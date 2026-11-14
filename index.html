@@ -4,8 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#10201a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Factures">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Mes factures</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23a7e8c3'/%3E%3Ctext x='32' y='44' font-size='34' font-family='Arial' font-weight='bold' text-anchor='middle' fill='%230d3a25'%3E€%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20512%20512%22%20width%3D%22512%22%20height%3D%22512%22%3E%20%20%3Cdefs%3E%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23a7e8c3%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23e9f7a8%22/%3E%20%20%20%20%3C/linearGradient%3E%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-30%25%22%20y%3D%22-30%25%22%20width%3D%22160%25%22%20height%3D%22160%25%22%3E%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%2210%22%20stdDeviation%3D%2214%22%20flood-color%3D%22%230d3a25%22%20flood-opacity%3D%22.22%22/%3E%20%20%20%20%3C/filter%3E%20%20%3C/defs%3E%20%20%3Crect%20width%3D%22512%22%20height%3D%22512%22%20fill%3D%22url%28%23bg%29%22/%3E%20%20%3Cg%20filter%3D%22url%28%23sh%29%22%3E%20%20%20%20%3Cpath%20d%3D%22M160%20100%20h150%20l58%2058%20v236%20a22%2022%200%200%201%20-22%2022%20h-186%20a22%2022%200%200%201%20-22%20-22%20v-272%20a22%2022%200%200%201%2022%20-22z%22%20fill%3D%22%23ffffff%22/%3E%20%20%3C/g%3E%20%20%3Cpath%20d%3D%22M310%20100%20v38%20a20%2020%200%200%200%2020%2020%20h38z%22%20fill%3D%22%23d6ebdd%22/%3E%20%20%3Crect%20x%3D%22166%22%20y%3D%22132%22%20width%3D%2298%22%20height%3D%2216%22%20rx%3D%228%22%20fill%3D%22%231f5c45%22/%3E%20%20%3Crect%20x%3D%22166%22%20y%3D%22178%22%20width%3D%22150%22%20height%3D%2211%22%20rx%3D%225.5%22%20fill%3D%22%23d9e2dd%22/%3E%20%20%3Crect%20x%3D%22166%22%20y%3D%22206%22%20width%3D%22118%22%20height%3D%2211%22%20rx%3D%225.5%22%20fill%3D%22%23d9e2dd%22/%3E%20%20%3Crect%20x%3D%22166%22%20y%3D%22248%22%20width%3D%22180%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%231f5c45%22%20opacity%3D%22.85%22/%3E%20%20%3Crect%20x%3D%22166%22%20y%3D%22270%22%20width%3D%22110%22%20height%3D%2210%22%20rx%3D%225%22%20fill%3D%22%23d9e2dd%22/%3E%3Crect%20x%3D%22304%22%20y%3D%22270%22%20width%3D%2242%22%20height%3D%2210%22%20rx%3D%225%22%20fill%3D%22%23d9e2dd%22/%3E%20%20%3Crect%20x%3D%22166%22%20y%3D%22296%22%20width%3D%2292%22%20height%3D%2210%22%20rx%3D%225%22%20fill%3D%22%23d9e2dd%22/%3E%3Crect%20x%3D%22304%22%20y%3D%22296%22%20width%3D%2242%22%20height%3D%2210%22%20rx%3D%225%22%20fill%3D%22%23d9e2dd%22/%3E%20%20%3Crect%20x%3D%22166%22%20y%3D%22322%22%20width%3D%22120%22%20height%3D%2210%22%20rx%3D%225%22%20fill%3D%22%23d9e2dd%22/%3E%3Crect%20x%3D%22304%22%20y%3D%22322%22%20width%3D%2242%22%20height%3D%2210%22%20rx%3D%225%22%20fill%3D%22%23d9e2dd%22/%3E%20%20%3Ccircle%20cx%3D%22340%22%20cy%3D%22372%22%20r%3D%2250%22%20fill%3D%22%231f5c45%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%229%22/%3E%20%20%3Cpath%20d%3D%22M317%20373%20l15%2015%20l28%20-30%22%20fill%3D%22none%22%20stroke%3D%22%23a7e8c3%22%20stroke-width%3D%2212%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -309,16 +315,24 @@ table.list .r{text-align:right}
 .side-user small{display:flex;align-items:center;gap:6px;color:#9fb4a9}
 .logout{border:0;background:transparent;color:#9fb4a9;cursor:pointer;padding:6px;border-radius:8px;display:grid;place-items:center}
 .logout:hover{background:rgba(255,255,255,.08);color:#fff}
+.paygrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.paychip{display:flex;align-items:center;gap:9px;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;cursor:pointer;font-weight:600;background:#faf9f6;transition:all .15s}
+.paychip input{accent-color:var(--brand);width:16px;height:16px}
+.paychip:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
+.tip{background:var(--amber-soft);color:#5f420a;border-radius:12px;padding:11px 14px;margin-bottom:14px;font-size:13px}
+.num-preview{background:var(--side);color:#fff;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.num-preview small{color:#9fb4a9}
+.num-preview b{font-family:var(--display);font-size:22px;color:var(--mint);letter-spacing:.01em}
 .welcome{background:linear-gradient(135deg,var(--mint),#e9f7a8);color:var(--mint-ink);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;font-weight:600}
 .welcome b{font-family:var(--display);font-size:18px;display:block;margin-bottom:2px}
 </style>
 </head>
 <body>
-<div class="splash" id="splash"><div class="brand-mark big">€</div></div>
+<div class="splash" id="splash"><div class="brand-mark big"><svg viewBox="0 0 24 24" width="58%" height="58%" aria-hidden="true"><path d="M6 2.5h8.5l4.5 4.5v13a1.5 1.5 0 0 1-1.5 1.5h-11.5a1.5 1.5 0 0 1-1.5-1.5v-16a1.5 1.5 0 0 1 1.5-1.5z" fill="#fff"/><path d="M14.5 2.5v3a1.5 1.5 0 0 0 1.5 1.5h3z" fill="#cfe6d8"/><rect x="7" y="6" width="5" height="1.6" rx=".8" fill="#0d3a25"/><rect x="7" y="10" width="9" height="1.2" rx=".6" fill="#b8cfc2"/><rect x="7" y="13" width="9" height="1.2" rx=".6" fill="#b8cfc2"/><rect x="7" y="16" width="6" height="1.2" rx=".6" fill="#b8cfc2"/></svg></div></div>
 
 <div class="auth" id="auth" style="display:none">
   <div class="auth-side">
-    <div class="brand"><div class="brand-mark">€</div><div><b class="app-name">Mes factures</b><small>Facturation simple</small></div></div>
+    <div class="brand"><div class="brand-mark"><svg viewBox="0 0 24 24" width="58%" height="58%" aria-hidden="true"><path d="M6 2.5h8.5l4.5 4.5v13a1.5 1.5 0 0 1-1.5 1.5h-11.5a1.5 1.5 0 0 1-1.5-1.5v-16a1.5 1.5 0 0 1 1.5-1.5z" fill="#fff"/><path d="M14.5 2.5v3a1.5 1.5 0 0 0 1.5 1.5h3z" fill="#cfe6d8"/><rect x="7" y="6" width="5" height="1.6" rx=".8" fill="#0d3a25"/><rect x="7" y="10" width="9" height="1.2" rx=".6" fill="#b8cfc2"/><rect x="7" y="13" width="9" height="1.2" rx=".6" fill="#b8cfc2"/><rect x="7" y="16" width="6" height="1.2" rx=".6" fill="#b8cfc2"/></svg></div><div><b class="app-name">Mes factures</b><small>Facturation simple</small></div></div>
     <h2>Tes factures, prêtes en 2 minutes.</h2>
     <ul>
       <li><span>✓</span>Factures conformes avec toutes les mentions obligatoires</li>
@@ -351,7 +365,7 @@ table.list .r{text-align:right}
 
 <div class="app" id="app" style="display:none">
 <aside class="side">
-  <div class="brand"><div class="brand-mark">€</div><div><b class="app-name">Mes factures</b><small>Facturation simple</small></div></div>
+  <div class="brand"><div class="brand-mark"><svg viewBox="0 0 24 24" width="58%" height="58%" aria-hidden="true"><path d="M6 2.5h8.5l4.5 4.5v13a1.5 1.5 0 0 1-1.5 1.5h-11.5a1.5 1.5 0 0 1-1.5-1.5v-16a1.5 1.5 0 0 1 1.5-1.5z" fill="#fff"/><path d="M14.5 2.5v3a1.5 1.5 0 0 0 1.5 1.5h3z" fill="#cfe6d8"/><rect x="7" y="6" width="5" height="1.6" rx=".8" fill="#0d3a25"/><rect x="7" y="10" width="9" height="1.2" rx=".6" fill="#b8cfc2"/><rect x="7" y="13" width="9" height="1.2" rx=".6" fill="#b8cfc2"/><rect x="7" y="16" width="6" height="1.2" rx=".6" fill="#b8cfc2"/></svg></div><div><b class="app-name">Mes factures</b><small>Facturation simple</small></div></div>
   <nav class="tabs">
     <button data-tab="edit" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span>Facture</span></button>
     <button data-tab="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 15h3"/></svg><span>Mes factures</span></button>
@@ -501,7 +515,7 @@ table.list .r{text-align:right}
 
 <!-- SETTINGS -->
 <section class="view" id="v-settings">
-  <div class="welcome" id="welcome" style="display:none"><b>Bienvenue ! 👋</b>Commence par remplir les infos de ton entreprise : elles apparaîtront sur toutes tes factures. Ensuite, clique sur « Enregistrer ».</div>
+  <div class="welcome" id="welcome" style="display:none"><b>Bienvenue ! 👋</b>Commence par remplir les infos de ton entreprise : elles apparaîtront sur toutes tes factures. Tu faisais déjà des factures ailleurs ? Indique ton prochain numéro dans « Numérotation des factures ». Ensuite, clique sur « Enregistrer ».</div>
   <div class="page-head"><div><h1>Mon entreprise</h1><p>Ces infos apparaissent sur toutes tes factures.</p></div><button class="btn primary" id="btnSettingsSave2">Enregistrer</button></div>
   <div class="grid-edit">
     <div>
@@ -564,11 +578,17 @@ table.list .r{text-align:right}
 
       <div class="card">
         <div class="card-h"><div class="ico b">D</div><div><h3>Paiement</h3><p>Délais, coordonnées bancaires, pénalités</p></div></div>
-        <div class="row">
-          <label class="f"><span>Délai de paiement (jours)</span><input type="number" min="0" id="sDays"></label>
-          <label class="f"><span>Moyens acceptés</span><input type="text" id="sMeans" placeholder="Virement, chèque…"></label>
+        <label class="f"><span>Délai de paiement (jours)</span><input type="number" min="0" id="sDays" style="max-width:160px"></label>
+        <label class="f" style="margin-bottom:6px"><span>Moyens de paiement acceptés</span></label>
+        <div class="paygrid" id="payMeans">
+          <label class="paychip"><input type="checkbox" value="virement"><span>🏦 Virement bancaire</span></label>
+          <label class="paychip"><input type="checkbox" value="cheque"><span>✍️ Chèque</span></label>
+          <label class="paychip"><input type="checkbox" value="especes"><span>💶 Espèces</span></label>
+          <label class="paychip"><input type="checkbox" value="carte"><span>💳 Carte bancaire</span></label>
         </div>
-        <div class="row">
+        <p class="hint" id="cashHint" style="display:none">Espèces : un client particulier résidant en France, ou un client professionnel, ne peut pas te payer plus de 1 000 € en liquide.</p>
+        <label class="f"><span>Précision sur le paiement (facultatif)</span><input type="text" id="sMeans" placeholder="Ex. Chèque à l'ordre de Tani LANNOY"></label>
+        <div class="row" id="ibanRow">
           <label class="f"><span>IBAN</span><input type="text" id="sIban"></label>
           <label class="f"><span>BIC</span><input type="text" id="sBic"></label>
         </div>
@@ -577,13 +597,23 @@ table.list .r{text-align:right}
       </div>
 
       <div class="card">
-        <div class="card-h"><div class="ico g">E</div><div><h3>Assurance &amp; numérotation</h3><p>Mentions pro et suite des numéros</p></div></div>
-        <label class="f"><span>Assurance professionnelle (ex. décennale pour les travaux)</span><textarea id="sInsur" rows="2" placeholder="Assureur, n° de contrat, zone géographique couverte"></textarea></label>
+        <div class="card-h"><div class="ico g">E</div><div><h3>Numérotation des factures</h3><p>Choisis le format et reprends ta suite de numéros</p></div></div>
+        <div class="tip">💡 <b>Tu faisais déjà des factures ailleurs ?</b> Mets ici le numéro de ta <b>prochaine</b> facture. Exemple : ta dernière facture était la n° 50 → écris <b>51</b>.</div>
         <div class="row">
-          <label class="f"><span>Préfixe des numéros</span><input type="text" id="sPrefix"></label>
           <label class="f"><span>Prochain numéro</span><input type="number" min="1" id="sNext"></label>
+          <label class="f"><span>Préfixe (facultatif)</span><input type="text" id="sPrefix" placeholder="Ex. F, FAC… ou vide"></label>
         </div>
-        <p class="hint" id="numExample"></p>
+        <div class="row">
+          <label class="f"><span>Nombre de chiffres</span><select id="sDigits"><option value="1">Sans zéro devant (51)</option><option value="3">3 chiffres (051)</option><option value="4">4 chiffres (0051)</option><option value="5">5 chiffres (00051)</option></select></label>
+          <label class="f"><span>Année dans le numéro</span><select id="sYear"><option value="1">Oui (F-2026-051)</option><option value="0">Non (F-051)</option></select></label>
+        </div>
+        <div class="num-preview"><small>Ta prochaine facture portera le numéro</small><b id="numExample"></b></div>
+        <p class="hint" id="numWarn" style="display:none;color:var(--red)"></p>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="ico p">F</div><div><h3>Assurance &amp; pied de page</h3><p>Mentions pro facultatives</p></div></div>
+        <label class="f"><span>Assurance professionnelle (ex. décennale pour les travaux)</span><textarea id="sInsur" rows="2" placeholder="Assureur, n° de contrat, zone géographique couverte"></textarea></label>
         <label class="f"><span>Pied de page (facultatif)</span><input type="text" id="sFooter"></label>
       </div>
       <div class="actions" style="justify-content:flex-end;margin-bottom:20px"><button class="btn primary" id="btnSettingsSave">Enregistrer mes informations</button></div>
@@ -667,9 +697,9 @@ document.title=APP_NAME;
 const DEFAULT_PROFILE = {
   name:"", legalForm:"Entrepreneur individuel (EI)", address:"", siret:"", rcs:"", email:"", phone:"",
   franchise:true, tvaNumber:"", defaultTva:20, tvaDebits:false,
-  payDays:30, means:"Virement bancaire", iban:"", bic:"",
+  payDays:30, means:"", iban:"", bic:"",
   penalties:"Taux d'intérêt appliqué par la BCE à son opération de refinancement la plus récente, majoré de 10 points",
-  insurance:"", prefix:"F", nextNumber:1, footer:"", logo:null, accent:"#1f5c45", signature:null, showSignature:true, signName:""
+  insurance:"", prefix:"F", nextNumber:1, numDigits:3, numYear:true, payMeans:["virement"], footer:"", logo:null, accent:"#1f5c45", signature:null, showSignature:true, signName:""
 };
 const S = { uid:null, user:null, profile:{...DEFAULT_PROFILE}, invoices:{}, clients:{}, cur:null, filter:"", unsubs:[], profileLoaded:false };
 const R = {
@@ -694,8 +724,24 @@ function computeTotals(inv, p){
   Object.keys(byRate).sort((a,b)=>b-a).forEach(k=>{ const v=r2(byRate[k]*num(k)/100); if(num(k)>0||Object.keys(byRate).length>1){vat.push({rate:num(k),base:r2(byRate[k]),amount:v});} tva+=v; });
   tva=r2(tva); return { ht, tva, ttc:r2(ht+tva), vat };
 }
+function normProfile(p){
+  const o={...DEFAULT_PROFILE,...p};
+  if(!Array.isArray(o.payMeans)){ o.payMeans=["virement"]; }
+  if(/^virement bancaire\.?$/i.test(String(o.means||"").trim())) o.means="";
+  o.numDigits=Math.min(5,Math.max(1,Number(o.numDigits)||3)); if(o.numDigits===2) o.numDigits=1;
+  o.numYear = o.numYear!==false;
+  return o;
+}
+const PAY_LABEL={virement:"virement bancaire",cheque:"chèque",especes:"espèces",carte:"carte bancaire"};
+function payText(p){ const l=(p.payMeans||[]).map(k=>PAY_LABEL[k]).filter(Boolean); if(!l.length) return ""; return l.length===1?l[0]:l.slice(0,-1).join(", ")+" ou "+l[l.length-1]; }
 const isLate = inv => inv.status==="envoyee" && inv.dueDate && inv.dueDate < todayISO();
-const fmtNumber = (p,n,iso) => `${(p.prefix||"F").trim()}-${(iso||todayISO()).slice(0,4)}-${String(n).padStart(3,"0")}`;
+function fmtNumber(p,n,iso){
+  const parts=[]; const pre=String(p.prefix??"").trim();
+  if(pre) parts.push(pre);
+  if(p.numYear!==false) parts.push((iso||todayISO()).slice(0,4));
+  parts.push(String(Math.max(1,Math.floor(Number(n)||1))).padStart(Math.min(5,Math.max(1,Number(p.numDigits)||3)),"0"));
+  return parts.join("-");
+}
 
 function fbErr(e){
   const c=(e&&e.code)||"";
@@ -796,7 +842,7 @@ function startSession(user){
   setSync("Chargement…");
   let first=true;
   S.unsubs.push(onSnapshot(R.prof(), s=>{
-    S.profile = s.exists() ? {...DEFAULT_PROFILE,...s.data()} : {...DEFAULT_PROFILE, email:user.email||""};
+    S.profile = s.exists() ? normProfile(s.data()) : normProfile({email:user.email||""});
     applyAccent(); renderProfileDependent();
     if(first){ first=false; S.profileLoaded=true; setSync("Synchronisé");
       if(!s.exists() || !S.profile.name){ showTab("settings"); $("#welcome").style.display="block"; } }
@@ -1016,8 +1062,9 @@ function companyLines(p){
 const NATURE={services:"Prestation de services",biens:"Livraison de biens",mixte:"Mixte (livraison de biens et prestation de services)"};
 function conditionsText(inv,p){
   const a=[];
-  a.push(`Paiement ${inv.dueDate?("au plus tard le "+frDate(inv.dueDate)):"à réception"}${p.means?" — "+p.means:""}.`);
-  if(p.iban) a.push(`IBAN : ${p.iban}${p.bic?"   BIC : "+p.bic:""}`);
+  const pt=payText(p);
+  a.push(`Paiement ${inv.dueDate?("au plus tard le "+frDate(inv.dueDate)):"à réception"}${pt?" par "+pt:""}.${p.means?" "+p.means:""}`);
+  if(p.iban && (p.payMeans||[]).includes("virement")) a.push(`IBAN : ${p.iban}${p.bic?"   BIC : "+p.bic:""}`);
   if(inv.client.kind==="pro"){
     if(p.penalties) a.push(`Pénalités de retard : ${p.penalties}.`);
     a.push("Indemnité forfaitaire pour frais de recouvrement en cas de retard : 40 €.");
@@ -1303,18 +1350,29 @@ $("#btnClSave").addEventListener("click",async()=>{
 });
 
 /* ================= settings ================= */
-const SMAP={sName:"name",sForm:"legalForm",sSiret:"siret",sAddr:"address",sEmail:"email",sPhone:"phone",sRcs:"rcs",sTvaNum:"tvaNumber",sTvaDef:"defaultTva",sDays:"payDays",sMeans:"means",sIban:"iban",sBic:"bic",sPenal:"penalties",sInsur:"insurance",sPrefix:"prefix",sNext:"nextNumber",sFooter:"footer",sSigName:"signName"};
+const SMAP={sName:"name",sForm:"legalForm",sSiret:"siret",sAddr:"address",sEmail:"email",sPhone:"phone",sRcs:"rcs",sTvaNum:"tvaNumber",sTvaDef:"defaultTva",sDays:"payDays",sMeans:"means",sIban:"iban",sBic:"bic",sPenal:"penalties",sInsur:"insurance",sPrefix:"prefix",sNext:"nextNumber",sDigits:"numDigits",sFooter:"footer",sSigName:"signName"};
 function fillSettings(){
   draftProfile=clean(S.profile);
   Object.entries(SMAP).forEach(([id,k])=>{ $("#"+id).value = draftProfile[k] ?? ""; });
   $("#sFranchise").checked=!!draftProfile.franchise; $("#sDebits").checked=!!draftProfile.tvaDebits; $("#sShowSig").checked=draftProfile.showSignature!==false;
+  $("#sYear").value=draftProfile.numYear===false?"0":"1"; $("#sDigits").value=String(draftProfile.numDigits||3);
+  $$("#payMeans input").forEach(c=>c.checked=(draftProfile.payMeans||[]).includes(c.value)); payUi();
   showSig();
   $("#tvaFields").style.display=draftProfile.franchise?"none":"block";
   showLogo(); numExample(); renderSwatches();
 }
-function numExample(){ $("#numExample").textContent="Prochaine facture : "+fmtNumber(draftProfile,draftProfile.nextNumber||1,todayISO()); }
+function numExample(){
+  const nx=fmtNumber(draftProfile,draftProfile.nextNumber||1,todayISO());
+  $("#numExample").textContent=nx;
+  const clash=Object.values(S.invoices).some(i=>i.number===nx);
+  $("#numWarn").style.display=clash?"block":"none";
+  $("#numWarn").textContent=clash?`⚠️ Le numéro ${nx} existe déjà dans tes factures : choisis un numéro plus grand pour éviter un doublon.`:"";
+}
+function payUi(){ const pm=draftProfile.payMeans||[]; $("#cashHint").style.display=pm.includes("especes")?"block":"none"; $("#ibanRow").style.display=pm.includes("virement")?"grid":"none"; }
+$$("#payMeans input").forEach(c=>c.addEventListener("change",()=>{ draftProfile.payMeans=$$("#payMeans input").filter(x=>x.checked).map(x=>x.value); payUi(); }));
+$("#sYear").addEventListener("change",e=>{ draftProfile.numYear=e.target.value==="1"; numExample(); });
 function showLogo(){ const l=draftProfile.logo; $("#logoPrev").innerHTML=l?`<img src="${l}" alt="">`:"Pas de logo"; $("#logoDel").style.display=l?"inline-flex":"none"; }
-Object.entries(SMAP).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{ let v=e.target.value; if(["defaultTva","payDays","nextNumber"].includes(k)) v=num(v); draftProfile[k]=v; if(k==="prefix"||k==="nextNumber") numExample(); }));
+Object.entries(SMAP).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{ let v=e.target.value; if(["defaultTva","payDays","nextNumber","numDigits"].includes(k)) v=num(v); draftProfile[k]=v; if(["prefix","nextNumber","numDigits"].includes(k)) numExample(); }));
 $("#sFranchise").addEventListener("change",e=>{ draftProfile.franchise=e.target.checked; $("#tvaFields").style.display=e.target.checked?"none":"block"; });
 $("#sDebits").addEventListener("change",e=>{ draftProfile.tvaDebits=e.target.checked; });
 $("#logoFile").addEventListener("change",e=>{
@@ -1327,7 +1385,10 @@ $("#logoFile").addEventListener("change",e=>{
 $("#logoDel").addEventListener("click",()=>{ draftProfile.logo=null; showLogo(); });
 async function saveSettings(){
   draftProfile.nextNumber=Math.max(1,Math.floor(num(draftProfile.nextNumber))||1);
-  S.profile={...DEFAULT_PROFILE,...draftProfile};
+  const nx=fmtNumber(draftProfile,draftProfile.nextNumber,todayISO());
+  if(Object.values(S.invoices).some(i=>i.number===nx)){ toast(`Le numéro ${nx} existe déjà : choisis un « Prochain numéro » plus grand.`); numExample(); return; }
+  if(!(draftProfile.payMeans||[]).length){ toast("Coche au moins un moyen de paiement."); return; }
+  S.profile=normProfile(draftProfile);
   try{ await Store.saveProfile(); $("#welcome").style.display="none"; toast("Informations enregistrées."); applyAccent(); renderProfileDependent(); }catch(e){ fbErr(e); }
 }
 $("#btnSettingsSave").addEventListener("click",saveSettings);
@@ -1382,6 +1443,9 @@ function confirmBox(title,text,cb){ $("#mTitle").textContent=title; $("#mText").
 $("#mNo").addEventListener("click",()=>{ $("#modal").classList.remove("on"); mCb=null; });
 $("#mYes").addEventListener("click",()=>{ $("#modal").classList.remove("on"); const c=mCb; mCb=null; c&&c(); });
 $("#modal").addEventListener("click",e=>{ if(e.target.id==="modal"){ $("#modal").classList.remove("on"); mCb=null; } });
+
+/* ================= appli installable ================= */
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 
 </script>
 </body>
