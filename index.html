@@ -411,7 +411,7 @@ table.list .r{text-align:right}
           <select id="clientPick"><option value="">— Saisir un nouveau client —</option></select>
         </label>
         <div class="seg" id="kindSeg"><button data-v="particulier">Particulier</button><button data-v="pro">Professionnel</button></div>
-        <label class="f"><span>Nom / Raison sociale</span><input type="text" id="cName" placeholder="Ex. Dupont SARL"></label>
+        <label class="f"><span>Nom / Raison sociale</span><input type="text" id="cName" placeholder="Ex. Dupont SARL" data-ex="client"></label>
         <label class="f"><span>Adresse de facturation</span><textarea id="cAddr" rows="2" placeholder="N°, rue&#10;Code postal Ville"></textarea></label>
         <div class="row" id="cProRow">
           <label class="f"><span>SIREN du client</span><input type="text" id="cSiren" placeholder="9 chiffres"></label>
@@ -431,7 +431,7 @@ table.list .r{text-align:right}
 
       <div class="card">
         <div class="card-h"><div class="ico p">4</div><div><h3>Petit mot</h3><p>Facultatif — apparaît sur la facture</p></div></div>
-        <textarea id="notes" rows="3" placeholder="Ex. Merci pour votre confiance ! Chantier réalisé du … au …"></textarea>
+        <textarea id="notes" rows="3" placeholder="Ex. Merci pour votre confiance !" data-ex="note"></textarea>
       </div>
 
       <div class="paybar">
@@ -528,7 +528,7 @@ table.list .r{text-align:right}
             <button class="btn sm ghost danger" id="logoDel" style="display:none">Retirer</button>
           </div>
         </div>
-        <label class="f"><span>Nom ou nom commercial</span><input type="text" id="sName" placeholder="Ex. Tani Pose Cuisine"></label>
+        <label class="f"><span>Nom ou nom commercial</span><input type="text" id="sName" placeholder="Ex. Atelier Martin" data-ex="company"></label>
         <div class="row">
           <label class="f"><span>Forme juridique</span>
             <select id="sForm"><option>Entrepreneur individuel (EI)</option><option>Micro-entreprise (EI)</option><option>EURL</option><option>SASU</option><option>SARL</option><option>SAS</option><option value="">Ne pas afficher</option></select>
@@ -560,7 +560,7 @@ table.list .r{text-align:right}
           </div>
         </div>
         <label class="chk"><input type="checkbox" id="sShowSig"><span>Afficher ma signature sur les factures</span></label>
-        <label class="f"><span>Nom sous la signature (facultatif)</span><input type="text" id="sSigName" placeholder="Ex. Tani, gérant"></label>
+        <label class="f"><span>Nom sous la signature (facultatif)</span><input type="text" id="sSigName" placeholder="Ex. Jean Martin, gérant" data-ex="signer"></label>
         <p class="hint" style="margin:0">La signature n'est pas obligatoire sur une facture, mais tu peux l'ajouter si tu en as l'habitude.</p>
       </div>
 
@@ -587,7 +587,7 @@ table.list .r{text-align:right}
           <label class="paychip"><input type="checkbox" value="carte"><span>💳 Carte bancaire</span></label>
         </div>
         <p class="hint" id="cashHint" style="display:none">Espèces : un client particulier résidant en France, ou un client professionnel, ne peut pas te payer plus de 1 000 € en liquide.</p>
-        <label class="f"><span>Précision sur le paiement (facultatif)</span><input type="text" id="sMeans" placeholder="Ex. Chèque à l'ordre de Tani LANNOY"></label>
+        <label class="f"><span>Précision sur le paiement (facultatif)</span><input type="text" id="sMeans" placeholder="Ex. Chèque à l'ordre de Jean Martin" data-ex="cheque"></label>
         <div class="row" id="ibanRow">
           <label class="f"><span>IBAN</span><input type="text" id="sIban"></label>
           <label class="f"><span>BIC</span><input type="text" id="sBic"></label>
@@ -692,6 +692,25 @@ const safeName = x => String(x||"").replace(/[\\/:*?"<>|]/g,"-").trim()||"Sans n
 
 $$(".app-name").forEach(e=>e.textContent=APP_NAME);
 document.title=APP_NAME;
+
+/* ================= exemples au hasard ================= */
+const EX_SETS=[
+  {company:"Atelier Martin", person:"Jean Martin", role:"gérant", client:"Dupont SARL", lines:["Réparation d'un meuble","Fourniture de vernis","Déplacement"], note:"Merci pour votre confiance !"},
+  {company:"Studio Photo Lumière", person:"Sophie Lefèvre", role:"photographe", client:"Mme Laura Petit", lines:["Séance photo 2 h","Retouche de 20 photos","Tirage A4"], note:"Merci et à bientôt pour votre prochain shooting !"},
+  {company:"Jardins & Paysages", person:"Karim Benali", role:"gérant", client:"M. Paul Garnier", lines:["Taille de haie","Tonte de pelouse","Évacuation des déchets verts"], note:"Intervention réalisée le matin, merci de votre accueil."},
+  {company:"Garage du Centre", person:"Lucas Bernard", role:"mécanicien", client:"Mme Claire Roux", lines:["Vidange + filtre à huile","Plaquettes de frein avant","Main-d'œuvre"], note:"Prochaine révision conseillée dans 15 000 km."},
+  {company:"Web & Malin", person:"Emma Girard", role:"développeuse", client:"Boulangerie Moreau", lines:["Création d'un site vitrine","Nom de domaine (1 an)","Formation 1 h"], note:"Merci pour ce beau projet !"},
+  {company:"Coiffure Élégance", person:"Nadia Fontaine", role:"coiffeuse", client:"Association Les Tilleuls", lines:["Coupe + brushing","Coloration","Produit de soin"], note:"Au plaisir de vous revoir !"},
+  {company:"Plomberie Rapide", person:"Thomas Leroy", role:"artisan", client:"SCI Les Érables", lines:["Remplacement d'un chauffe-eau","Raccords et joints","Déplacement"], note:"Garantie pièces : 2 ans."},
+  {company:"Cours & Notes", person:"Julie Mercier", role:"professeure", client:"M. et Mme Lambert", lines:["Cours de guitare (1 h)","Cours de solfège (30 min)","Partitions"], note:"Bonne pratique d'ici le prochain cours !"}
+];
+const EXS=EX_SETS[Math.floor(Math.random()*EX_SETS.length)];
+const EX={ line:i=>EXS.lines[i%EXS.lines.length] };
+function applyExamples(){
+  const m={company:"Ex. "+EXS.company, signer:`Ex. ${EXS.person}, ${EXS.role}`, cheque:`Ex. Chèque à l'ordre de ${EXS.person}`, note:"Ex. "+EXS.note, client:"Ex. "+EXS.client};
+  $$("[data-ex]").forEach(el=>{ if(m[el.dataset.ex]) el.placeholder=m[el.dataset.ex]; });
+}
+applyExamples();
 
 /* ================= state ================= */
 const DEFAULT_PROFILE = {
@@ -973,7 +992,7 @@ function renderLines(){
     <div class="ln" data-i="${i}">
       <div class="ln-idx">${i+1}</div>
       <div class="ln-top">
-        <textarea rows="1" data-k="desc" placeholder="Désignation (ex. Pose plan de travail quartz)">${esc(l.desc)}</textarea>
+        <textarea rows="1" data-k="desc" placeholder="Désignation (ex. ${esc(EX.line(i))})">${esc(l.desc)}</textarea>
         <button class="btn ghost sm" data-del="${i}" title="Supprimer la ligne" ${S.cur.lines.length<2?"disabled":""}>✕</button>
       </div>
       <div class="ln-grid ${fr?"nofx":""}">
