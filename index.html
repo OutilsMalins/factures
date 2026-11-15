@@ -373,6 +373,7 @@ details.more[open] summary{margin-bottom:12px}
 .team-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #eee9df;font-size:13.5px}
 .team-row b{word-break:break-all}.team-row small{display:block;color:#888;font-size:12px}
 .ws-note{background:#eef3fb;border:1px solid #cad8ef;color:#1d3b66;border-radius:12px;padding:11px 14px;margin-bottom:14px;font-size:13.5px;font-weight:600}
+.bk-warn{background:#fff6e0;border:1px solid #efd18a;color:#5f4300;border-radius:10px;padding:9px 11px;margin-top:6px;font-size:12.5px;line-height:1.45}
 .ac-res{font-weight:700;margin:6px 0 12px}
 </style>
 </head>
@@ -500,6 +501,7 @@ details.more[open] summary{margin-bottom:12px}
       <div class="paybar">
         <div><div class="lbl" id="pbLbl">Total TTC</div><div class="amt" id="pbAmt">0,00 €</div><div class="sub" id="pbSub"></div></div>
         <div class="actions">
+          <button class="btn" id="btnShare" style="display:none">📲 Enregistrer dans Fichiers</button>
           <button class="btn" id="btnPdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>PDF</button>
           <button class="btn" id="btnDraft" style="display:none">Enregistrer le brouillon</button>
           <button class="btn mint" id="btnSave">Enregistrer</button>
@@ -782,11 +784,11 @@ details.more[open] summary{margin-bottom:12px}
   <h4>💾 Où garder une copie de tes factures ?</h4>
   <p>Tes documents sont déjà enregistrés en ligne dans l'appli. Choisis en plus où en garder une copie automatique, sur cet appareil :</p>
   <div class="bk-opts">
-    <button class="bk-opt" id="bkFolder"><b>📁 Dans un dossier de mon choix</b><small>Sur ton PC, une clé USB, un disque dur, ou un dossier Google Drive / OneDrive synchronisé. Chaque document émis y est copié en PDF, rangé par année, avec un fichier de sauvegarde de toutes tes données.</small></button>
+    <button class="bk-opt" id="bkFolder"><b>📁 Dans un dossier de mon choix</b><small>Sur ton PC, une clé USB, un disque dur, ou un dossier Google Drive / OneDrive synchronisé. Chaque document y est copié en PDF, rangé dans un dossier par client et classé par numéro, avec un fichier de sauvegarde de toutes tes données.</small></button>
     <button class="bk-opt" id="bkDl"><b>⬇ Télécharger chaque document automatiquement</b><small>Le PDF part dans tes Téléchargements à chaque émission. Fonctionne partout (tablette, téléphone, Mac…).</small></button>
-    <button class="bk-opt" id="bkNone"><b>☁️ Seulement dans l'appli</b><small>Tu pourras toujours tout télécharger depuis « Archives PDF ».</small></button>
+    <button class="bk-opt" id="bkNone"><b>☁️ Seulement dans l'appli (déconseillé)</b><small>Aucune copie externe : tes documents ne sont conservés que dans l'application.</small></button>
   </div>
-  <p class="hint" id="bkNoFs" style="display:none">Le choix d'un dossier n'est possible que sur ordinateur, avec Chrome ou Edge. Sur ce navigateur, prends le téléchargement automatique.</p>
+  <p class="hint" id="bkNoFs" style="display:none">Le choix d'un dossier n'est pas possible sur ce navigateur (iPhone, iPad, Safari, Firefox). Prends le téléchargement automatique : tu pourras aussi ranger chaque document dans le dossier de ton choix avec le bouton « 📲 Enregistrer dans Fichiers ». Sur Android, utilise Chrome pour pouvoir choisir un dossier.</p>
   <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="bkLater">Plus tard</button></div>
 </div></div>
 <div class="modal-bg" id="invModal"><div class="modal">
@@ -965,6 +967,9 @@ const R = {
 };
 const lsGet = k => { try{ return localStorage.getItem(k); }catch(_){ return null; } };
 const lsSet = (k,v) => { try{ localStorage.setItem(k,v); }catch(_){} };
+const FS_OK = typeof window.showDirectoryPicker==="function";
+const SHARE_OK = (()=>{ try{ return !FS_OK && typeof navigator.share==="function" && typeof navigator.canShare==="function" && navigator.canShare({files:[new File([new Uint8Array(1)],"t.pdf",{type:"application/pdf"})]}); }catch(_){ return false; } })();
+const pdfCache = {};
 
 /* types de documents */
 const TYPE = {
@@ -1433,6 +1438,7 @@ function loadEditor(inv){
   $("#btnSave").textContent = t==="devis" ? (inv.number?"Enregistrer":"Enregistrer le devis") : `✓ Émettre ${t==="avoir"?"l'avoir":"la facture"}`;
   refreshLockUi();
   toggleProRow(); renderLines(); renderPreview();
+  $("#btnShare").style.display = SHARE_OK ? "inline-flex" : "none"; if(isLockedEd(inv)||(t==="devis"&&inv.number)) prefetchPdf(inv);
 }
 function autoliqHint(){ $("#autoliqHint").style.display = S.cur && S.cur.autoliq && !S.profile.franchise && !String(S.cur.client.tva||"").trim() ? "block" : "none"; }
 function toggleProRow(){ $("#cProRow").style.display = S.cur.client.kind==="pro" ? "grid" : "none"; }
@@ -1902,7 +1908,8 @@ function buildPdf(inv,p){
   footer();
   return doc;
 }
-const pdfName = inv => safeName((inv.number?(labelOf(inv)+" "+inv.number):labelOf(inv)+" brouillon")+(inv.client&&inv.client.name?(" - "+inv.client.name):""))+".pdf";
+const pdfName = inv => safeName([inv.number||"Brouillon", labelOf(inv), inv.client&&inv.client.name].filter(Boolean).join(" - "))+".pdf";
+const folderName = inv => safeName(inv.client&&inv.client.name).replace(/[. ]+$/,"").slice(0,80) || "Sans nom";
 async function pdfBytes(inv){
   if(inv.pdf){ try{ const s=await getDoc(R.pdf(inv.id)); if(s.exists()&&s.data().b64) return b64ToBytes(s.data().b64); }catch(e){ console.error(e); } }
   return new Uint8Array(buildPdf(inv,profFor(inv)).output("arraybuffer"));
@@ -2107,9 +2114,10 @@ function renderArchive(){
     const ic = archMode==="client" ? `<div class="avatar" style="background:${avColor(g.label)};width:36px;height:36px">${esc(initials(g.label))}</div>` : `<div class="folder" style="background:var(--amber-soft);color:#8a5d06"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>`;
     return `<details class="group" ${gi<4?"open":""}><summary>${ic}<div><div class="gt">${esc(g.label)}</div><div class="gs">${g.items.length} facture${g.items.length>1?"s":""}</div></div><div class="gr"><div class="amount">${money(tot)}</div></div><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></summary>
       ${g.items.map(i=>`<div class="file"><div class="pdf">PDF</div><div style="min-width:0"><div class="fn">${docType(i)!=="facture"?`<span class="pill ${docType(i)==="avoir"?"avoir":"envoye"}">${TYPE[docType(i)].label}</span> `:""}${esc(i.number)}${archMode==="month"?` <span class="muted" style="font-weight:600">· ${esc(i.client?.name)}</span>`:""}</div><div class="fm">${frDate(i.issueDate)} · ${money(ttc(i))} · ${i.pdf?`<span class="tag-ok">Archivé · ${kb(i.pdf.size||0)}</span>`:`<span class="tag-no">Recréé à la demande</span>`}</div></div>
-      <div class="act"><button class="btn sm ghost" data-open="${i.id}">Ouvrir</button><button class="btn sm" data-dl="${i.id}">Télécharger</button></div></div>`).join("")}
+      <div class="act"><button class="btn sm ghost" data-open="${i.id}">Ouvrir</button>${SHARE_OK?`<button class="btn sm" data-share="${i.id}">📲 Fichiers</button>`:""}<button class="btn sm" data-dl="${i.id}">Télécharger</button></div></div>`).join("")}
     </details>`; }).join("");
   $$("#archList [data-dl]").forEach(b=>b.addEventListener("click",()=>downloadPdf(S.invoices[b.dataset.dl])));
+  $$("#archList [data-share]").forEach(b=>b.addEventListener("click",()=>sharePdf(S.invoices[b.dataset.share])));
   $$("#archList [data-open]").forEach(b=>b.addEventListener("click",()=>{ loadEditor(clean(S.invoices[b.dataset.open])); showTab("edit"); }));
 }
 function loadZip(){ return new Promise((res,rej)=>{ if(window.JSZip) return res(window.JSZip); const urls=["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js","https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"]; (function next(i){ if(i>=urls.length) return rej(new Error("zip")); const sc=document.createElement("script"); sc.src=urls[i]; sc.onload=()=>window.JSZip?res(window.JSZip):next(i+1); sc.onerror=()=>next(i+1); document.head.appendChild(sc); })(0); }); }
@@ -2276,7 +2284,6 @@ $("#sigFile").addEventListener("change",e=>{
 });
 
 /* ================= sauvegarde automatique (copie locale) ================= */
-const FS_OK = typeof window.showDirectoryPicker==="function";
 function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open("mes-factures",1); r.onupgradeneeded=()=>r.result.createObjectStore("kv"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
 const kv = {
   async get(k){ const d=await idb(); return new Promise((res,rej)=>{ const q=d.transaction("kv").objectStore("kv").get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); },
@@ -2304,7 +2311,8 @@ const Backup = {
     try{ let st=await c.handle.queryPermission({mode:"readwrite"}); if(st!=="granted"&&ask) st=await c.handle.requestPermission({mode:"readwrite"}); this.perm = st==="granted"; }catch(e){ console.error(e); this.perm=false; }
     this.ui(); return this.perm;
   },
-  path(inv){ return `${(inv.issueDate||todayISO()).slice(0,4)}/${pdfName(inv)}`; },
+  // rangement : un dossier par client, fichiers nommés « numéro - type - client » (donc classés par numéro)
+  path(inv){ return `${folderName(inv)}/${pdfName(inv)}`; },
   async dirOf(path,create){ let d=this.cfg.handle; const parts=path.split("/"); for(const p of parts.slice(0,-1)) d=await d.getDirectoryHandle(p,{create}); return [d,parts[parts.length-1]]; },
   async write(path,data){ const [d,name]=await this.dirOf(path,true); const fh=await d.getFileHandle(name,{create:true}); const w=await fh.createWritable(); await w.write(data); await w.close(); },
   async exists(path){ try{ const [d,name]=await this.dirOf(path,false); await d.getFileHandle(name); return true; }catch(_){ return false; } },
@@ -2350,7 +2358,7 @@ const Backup = {
   },
   ui(){
     const c=this.cfg, st=$("#bkState"), bar=$("#bkBar"); if(!st) return; const pend=S.uid?this.pending().length:0;
-    if(!c||c.mode==="none") st.innerHTML=`<b>☁️ Seulement dans l'appli</b><small>Aucune copie automatique sur cet appareil.</small>`;
+    if(!c||c.mode==="none") st.innerHTML=`<b>☁️ Seulement dans l'appli</b><small>Aucune copie automatique sur cet appareil.</small><div class="bk-warn">⚠️ Sans copie externe, tes documents ne sont conservés que dans l'application. En cas d'incident (suppression ou piratage du compte, interruption du service, erreur de manipulation), ils pourraient être définitivement perdus. Les factures doivent être conservées 10 ans : une sauvegarde externe est fortement recommandée.</div>`;
     else if(c.mode==="download") st.innerHTML=`<b>⬇ Téléchargement automatique</b><small>Chaque document émis est téléchargé (dossier Téléchargements).</small>`;
     else st.innerHTML=`<b>📁 Dossier « ${esc(c.name)} »</b><small>${this.perm?`✓ Actif${c.last?` · dernière copie le ${new Date(c.last).toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"})}`:""}`:"⏸ En pause : le dossier doit être reconnecté"}${pend?` · ${pend} document${pend>1?"s":""} en attente`:""}</small>`;
     $("#bkSync").textContent = c&&c.mode==="download" ? "Tout télécharger (ZIP)" : "Tout sauvegarder maintenant";
@@ -2372,25 +2380,44 @@ $("#bkFolder").addEventListener("click",async()=>{
   $("#bkModal").classList.remove("on");
   await Backup.save({mode:"folder",handle:h,name:h.name,at:Date.now()});
   Backup.perm=true; Backup.ui();
-  toast(`Dossier « ${h.name} » choisi : copie de tes documents…`);
+  toast(`Dossier « ${h.name} » choisi : copie de tes documents, rangés par client…`);
   Backup.syncAll();
 });
 $("#bkDl").addEventListener("click",async()=>{ $("#bkModal").classList.remove("on"); await Backup.save({mode:"download",at:Date.now()}); toast("Chaque document émis sera téléchargé automatiquement."); });
-$("#bkNone").addEventListener("click",async()=>{ $("#bkModal").classList.remove("on"); await Backup.save({mode:"none",at:Date.now()}); toast("D'accord : tes documents restent dans l'appli."); });
+$("#bkNone").addEventListener("click",()=>{ $("#bkModal").classList.remove("on");
+  confirmBox("Continuer sans sauvegarde externe ?","Sans copie externe, tes documents ne sont conservés que dans l'application. En cas d'incident (suppression ou piratage du compte, interruption du service, erreur de manipulation), ils pourraient être définitivement perdus. Les factures doivent être conservées 10 ans : une sauvegarde externe est fortement recommandée.",async()=>{ await Backup.save({mode:"none",at:Date.now()}); toast("Choix enregistré. Tu peux activer une sauvegarde à tout moment dans « Mon entreprise »."); }, openBackupModal);
+  $("#mYes").textContent="Continuer sans sauvegarde"; });
 $("#bkChange").addEventListener("click",openBackupModal);
 $("#bkSync").addEventListener("click",()=>Backup.syncAll());
 $("#bkReconnect").addEventListener("click",async()=>{ if(await Backup.ensurePerm(true)){ toast("Dossier reconnecté ✓"); await Backup.flush(); Backup.touch(); } else toast("Accès refusé : la sauvegarde reste en pause."); });
 
+
+/* ================= « Enregistrer dans Fichiers » (iPhone, iPad… via le menu Partager) ================= */
+async function prefetchPdf(inv){ if(!SHARE_OK||!inv||!inv.number||pdfCache[inv.id]) return; try{ pdfCache[inv.id]=await pdfBytes(inv); }catch(_){} }
+async function sharePdf(inv){
+  if(!inv) return;
+  if(!window.jspdf) return toast("Le module PDF n'a pas pu se charger. Recharge la page.");
+  const fresh = S.cur && S.cur.id===inv.id && JSON.stringify(clean(S.cur))!==JSON.stringify(S.invoices[inv.id]||null);
+  let bytes = (!fresh && pdfCache[inv.id]) || null;
+  if(!bytes){
+    if(fresh || !inv.number) bytes=new Uint8Array(buildPdf(inv,profFor(inv)).output("arraybuffer"));
+    else { await prefetchPdf(inv); bytes=pdfCache[inv.id] || new Uint8Array(buildPdf(inv,profFor(inv)).output("arraybuffer")); }
+  }
+  const file=new File([bytes],pdfName(inv),{type:"application/pdf"});
+  try{ await navigator.share({files:[file],title:pdfName(inv)}); }
+  catch(e){ if(e&&e.name==="AbortError") return; if(e&&e.name==="NotAllowedError") return toast("PDF prêt : touche de nouveau « Fichiers » pour l'enregistrer."); console.error(e); toast("Partage impossible ici : utilise le bouton PDF."); }
+}
+$("#btnShare").addEventListener("click",()=>sharePdf(S.cur));
 /* ================= misc ================= */
 function renderProfileDependent(){
   if(S.cur){ renderLines(); renderPreview(); }
   if($("#v-settings").classList.contains("on") && !document.activeElement.closest("#v-settings")) fillSettings();
 }
 let tt; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("on"),3200); }
-let mCb=null;
-function confirmBox(title,text,cb){ $("#mTitle").textContent=title; $("#mText").textContent=text; mCb=cb; $("#modal").classList.add("on"); }
-$("#mNo").addEventListener("click",()=>{ $("#modal").classList.remove("on"); mCb=null; });
-$("#mYes").addEventListener("click",()=>{ $("#modal").classList.remove("on"); const c=mCb; mCb=null; c&&c(); });
+let mCb=null, mNoCb=null;
+function confirmBox(title,text,cb,noCb){ mNoCb=noCb||null; $("#mYes").textContent="Confirmer"; $("#mTitle").textContent=title; $("#mText").textContent=text; mCb=cb; $("#modal").classList.add("on"); }
+$("#mNo").addEventListener("click",()=>{ $("#modal").classList.remove("on"); mCb=null; const n=mNoCb; mNoCb=null; n&&n(); });
+$("#mYes").addEventListener("click",()=>{ $("#modal").classList.remove("on"); const c=mCb; mCb=null; mNoCb=null; c&&c(); });
 $("#modal").addEventListener("click",e=>{ if(e.target.id==="modal"){ $("#modal").classList.remove("on"); mCb=null; } });
 
 /* ================= appli installable ================= */
