@@ -148,10 +148,9 @@ textarea{resize:vertical;min-height:40px}
 .sh{position:absolute;inset:0;font-size:1.43cqw;line-height:1.35;display:flex;flex-direction:column}
 .sh-band{background:var(--inv);color:#fff;height:20cqw;padding:0 7.14cqw;display:flex;align-items:center;justify-content:space-between;gap:3cqw;flex:none}
 .sh-band .l{display:flex;align-items:center;gap:2.6cqw;min-width:0}
-.sh-logo{background:#fff;border-radius:1.2cqw;padding:.9cqw;display:flex;align-items:center;justify-content:center;flex:none}
-.sh-logo img{max-height:11.7cqw;max-width:29cqw;width:auto;height:auto;display:block}
-.sh-logo.full{padding:0;overflow:hidden}
-.sh-logo.full img{max-height:13.5cqw;max-width:31cqw;border-radius:1.2cqw}
+.sh-logo{background:none;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
+.sh-logo img{max-height:13.5cqw;max-width:31cqw;width:auto;height:auto;display:block}
+.sh-logo.full img{border-radius:1.2cqw}
 .sh-band .nm{font-weight:700;font-size:3cqw;line-height:1.15}
 .sh-band .r{text-align:right}
 .sh-band .big{font-size:5.2cqw;font-weight:700;letter-spacing:.04em;line-height:1}
@@ -814,8 +813,23 @@ function logoBackground(d,w,h){
 function fitLogo(img, max){
   const {c,w,h,d}=logoCanvas(img);
   const {transp,uniform,bg}=logoBackground(d,w,h);
-  const isInk=k=>{ if(d[k+3]<60) return false; if(transp||!uniform) return true; return Math.hypot(d[k]-bg[0],d[k+1]-bg[1],d[k+2]-bg[2])>55; };
-  // cadre du vrai contenu (en ignorant poussières, grain et ombres légères)
+  // fond uni (blanc, noir, couleur…) : on l'efface autour du dessin, en partant des bords
+  if(!transp && uniform && bg){
+    const N=w*h, TOL=60, SOFT=40, seen=new Uint8Array(N), stack=new Int32Array(N); let sp=0;
+    const dist=i=>{ const k=i*4; return Math.hypot(d[k]-bg[0],d[k+1]-bg[1],d[k+2]-bg[2]); };
+    const push=i=>{ if(!seen[i] && dist(i)<TOL){ seen[i]=1; stack[sp++]=i; } };
+    for(let x=0;x<w;x++){ push(x); push((h-1)*w+x); }
+    for(let y=0;y<h;y++){ push(y*w); push(y*w+w-1); }
+    while(sp){ const i=stack[--sp]; d[i*4+3]=0; const x=i%w, y=(i/w)|0;
+      if(x>0) push(i-1); if(x<w-1) push(i+1); if(y>0) push(i-w); if(y<h-1) push(i+w); }
+    // bords adoucis : les pixels proches du fond, collés à la zone effacée, deviennent semi-transparents
+    for(let i=0;i<N;i++){ if(seen[i]) continue; const x=i%w, y=(i/w)|0;
+      if((x>0&&seen[i-1])||(x<w-1&&seen[i+1])||(y>0&&seen[i-w])||(y<h-1&&seen[i+w])){ const dd=dist(i); if(dd<TOL+SOFT) d[i*4+3]=Math.round(d[i*4+3]*(dd-TOL)/SOFT); } }
+    c.getContext("2d").putImageData(new ImageData(d,w,h),0,0);
+  }
+  const clear = !transp && uniform && bg; // fond effacé → on cherche le contenu non transparent
+  const isInk=k=>{ if(d[k+3]<60) return false; if(transp||clear||!uniform) return true; return true; };
+  // cadre du vrai contenu (en ignorant poussières et ombres légères)
   const rows=new Uint32Array(h), cols=new Uint32Array(w);
   for(let j=0;j<h;j++) for(let i=0;i<w;i++){ if(isInk((j*w+i)*4)){ rows[j]++; cols[i]++; } }
   const minR=Math.max(2,Math.round(w*0.008)), minC=Math.max(2,Math.round(h*0.008));
@@ -824,11 +838,13 @@ function fitLogo(img, max){
   let x0=0; while(x0<w && cols[x0]<minC) x0++;
   let x1=w-1; while(x1>x0 && cols[x1]<minC) x1--;
   if(y0>=h || x0>=w) return null;
-  const pad=Math.round(Math.max(x1-x0,y1-y0)*0.03); x0=Math.max(0,x0-pad); y0=Math.max(0,y0-pad); x1=Math.min(w-1,x1+pad); y1=Math.min(h-1,y1+pad);
-  const cw=x1-x0+1, ch=y1-y0+1, s2=Math.min(1,max/Math.max(cw,ch));
-  const o=document.createElement("canvas"); o.width=Math.round(cw*s2); o.height=Math.round(ch*s2); o.getContext("2d").drawImage(c,x0,y0,cw,ch,0,0,o.width,o.height);
-  let url=o.toDataURL("image/png");
-  if(url.length>300000){ const j=document.createElement("canvas"); j.width=o.width; j.height=o.height; const jx=j.getContext("2d"); jx.fillStyle=bg&&uniform?`rgb(${bg.join(",")})`:"#fff"; jx.fillRect(0,0,j.width,j.height); jx.drawImage(o,0,0); url=j.toDataURL("image/jpeg",0.9); }
+  const pad=Math.round(Math.max(x1-x0,y1-y0)*0.02); x0=Math.max(0,x0-pad); y0=Math.max(0,y0-pad); x1=Math.min(w-1,x1+pad); y1=Math.min(h-1,y1+pad);
+  const cw=x1-x0+1, ch=y1-y0+1;
+  let lim=max, url;
+  do{ const s2=Math.min(1,lim/Math.max(cw,ch)); const o=document.createElement("canvas"); o.width=Math.max(1,Math.round(cw*s2)); o.height=Math.max(1,Math.round(ch*s2)); o.getContext("2d").drawImage(c,x0,y0,cw,ch,0,0,o.width,o.height);
+    // photo sans transparence : JPEG (plus léger) ; sinon PNG pour garder la transparence
+    url = (!transp && !clear) ? o.toDataURL("image/jpeg",0.88) : o.toDataURL("image/png"); lim=Math.round(lim*0.75);
+  } while(url.length>300000 && lim>120);
   return url;
 }
 // logos : ajustés à l'affichage + couleur du cadre = couleur du fond du logo
@@ -1362,7 +1378,7 @@ function renderPreview(){
   const ref=refText(inv);
   $("#sheet").innerHTML=`
     <div class="sh-band">
-      <div class="l">${p.logo?`<div class="sh-logo${logoFull(p)?" full":""}" style="background:${logoBgCss(p)}"><img src="${logoSrc(p)}" alt=""></div>`:""}<div class="nm">${esc(p.name)||'<span class="sh-empty">Ton entreprise</span>'}</div></div>
+      <div class="l">${p.logo?`<div class="sh-logo${logoFull(p)?" full":""}"><img src="${logoSrc(p)}" alt=""></div>`:""}<div class="nm">${esc(p.name)||'<span class="sh-empty">Ton entreprise</span>'}</div></div>
       <div class="r"><div class="big">${TYPE[t].title}</div><div class="no">N° ${esc(inv.number||"attribué à l'enregistrement")}</div></div>
     </div>
     <div class="sh-body">
@@ -1416,18 +1432,17 @@ function buildPdf(inv,p){
   let nx=M;
   if(p.logo){
     try{ const src=logoSrc(p); const pr=doc.getImageProperties(src); const ratio=pr.width/pr.height;
-      const full=logoFull(p), pad=full?0:2; let ih=full?28:24, iw=ih*ratio; if(iw>(full?62:60)){ iw=full?62:60; ih=iw/ratio; }
-      const bw=iw+2*pad, bh=ih+2*pad, by=(BH-bh)/2;
+      const full=logoFull(p); let ih=28, iw=ih*ratio; if(iw>62){ iw=62; ih=iw/ratio; }
+      const by=(BH-ih)/2;
       if(full){
         let clipped=false;
-        try{ doc.saveGraphicsState(); doc.roundedRect(M,by,bw,bh,2.5,2.5,null); doc.clip(); doc.discardPath(); clipped=true; }catch(e){}
+        try{ doc.saveGraphicsState(); doc.roundedRect(M,by,iw,ih,2.5,2.5,null); doc.clip(); doc.discardPath(); clipped=true; }catch(e){}
         doc.addImage(src,pr.fileType||"PNG",M,by,iw,ih,undefined,"FAST");
         if(clipped) try{ doc.restoreGraphicsState(); }catch(e){}
       } else {
-        doc.setFillColor(...logoBgRgb(p)); doc.roundedRect(M,by,bw,bh,2.5,2.5,"F");
-        doc.addImage(src,pr.fileType||"PNG",M+(bw-iw)/2,by+(bh-ih)/2,iw,ih,undefined,"FAST");
+        doc.addImage(src,pr.fileType||"PNG",M,by,iw,ih,undefined,"FAST");
       }
-      nx=M+bw+6; }catch(e){}
+      nx=M+iw+6; }catch(e){}
   }
   doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(16);
   const nm=doc.splitTextToSize(pdfSafe(p.name||""),W-M-nx-62).slice(0,3);
@@ -1805,7 +1820,7 @@ $$("#payMeans input").forEach(c=>c.addEventListener("change",()=>{ draftProfile.
 $("#sYear").addEventListener("change",e=>{ draftProfile.numYear=e.target.value==="1"; numExample(); });
 $("#sReset").addEventListener("change",e=>{ draftProfile.numReset=e.target.checked; if(e.target.checked){ draftProfile.numYear=true; $("#sYear").value="1"; } $("#sYear").disabled=e.target.checked; numExample(); });
 Object.values(NUMF).forEach(id=>$("#"+id).addEventListener("input",numExample));
-function showLogo(){ const l=draftProfile.logo; $("#logoPrev").innerHTML=l?`<img src="${logoSrc(draftProfile)||l}" alt="">`:"Pas de logo"; $("#logoPrev").style.background=l?logoBgCss(draftProfile):""; $("#logoDel").style.display=l?"inline-flex":"none"; }
+function showLogo(){ const l=draftProfile.logo; $("#logoPrev").innerHTML=l?`<img src="${logoSrc(draftProfile)||l}" alt="">`:"Pas de logo"; $("#logoPrev").style.background=l?(draftProfile.accent||"#1f5c45"):""; $("#logoDel").style.display=l?"inline-flex":"none"; }
 Object.entries(SMAP).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{ let v=e.target.value; if(["defaultTva","payDays","numDigits","quoteDays"].includes(k)) v=num(v); draftProfile[k]=v; if(["prefix","prefixDevis","prefixAvoir","numDigits"].includes(k)) numExample(); }));
 $("#sFranchise").addEventListener("change",e=>{ draftProfile.franchise=e.target.checked; $("#tvaFields").style.display=e.target.checked?"none":"block"; });
 $("#sDebits").addEventListener("change",e=>{ draftProfile.tvaDebits=e.target.checked; });
