@@ -323,6 +323,29 @@ table.list .r{text-align:right}
 .num-preview{background:var(--side);color:#fff;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .num-preview small{color:#9fb4a9}
 .num-preview b{font-family:var(--display);font-size:22px;color:var(--mint);letter-spacing:.01em}
+@media (max-width:900px){.side-ctas{display:none!important}}
+.side-ctas{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
+.side-ctas .side-cta{margin-top:0;padding:11px 8px}
+.add-row{display:grid;grid-template-columns:1fr auto;gap:8px}
+.add-line.cat{width:auto;padding:11px 16px;color:#6a3f7a;border-color:#dccbe3}
+.add-line.cat:hover{background:#efe6f3;border-color:#6a3f7a}
+.ref-info{background:var(--brand-soft);color:var(--brand);border-radius:10px;padding:9px 12px;font-weight:700;font-size:13px;margin-bottom:12px}
+.pill.envoye{background:var(--amber-soft);color:#8a5d06}
+.pill.accepte{background:#dcf2e4;color:#1d6a3e}
+.pill.refuse{background:#efece6;color:#8b3a2e}
+.pill.expire{background:var(--red-soft);color:var(--red)}
+.pill.avoir{background:#efe6f3;color:#6a3f7a}
+.sh-accord{margin-top:2cqw;border:1.5px dashed #c8c8c8;border-radius:.9cqw;height:11cqw;padding:1.2cqw}
+.sh-accord small{font-size:1.05cqw;text-transform:uppercase;letter-spacing:.08em;color:#888}
+details.more{margin-top:14px;border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;background:#faf9f6}
+details.more summary{cursor:pointer;font-weight:700}
+details.more[open] summary{margin-bottom:12px}
+.cat-list{max-height:52vh;overflow:auto;display:grid;gap:6px}
+.cat-item{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;cursor:pointer;background:#faf9f6}
+.cat-item:hover{border-color:var(--brand);background:var(--brand-soft)}
+.cat-item b{display:block}
+.cat-item small{color:var(--muted)}
+.modal-bg .modal label.f{margin-bottom:12px}
 .welcome{background:linear-gradient(135deg,var(--mint),#e9f7a8);color:var(--mint-ink);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;font-weight:600}
 .welcome b{font-family:var(--display);font-size:18px;display:block;margin-bottom:2px}
 </style>
@@ -367,13 +390,14 @@ table.list .r{text-align:right}
 <aside class="side">
   <div class="brand"><div class="brand-mark"><svg viewBox="0 0 24 24" width="58%" height="58%" aria-hidden="true"><path d="M6 2.5h8.5l4.5 4.5v13a1.5 1.5 0 0 1-1.5 1.5h-11.5a1.5 1.5 0 0 1-1.5-1.5v-16a1.5 1.5 0 0 1 1.5-1.5z" fill="#fff"/><path d="M14.5 2.5v3a1.5 1.5 0 0 0 1.5 1.5h3z" fill="#cfe6d8"/><rect x="7" y="6" width="5" height="1.6" rx=".8" fill="#0d3a25"/><rect x="7" y="10" width="9" height="1.2" rx=".6" fill="#b8cfc2"/><rect x="7" y="13" width="9" height="1.2" rx=".6" fill="#b8cfc2"/><rect x="7" y="16" width="6" height="1.2" rx=".6" fill="#b8cfc2"/></svg></div><div><b class="app-name">Mes factures</b><small>Facturation simple</small></div></div>
   <nav class="tabs">
-    <button data-tab="edit" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span>Facture</span></button>
-    <button data-tab="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 15h3"/></svg><span>Mes factures</span></button>
+    <button data-tab="edit" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span id="tab-edit-label">Créer / modifier</span></button>
+    <button data-tab="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 15h3"/></svg><span>Factures</span></button>
+    <button data-tab="quotes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg><span>Devis</span></button>
     <button data-tab="archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v5m0 0-2-2m2 2 2-2"/></svg><span>Archives PDF</span></button>
     <button data-tab="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.8.8 3 2.6 3.5 5.2"/></svg><span>Clients</span></button>
     <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg><span>Mon entreprise</span></button>
   </nav>
-  <button class="side-cta" id="btnNewSide">+ Nouvelle facture</button>
+  <div class="side-ctas"><button class="side-cta" id="btnNewSide">+ Facture</button><button class="side-cta" id="btnNewSideD">+ Devis</button></div>
   <div class="save-state side-user"><div class="avatar" id="meAv" style="background:#2c5a47">?</div><div style="min-width:0;flex:1"><b id="meEmail" class="me-mail">…</b><small><span class="dot cloud" id="dot"></span> <span id="saveLabel">Synchronisé</span></small></div><button class="logout" id="btnLogout" title="Se déconnecter"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg></button></div>
 </aside>
 
@@ -381,26 +405,31 @@ table.list .r{text-align:right}
 <!-- EDITOR -->
 <section class="view on" id="v-edit">
   <div class="page-head">
-    <div><h1>Facture <span class="num-chip" id="edNum">Nouvelle</span></h1><p id="edSub">Remplis à gauche, l'aperçu se met à jour à droite.</p></div>
+    <div><h1><span id="edTitle">Facture</span> <span class="num-chip" id="edNum">Nouvelle</span></h1><p id="edSub">Remplis à gauche, l'aperçu se met à jour à droite.</p></div>
     <div class="actions">
-      <button class="btn sm" id="btnNew">+ Nouvelle</button>
+      <button class="btn sm primary" id="btnToInvoice" style="display:none">→ Transformer en facture</button>
+      <button class="btn sm" id="btnMakeAvoir" style="display:none">↩ Créer un avoir</button>
+      <button class="btn sm" id="btnNewF">+ Facture</button>
+      <button class="btn sm" id="btnNewD">+ Devis</button>
       <button class="btn sm" id="btnDup">Dupliquer</button>
     </div>
   </div>
   <div class="grid-edit">
     <div>
       <div class="card">
-        <div class="card-h"><div class="ico g">1</div><div><h3>Infos de la facture</h3><p>Dates, statut et type d'opération</p></div></div>
+        <div class="card-h"><div class="ico g">1</div><div><h3 id="infoTitle">Infos de la facture</h3><p>Dates, statut et type d'opération</p></div></div>
         <div class="row">
           <label class="f"><span>Date d'émission</span><input type="date" id="issueDate"></label>
-          <label class="f"><span>Date de la prestation / vente</span><input type="date" id="serviceDate"></label>
+          <label class="f" id="serviceWrap"><span>Date de la prestation / vente</span><input type="date" id="serviceDate"></label>
+          <label class="f" id="validWrap" style="display:none"><span>Valable jusqu'au</span><input type="date" id="validUntil"></label>
         </div>
         <div class="row">
-          <label class="f"><span>Échéance de paiement</span><input type="date" id="dueDate"></label>
+          <label class="f" id="dueWrap"><span>Échéance de paiement</span><input type="date" id="dueDate"></label>
           <label class="f"><span>Statut</span>
             <select id="status"><option value="brouillon">Brouillon</option><option value="envoyee">Envoyée</option><option value="payee">Payée</option></select>
           </label>
         </div>
+        <div class="ref-info" id="refInfo" style="display:none"></div>
         <label class="f" style="margin-bottom:4px"><span>Nature de l'opération</span></label>
         <div class="seg" id="natureSeg"><button data-v="services">Services</button><button data-v="biens">Biens</button><button data-v="mixte">Mixte</button></div>
       </div>
@@ -417,20 +446,22 @@ table.list .r{text-align:right}
           <label class="f"><span>SIREN du client</span><input type="text" id="cSiren" placeholder="9 chiffres"></label>
           <label class="f"><span>N° TVA intracom.</span><input type="text" id="cTva" placeholder="Si applicable"></label>
         </div>
+        <label class="f"><span>Email du client (pour les relances, facultatif)</span><input type="email" id="cEmail" placeholder="client@exemple.fr"></label>
         <label class="chk"><input type="checkbox" id="hasDelivery"><span>Adresse de livraison / chantier différente</span></label>
         <label class="f" id="deliveryWrap" style="display:none"><span>Adresse de livraison / chantier</span><textarea id="deliveryAddr" rows="2"></textarea></label>
-        <p class="hint" style="margin:0">Le client est ajouté à ta liste automatiquement quand tu enregistres la facture.</p>
+        <p class="hint" style="margin:0">Le client est ajouté à ta liste automatiquement quand tu enregistres.</p>
         <button class="btn sm" id="btnSaveClient" style="display:none">☆ Enregistrer dans mes clients</button>
       </div>
 
       <div class="card">
         <div class="card-h"><div class="ico a">3</div><div><h3>Prestations</h3><p>Ce que tu factures, ligne par ligne</p></div></div>
         <div class="lines" id="lines"></div>
-        <button class="add-line" id="btnAddLine">+ Ajouter une ligne</button>
+        <div class="add-row"><button class="add-line" id="btnAddLine">+ Ajouter une ligne</button><button class="add-line cat" id="btnCatalog">📚 Mon catalogue</button></div>
+        <p class="hint" style="margin:8px 0 0">Astuce : clique sur ☆ à côté d'une ligne pour l'enregistrer dans ton catalogue et la réutiliser en un clic.</p>
       </div>
 
       <div class="card">
-        <div class="card-h"><div class="ico p">4</div><div><h3>Petit mot</h3><p>Facultatif — apparaît sur la facture</p></div></div>
+        <div class="card-h"><div class="ico p">4</div><div><h3>Petit mot</h3><p>Facultatif — apparaît sur le document</p></div></div>
         <textarea id="notes" rows="3" placeholder="Ex. Merci pour votre confiance !" data-ex="note"></textarea>
       </div>
 
@@ -458,17 +489,33 @@ table.list .r{text-align:right}
 <!-- LIST -->
 <section class="view" id="v-list">
   <div class="page-head">
-    <div><h1>Mes factures</h1><p>Suis ce qui est payé, en attente ou en retard.</p></div>
-    <button class="btn primary" id="btnNew2">+ Nouvelle facture</button>
+    <div><h1>Factures &amp; avoirs</h1><p>Suis ce qui est payé, en attente ou en retard.</p></div>
+    <div class="actions"><button class="btn" id="btnExportCsv">⬇ Export comptable</button><button class="btn primary" id="btnNew2">+ Nouvelle facture</button></div>
   </div>
   <div class="stats" id="stats"></div>
   <div class="toolbar">
     <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="text" id="search" placeholder="Rechercher un n° ou un client…"></div>
     <div class="chips" id="chips">
-      <button class="chip on" data-v="">Toutes</button><button class="chip" data-v="brouillon">Brouillons</button><button class="chip" data-v="envoyee">Envoyées</button><button class="chip" data-v="payee">Payées</button><button class="chip" data-v="retard">En retard</button>
+      <button class="chip on" data-v="">Toutes</button><button class="chip" data-v="brouillon">Brouillons</button><button class="chip" data-v="envoyee">Envoyées</button><button class="chip" data-v="payee">Payées</button><button class="chip" data-v="retard">En retard</button><button class="chip" data-v="avoir">Avoirs</button>
     </div>
   </div>
   <div id="invList"></div>
+</section>
+
+<!-- DEVIS -->
+<section class="view" id="v-quotes">
+  <div class="page-head">
+    <div><h1>Devis</h1><p>Envoie tes devis, puis transforme-les en facture en un clic quand le client accepte.</p></div>
+    <button class="btn primary" id="btnNewQ">+ Nouveau devis</button>
+  </div>
+  <div class="stats" id="qstats"></div>
+  <div class="toolbar">
+    <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="text" id="qsearch" placeholder="Rechercher un n° ou un client…"></div>
+    <div class="chips" id="qchips">
+      <button class="chip on" data-v="">Tous</button><button class="chip" data-v="attente">En attente</button><button class="chip" data-v="accepte">Acceptés</button><button class="chip" data-v="refuse">Refusés</button><button class="chip" data-v="expire">Expirés</button>
+    </div>
+  </div>
+  <div id="qList"></div>
 </section>
 
 <!-- ARCHIVES -->
@@ -515,7 +562,7 @@ table.list .r{text-align:right}
 
 <!-- SETTINGS -->
 <section class="view" id="v-settings">
-  <div class="welcome" id="welcome" style="display:none"><b>Bienvenue ! 👋</b>Commence par remplir les infos de ton entreprise : elles apparaîtront sur toutes tes factures. Tu faisais déjà des factures ailleurs ? Indique ton prochain numéro dans « Numérotation des factures ». Ensuite, clique sur « Enregistrer ».</div>
+  <div class="welcome" id="welcome" style="display:none"><b>Bienvenue ! 👋</b>Commence par remplir les infos de ton entreprise : elles apparaîtront sur toutes tes factures. Tu faisais déjà des factures ailleurs ? Indique ton prochain numéro dans « Numérotation ». Ensuite, clique sur « Enregistrer ».</div>
   <div class="page-head"><div><h1>Mon entreprise</h1><p>Ces infos apparaissent sur toutes tes factures.</p></div><button class="btn primary" id="btnSettingsSave2">Enregistrer</button></div>
   <div class="grid-edit">
     <div>
@@ -597,18 +644,32 @@ table.list .r{text-align:right}
       </div>
 
       <div class="card">
-        <div class="card-h"><div class="ico g">E</div><div><h3>Numérotation des factures</h3><p>Choisis le format et reprends ta suite de numéros</p></div></div>
+        <div class="card-h"><div class="ico g">E</div><div><h3>Numérotation</h3><p>Format des numéros et suite de tes documents</p></div></div>
         <div class="tip">💡 <b>Tu faisais déjà des factures ailleurs ?</b> Mets ici le numéro de ta <b>prochaine</b> facture. Exemple : ta dernière facture était la n° 50 → écris <b>51</b>.</div>
         <div class="row">
-          <label class="f"><span>Prochain numéro</span><input type="number" min="1" id="sNext"></label>
-          <label class="f"><span>Préfixe (facultatif)</span><input type="text" id="sPrefix" placeholder="Ex. F, FAC… ou vide"></label>
+          <label class="f"><span>Prochain n° de facture</span><input type="number" min="1" id="sNext"></label>
+          <label class="f"><span>Préfixe des factures (facultatif)</span><input type="text" id="sPrefix" placeholder="Ex. F, FAC… ou vide"></label>
         </div>
         <div class="row">
           <label class="f"><span>Nombre de chiffres</span><select id="sDigits"><option value="1">Sans zéro devant (51)</option><option value="3">3 chiffres (051)</option><option value="4">4 chiffres (0051)</option><option value="5">5 chiffres (00051)</option></select></label>
           <label class="f"><span>Année dans le numéro</span><select id="sYear"><option value="1">Oui (F-2026-051)</option><option value="0">Non (F-051)</option></select></label>
         </div>
+        <label class="chk"><input type="checkbox" id="sReset"><span><b>Repartir à 1 chaque nouvelle année</b><br><span class="muted">Ex. F-2026-087, puis F-2027-001 au 1er janvier. L'année est alors obligatoire dans le numéro.</span></span></label>
         <div class="num-preview"><small>Ta prochaine facture portera le numéro</small><b id="numExample"></b></div>
+        <p class="hint" id="numExample2" style="margin:8px 0 0"></p>
         <p class="hint" id="numWarn" style="display:none;color:var(--red)"></p>
+        <details class="more"><summary>Devis et avoirs</summary>
+          <div class="row">
+            <label class="f"><span>Préfixe des devis</span><input type="text" id="sPrefixD" placeholder="Ex. D, DEV…"></label>
+            <label class="f"><span>Prochain n° de devis</span><input type="number" min="1" id="sNextD"></label>
+          </div>
+          <div class="row">
+            <label class="f"><span>Préfixe des avoirs</span><input type="text" id="sPrefixA" placeholder="Ex. A, AV…"></label>
+            <label class="f"><span>Prochain n° d'avoir</span><input type="number" min="1" id="sNextA"></label>
+          </div>
+          <label class="f"><span>Durée de validité des devis (jours)</span><input type="number" min="1" id="sQuoteDays" style="max-width:160px"></label>
+          <p class="hint" style="margin:0">Les devis et les avoirs ont chacun leur propre suite de numéros, séparée de celle des factures.</p>
+        </details>
       </div>
 
       <div class="card">
@@ -643,6 +704,22 @@ table.list .r{text-align:right}
 <div class="modal-bg" id="modal"><div class="modal">
   <h4 id="mTitle"></h4><p id="mText"></p>
   <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="mNo">Annuler</button><button class="btn primary" id="mYes">Confirmer</button></div>
+</div></div>
+<div class="modal-bg" id="payModal"><div class="modal">
+  <h4 id="payTitle">Paiement reçu</h4><p>Ces infos t'aident à suivre ta trésorerie et apparaissent dans l'export comptable.</p>
+  <label class="f"><span>Date du paiement</span><input type="date" id="payDate"></label>
+  <label class="f"><span>Mode de paiement</span><select id="payMethod"></select></label>
+  <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="payNo">Annuler</button><button class="btn primary" id="payYes">Enregistrer</button></div>
+</div></div>
+<div class="modal-bg" id="expModal"><div class="modal">
+  <h4>Export comptable</h4><p>Un tableau de toutes tes factures et avoirs (date, n°, client, montants, paiement), à ouvrir avec Excel ou à envoyer à ton comptable. Utile aussi pour tenir ton livre des recettes.</p>
+  <label class="f"><span>Période</span><select id="expYear"></select></label>
+  <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="expNo">Annuler</button><button class="btn primary" id="expYes">⬇ Télécharger (.csv)</button></div>
+</div></div>
+<div class="modal-bg" id="catModal"><div class="modal" style="max-width:520px">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px"><h4 style="margin:0">📚 Mon catalogue</h4><button class="btn sm ghost" id="catClose">Fermer</button></div>
+  <input type="text" id="catSearch" placeholder="Rechercher une prestation…" style="margin-bottom:10px">
+  <div id="catList" class="cat-list"></div>
 </div></div>
 <div class="toast" id="toast"></div>
 
@@ -740,25 +817,48 @@ function logoSrc(p){
 const DEFAULT_PROFILE = {
   name:"", legalForm:"Entrepreneur individuel (EI)", address:"", siret:"", rcs:"", email:"", phone:"",
   franchise:true, tvaNumber:"", defaultTva:20, tvaDebits:false,
-  payDays:30, means:"", iban:"", bic:"",
+  payDays:30, means:"", iban:"", bic:"", quoteDays:30,
   penalties:"Taux d'intérêt appliqué par la BCE à son opération de refinancement la plus récente, majoré de 10 points",
-  insurance:"", prefix:"F", nextNumber:1, numDigits:3, numYear:true, payMeans:["virement"], footer:"", logo:null, accent:"#1f5c45", signature:null, showSignature:true, signName:""
+  insurance:"", prefix:"F", prefixDevis:"D", prefixAvoir:"A", nextNumber:1, counters:{}, numDigits:3, numYear:true, numReset:false,
+  payMeans:["virement"], footer:"", logo:null, accent:"#1f5c45", signature:null, showSignature:true, signName:""
 };
-const S = { uid:null, user:null, profile:{...DEFAULT_PROFILE}, invoices:{}, clients:{}, cur:null, filter:"", unsubs:[], profileLoaded:false };
+const S = { uid:null, user:null, profile:{...DEFAULT_PROFILE}, invoices:{}, clients:{}, catalog:{}, cur:null, filter:"", qfilter:"", unsubs:[], profileLoaded:false };
 const R = {
   prof: () => doc(db,"users",S.uid),
   inv: id => doc(db,"users",S.uid,"invoices",id),
   cli: id => doc(db,"users",S.uid,"clients",id),
   pdf: id => doc(db,"users",S.uid,"pdfs",id),
+  cat: id => doc(db,"users",S.uid,"catalog",id),
   col: name => collection(db,"users",S.uid,name)
 };
 
-function newInvoice(){
-  const t=todayISO();
-  return { id:uid(), number:null, status:"brouillon", issueDate:t, serviceDate:t, dueDate:addDays(t,S.profile.payDays),
-    nature:"services", clientId:"", client:{name:"",kind:"particulier",address:"",siren:"",tva:""},
+/* types de documents */
+const TYPE = {
+  facture:{ title:"FACTURE", label:"Facture", lower:"facture", the:"la facture", newLabel:"Nouvelle facture" },
+  devis:  { title:"DEVIS",   label:"Devis",   lower:"devis",   the:"le devis",   newLabel:"Nouveau devis" },
+  avoir:  { title:"AVOIR",   label:"Avoir",   lower:"avoir",   the:"l'avoir",    newLabel:"Nouvel avoir" }
+};
+const docType = d => (d && d.type) || "facture";
+const STATUS = {
+  facture:[["brouillon","Brouillon"],["envoyee","Envoyée"],["payee","Payée"]],
+  devis:[["brouillon","Brouillon"],["envoye","Envoyé"],["accepte","Accepté"],["refuse","Refusé"]],
+  avoir:[["brouillon","Brouillon"],["envoyee","Émis"],["payee","Remboursé / déduit"]]
+};
+const statusLabel = d => { const st=effStatus(d); if(st==="retard") return "En retard"; if(st==="expire") return "Expiré"; const f=(STATUS[docType(d)]||[]).find(x=>x[0]===d.status); return f?f[1]:d.status; };
+const isLate = inv => docType(inv)==="facture" && inv.status==="envoyee" && inv.dueDate && inv.dueDate < todayISO();
+const isExpired = q => docType(q)==="devis" && ["brouillon","envoye"].includes(q.status) && q.validUntil && q.validUntil < todayISO();
+const effStatus = d => isLate(d) ? "retard" : isExpired(d) ? "expire" : d.status;
+const sign = d => docType(d)==="avoir" ? -1 : 1;
+
+function newDoc(type="facture"){
+  const t=todayISO(), p=S.profile;
+  return { id:uid(), type, number:null, status:"brouillon", issueDate:t, serviceDate:t,
+    dueDate: type==="facture" ? addDays(t,p.payDays) : "",
+    validUntil: type==="devis" ? addDays(t,p.quoteDays||30) : "",
+    nature:"services", clientId:"", client:{name:"",kind:"particulier",address:"",siren:"",tva:"",email:""},
     hasDelivery:false, deliveryAddress:"", lines:[newLine()], notes:"", createdAt:Date.now() };
 }
+const newInvoice = () => newDoc("facture");
 function newLine(){ return { desc:"", qty:1, unit:"u", price:0, tva:S.profile.defaultTva }; }
 function computeTotals(inv, p){
   const fr = p.franchise; let ht=0; const byRate={};
@@ -773,18 +873,32 @@ function normProfile(p){
   if(/^virement bancaire\.?$/i.test(String(o.means||"").trim())) o.means="";
   o.numDigits=Math.min(5,Math.max(1,Number(o.numDigits)||3)); if(o.numDigits===2) o.numDigits=1;
   o.numYear = o.numYear!==false;
+  o.numReset = !!o.numReset; if(o.numReset) o.numYear=true;
+  o.counters = (o.counters && typeof o.counters==="object") ? o.counters : {};
+  if(o.prefixDevis==null) o.prefixDevis="D"; if(o.prefixAvoir==null) o.prefixAvoir="A";
   return o;
 }
 const PAY_LABEL={virement:"virement bancaire",cheque:"chèque",especes:"espèces",carte:"carte bancaire"};
+const PAY_SHORT={virement:"Virement",cheque:"Chèque",especes:"Espèces",carte:"Carte bancaire"};
 function payText(p){ const l=(p.payMeans||[]).map(k=>PAY_LABEL[k]).filter(Boolean); if(!l.length) return ""; return l.length===1?l[0]:l.slice(0,-1).join(", ")+" ou "+l[l.length-1]; }
-const isLate = inv => inv.status==="envoyee" && inv.dueDate && inv.dueDate < todayISO();
-function fmtNumber(p,n,iso){
-  const parts=[]; const pre=String(p.prefix??"").trim();
+
+/* ---------- numérotation ---------- */
+function prefixFor(p,type){ return String(type==="devis" ? (p.prefixDevis??"D") : type==="avoir" ? (p.prefixAvoir??"A") : (p.prefix??"")).trim(); }
+function fmtNumber(p,n,iso,type="facture"){
+  const parts=[]; const pre=prefixFor(p,type);
   if(pre) parts.push(pre);
-  if(p.numYear!==false) parts.push((iso||todayISO()).slice(0,4));
+  if(p.numYear!==false || p.numReset) parts.push((iso||todayISO()).slice(0,4));
   parts.push(String(Math.max(1,Math.floor(Number(n)||1))).padStart(Math.min(5,Math.max(1,Number(p.numDigits)||3)),"0"));
   return parts.join("-");
 }
+const counterKey = (p,type,year) => p.numReset ? `${type}:${year}` : type;
+function nextFor(p,type,year){
+  const k=counterKey(p,type,year); const c=(p.counters||{})[k];
+  if(c!=null) return Number(c)||1;
+  if(k==="facture") return Number(p.nextNumber)||1;
+  return 1;
+}
+const numberExists = (nb,exceptId) => Object.values(S.invoices).some(i=>i.number===nb && i.id!==exceptId);
 
 function fbErr(e){
   const c=(e&&e.code)||"";
@@ -796,13 +910,16 @@ function fbErr(e){
   else toast("Échec de l'enregistrement, réessaie dans un instant.");
 }
 const Store = {
-  saveProfile: () => setDoc(R.prof(), clean(S.profile), {merge:true}),
+  // les compteurs ne sont jamais écrasés ici (ils sont gérés à part, de façon sûre)
+  saveProfile: () => { const o=clean(S.profile); delete o.counters; delete o.nextNumber; return setDoc(R.prof(), o, {merge:true}); },
   saveInvoice: inv => setDoc(R.inv(inv.id), clean(inv)),
   deleteInvoice: id => deleteDoc(R.inv(id)),
   saveClient: c => setDoc(R.cli(c.id), clean(c)),
   deleteClient: id => deleteDoc(R.cli(id)),
   savePdf: (id, data) => setDoc(R.pdf(id), data),
-  deletePdf: id => deleteDoc(R.pdf(id))
+  deletePdf: id => deleteDoc(R.pdf(id)),
+  saveCat: it => setDoc(R.cat(it.id), clean(it)),
+  deleteCat: id => deleteDoc(R.cat(id))
 };
 
 /* ================= AUTH ================= */
@@ -892,7 +1009,11 @@ function startSession(user){
   }, e=>{ fbErr(e); setSync("Hors ligne"); }));
   S.unsubs.push(onSnapshot(R.col("invoices"), s=>{
     const o={}; s.docs.forEach(d=>{ o[d.id]=d.data(); }); S.invoices=o;
-    renderList(); if($("#v-archive").classList.contains("on")) renderArchive();
+    renderList(); renderQuotes(); if($("#v-archive").classList.contains("on")) renderArchive();
+  }, fbErr));
+  S.unsubs.push(onSnapshot(R.col("catalog"), s=>{
+    const o={}; s.docs.forEach(d=>{ o[d.id]=d.data(); }); S.catalog=o;
+    if($("#catModal").classList.contains("on")) renderCatalog();
   }, fbErr));
   S.unsubs.push(onSnapshot(R.col("clients"), s=>{
     const o={}; s.docs.forEach(d=>{ o[d.id]=d.data(); }); S.clients=o;
@@ -901,13 +1022,13 @@ function startSession(user){
 }
 function stopSession(){
   S.unsubs.forEach(u=>{ try{u();}catch(_){} }); S.unsubs=[];
-  S.uid=null; S.user=null; S.profile={...DEFAULT_PROFILE}; S.invoices={}; S.clients={}; S.cur=null; S.profileLoaded=false;
+  S.uid=null; S.user=null; S.profile={...DEFAULT_PROFILE}; S.invoices={}; S.clients={}; S.catalog={}; S.cur=null; S.profileLoaded=false;
 }
 function setSync(t){ $("#saveLabel").textContent=t; $("#dot").className="dot "+(t==="Synchronisé"?"cloud":"local"); }
 
 /* ================= account ================= */
 $("#btnExport").addEventListener("click",()=>{
-  const data={ exportedAt:new Date().toISOString(), app:APP_NAME, profile:S.profile, clients:Object.values(S.clients), invoices:Object.values(S.invoices) };
+  const data={ exportedAt:new Date().toISOString(), app:APP_NAME, profile:S.profile, clients:Object.values(S.clients), invoices:Object.values(S.invoices), catalog:Object.values(S.catalog) };
   downloadBlob(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}), `export-factures-${todayISO()}.json`);
   toast("Export téléchargé.");
 });
@@ -919,7 +1040,7 @@ $("#btnDeleteAcc").addEventListener("click",()=>{
     try{
       toast("Suppression en cours…");
       const uidNow=S.uid; const prof=R.prof();
-      for(const name of ["invoices","clients","pdfs"]){
+      for(const name of ["invoices","clients","pdfs","catalog"]){
         const snap=await getDocs(R.col(name)); let batch=writeBatch(db), n=0;
         for(const d of snap.docs){ batch.delete(d.ref); n++; if(n>=400){ await batch.commit(); batch=writeBatch(db); n=0; } }
         if(n) await batch.commit();
@@ -960,7 +1081,7 @@ function renderSwatches(){
 function showTab(t){
   $$("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   $$(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+t));
-  if(t==="list") renderList(); if(t==="archive") renderArchive(); if(t==="clients") renderClients(); if(t==="settings") fillSettings();
+  if(t==="list") renderList(); if(t==="quotes") renderQuotes(); if(t==="archive") renderArchive(); if(t==="clients") renderClients(); if(t==="settings") fillSettings();
   window.scrollTo({top:0});
 }
 $$("nav.tabs button").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
@@ -968,55 +1089,97 @@ function setSeg(id,v){ $$("#"+id+" button").forEach(b=>b.classList.toggle("on",b
 function bindSeg(id,cb){ $$("#"+id+" button").forEach(b=>b.addEventListener("click",e=>{ e.preventDefault(); setSeg(id,b.dataset.v); cb(b.dataset.v); })); }
 
 /* ================= editor ================= */
+function fillStatusOptions(type){ $("#status").innerHTML=(STATUS[type]||STATUS.facture).map(([v,l])=>`<option value="${v}">${l}</option>`).join(""); }
 function loadEditor(inv){
-  S.cur=inv;
-  $("#edNum").textContent = inv.number || "Nouvelle";
-  $("#edSub").textContent = inv.number ? `Créée le ${frDate(inv.issueDate)} — modifie puis enregistre.` : "Le numéro est attribué à l'enregistrement.";
-  $("#issueDate").value=inv.issueDate||""; $("#serviceDate").value=inv.serviceDate||""; $("#dueDate").value=inv.dueDate||"";
+  if(!inv.type) inv.type="facture";
+  if(!inv.client.email) inv.client.email="";
+  S.cur=inv; const t=inv.type, T=TYPE[t];
+  $("#edTitle").textContent=T.label;
+  $("#edNum").textContent = inv.number || (t==="devis"?"Nouveau":"Nouvelle");
+  $("#edSub").textContent = inv.number ? `Créé${t==="facture"?"e":""} le ${frDate(inv.issueDate)} — modifie puis enregistre.` : "Le numéro est attribué à l'enregistrement.";
+  $("#infoTitle").textContent = `Infos ${t==="facture"?"de la facture":t==="devis"?"du devis":"de l'avoir"}`;
+  fillStatusOptions(t);
+  $("#issueDate").value=inv.issueDate||""; $("#serviceDate").value=inv.serviceDate||""; $("#dueDate").value=inv.dueDate||""; $("#validUntil").value=inv.validUntil||"";
   $("#status").value=inv.status; setSeg("natureSeg",inv.nature||"services");
+  $("#serviceWrap").style.display = t==="devis" ? "none" : "block";
+  $("#dueWrap").style.display = t==="facture" ? "block" : "none";
+  $("#validWrap").style.display = t==="devis" ? "block" : "none";
+  $("#refInfo").style.display = (t==="avoir"&&inv.ref) || inv.fromDevis ? "block" : "none";
+  $("#refInfo").textContent = t==="avoir"&&inv.ref ? `↩ Avoir sur la facture n° ${inv.ref.number} du ${frDate(inv.ref.date)}` : inv.fromDevis ? `📝 Facture créée à partir du devis n° ${inv.fromDevis.number}` : "";
   $("#clientPick").value = inv.clientId && S.clients[inv.clientId] ? inv.clientId : "";
   $("#cName").value=inv.client.name||""; setSeg("kindSeg",inv.client.kind||"particulier"); $("#cAddr").value=inv.client.address||"";
-  $("#cSiren").value=inv.client.siren||""; $("#cTva").value=inv.client.tva||"";
+  $("#cSiren").value=inv.client.siren||""; $("#cTva").value=inv.client.tva||""; $("#cEmail").value=inv.client.email||"";
   $("#hasDelivery").checked=!!inv.hasDelivery; $("#deliveryAddr").value=inv.deliveryAddress||""; $("#deliveryWrap").style.display=inv.hasDelivery?"block":"none";
   $("#notes").value=inv.notes||"";
+  // boutons contextuels
+  $("#btnToInvoice").style.display = (t==="devis" && inv.number && !inv.convertedTo) ? "inline-flex" : "none";
+  $("#btnMakeAvoir").style.display = (t==="facture" && inv.number) ? "inline-flex" : "none";
+  $("#btnSave").textContent = inv.number ? "Enregistrer" : `Enregistrer ${T.the}`;
   toggleProRow(); renderLines(); renderPreview();
 }
 function toggleProRow(){ $("#cProRow").style.display = S.cur.client.kind==="pro" ? "grid" : "none"; }
-function newEditor(){ loadEditor(newInvoice()); showTab("edit"); }
+function newEditor(type="facture"){ loadEditor(newDoc(type)); showTab("edit"); }
 
-const m = {issueDate:"issueDate",serviceDate:"serviceDate",dueDate:"dueDate",status:"status",notes:"notes",deliveryAddr:"deliveryAddress"};
+const m = {issueDate:"issueDate",serviceDate:"serviceDate",dueDate:"dueDate",validUntil:"validUntil",status:"status",notes:"notes",deliveryAddr:"deliveryAddress"};
 Object.entries(m).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{
   S.cur[k]=e.target.value;
-  if(id==="issueDate"){ S.cur.dueDate=addDays(e.target.value,S.profile.payDays); $("#dueDate").value=S.cur.dueDate; }
+  if(id==="issueDate"){
+    if(S.cur.type==="facture"){ S.cur.dueDate=addDays(e.target.value,S.profile.payDays); $("#dueDate").value=S.cur.dueDate; }
+    if(S.cur.type==="devis"){ S.cur.validUntil=addDays(e.target.value,S.profile.quoteDays||30); $("#validUntil").value=S.cur.validUntil; }
+  }
   renderPreview();
 }));
 bindSeg("natureSeg",v=>{ S.cur.nature=v; renderPreview(); });
 bindSeg("kindSeg",v=>{ S.cur.client.kind=v; toggleProRow(); renderPreview(); });
-Object.entries({cName:"name",cAddr:"address",cSiren:"siren",cTva:"tva"}).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{ S.cur.client[k]=e.target.value; renderPreview(); }));
+Object.entries({cName:"name",cAddr:"address",cSiren:"siren",cTva:"tva",cEmail:"email"}).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{ S.cur.client[k]=e.target.value; renderPreview(); }));
 $("#hasDelivery").addEventListener("change",e=>{ S.cur.hasDelivery=e.target.checked; $("#deliveryWrap").style.display=e.target.checked?"block":"none"; renderPreview(); });
 $("#clientPick").addEventListener("change",e=>{
   const c=S.clients[e.target.value]; S.cur.clientId=e.target.value;
-  S.cur.client = c ? {name:c.name,kind:c.kind,address:c.address,siren:c.siren||"",tva:c.tva||""} : {name:"",kind:"particulier",address:"",siren:"",tva:""};
+  S.cur.client = c ? {name:c.name,kind:c.kind,address:c.address,siren:c.siren||"",tva:c.tva||"",email:c.email||""} : {name:"",kind:"particulier",address:"",siren:"",tva:"",email:""};
   loadEditor(S.cur);
 });
 $("#btnAddLine").addEventListener("click",()=>{ S.cur.lines.push(newLine()); renderLines(); renderPreview(); const t=$$("#lines textarea"); t[t.length-1]?.focus(); });
-$("#btnNew").addEventListener("click",newEditor);
-$("#btnNew2").addEventListener("click",newEditor);
-$("#btnNewSide").addEventListener("click",newEditor);
+$("#btnNewF").addEventListener("click",()=>newEditor("facture"));
+$("#btnNewD").addEventListener("click",()=>newEditor("devis"));
+$("#btnNew2").addEventListener("click",()=>newEditor("facture"));
+$("#btnNewQ").addEventListener("click",()=>newEditor("devis"));
+$("#btnNewSide").addEventListener("click",()=>newEditor("facture"));
+$("#btnNewSideD").addEventListener("click",()=>newEditor("devis"));
 $("#btnDup").addEventListener("click",()=>{
-  const c=clean(S.cur); delete c.pdf; delete c.totals; c.id=uid(); c.number=null; c.status="brouillon"; const t=todayISO(); c.issueDate=t; c.serviceDate=t; c.dueDate=addDays(t,S.profile.payDays); c.createdAt=Date.now();
-  loadEditor(c); toast("Copie créée — pense à l'enregistrer.");
+  const c=clean(S.cur); ["pdf","totals","ref","fromDevis","convertedTo","paidAt","paidMethod"].forEach(k=>delete c[k]);
+  c.id=uid(); c.number=null; c.status="brouillon"; const t=todayISO(); c.issueDate=t; c.serviceDate=t;
+  if(c.type==="facture") c.dueDate=addDays(t,S.profile.payDays); if(c.type==="devis") c.validUntil=addDays(t,S.profile.quoteDays||30);
+  c.createdAt=Date.now(); loadEditor(c); toast("Copie créée — pense à l'enregistrer.");
 });
-$("#btnSave").addEventListener("click",saveCurrent);
+$("#btnSave").addEventListener("click",()=>saveCurrent());
 $("#btnPdf").addEventListener("click",()=>downloadPdf(S.cur));
+$("#btnToInvoice").addEventListener("click",()=>devisToInvoice(S.cur));
+$("#btnMakeAvoir").addEventListener("click",()=>makeAvoir(S.cur));
+
+function devisToInvoice(q){
+  if(!q || !q.number) return;
+  if(q.convertedTo){ const f=S.invoices[q.convertedTo.id]; if(f){ loadEditor(clean(f)); showTab("edit"); return toast("Ce devis a déjà été transformé en facture."); } }
+  const f=newDoc("facture");
+  Object.assign(f,{ clientId:q.clientId, client:clean(q.client), hasDelivery:q.hasDelivery, deliveryAddress:q.deliveryAddress, nature:q.nature, lines:clean(q.lines), notes:q.notes||"", fromDevis:{id:q.id,number:q.number} });
+  loadEditor(f); showTab("edit");
+  toast("Facture préparée à partir du devis — vérifie puis enregistre.");
+}
+function makeAvoir(inv){
+  if(!inv || !inv.number || docType(inv)!=="facture") return;
+  const a=newDoc("avoir");
+  Object.assign(a,{ clientId:inv.clientId, client:clean(inv.client), nature:inv.nature, lines:clean(inv.lines), ref:{id:inv.id,number:inv.number,date:inv.issueDate}, notes:"" });
+  loadEditor(a); showTab("edit");
+  toast("Avoir préparé : garde toutes les lignes pour annuler la facture, ou modifie-les pour un avoir partiel.");
+}
 
 function renderLines(){
-  const fr=S.profile.franchise;
+  const fr=S.profile.franchise, sg=sign(S.cur);
   $("#lines").innerHTML = S.cur.lines.map((l,i)=>`
     <div class="ln" data-i="${i}">
       <div class="ln-idx">${i+1}</div>
       <div class="ln-top">
         <textarea rows="1" data-k="desc" placeholder="Désignation (ex. ${esc(EX.line(i))})">${esc(l.desc)}</textarea>
+        <button class="btn ghost sm" data-star="${i}" title="Ajouter au catalogue">☆</button>
         <button class="btn ghost sm" data-del="${i}" title="Supprimer la ligne" ${S.cur.lines.length<2?"disabled":""}>✕</button>
       </div>
       <div class="ln-grid ${fr?"nofx":""}">
@@ -1024,7 +1187,7 @@ function renderLines(){
         <label><small>Unité</small><input type="text" data-k="unit" value="${esc(l.unit)}" list="units"></label>
         <label><small>Prix unit. HT</small><input type="text" inputmode="decimal" data-k="price" value="${esc(l.price)}"></label>
         ${fr?"":`<label><small>TVA</small><select data-k="tva">${[20,10,5.5,0].map(r=>`<option value="${r}" ${num(l.tva)===r?"selected":""}>${pct(r)}</option>`).join("")}</select></label>`}
-        <div class="ln-total" data-tot="${i}">${money(num(l.qty)*num(l.price))}</div>
+        <div class="ln-total" data-tot="${i}">${money(sg*num(l.qty)*num(l.price))}</div>
       </div>
     </div>`).join("") + `<datalist id="units"><option value="u"><option value="h"><option value="jour"><option value="m²"><option value="ml"><option value="forfait"></datalist>`;
   $$("#lines .ln").forEach(el=>{
@@ -1032,19 +1195,20 @@ function renderLines(){
     el.querySelectorAll("[data-k]").forEach(inp=>inp.addEventListener("input",e=>{
       const k=e.target.dataset.k; S.cur.lines[i][k]=e.target.value;
       if(k==="desc") autoGrow(e.target);
-      el.querySelector(`[data-tot="${i}"]`).textContent=money(num(S.cur.lines[i].qty)*num(S.cur.lines[i].price));
+      el.querySelector(`[data-tot="${i}"]`).textContent=money(sg*num(S.cur.lines[i].qty)*num(S.cur.lines[i].price));
       renderPreview();
     }));
     autoGrow(el.querySelector("textarea"));
   });
   $$("#lines [data-del]").forEach(b=>b.addEventListener("click",()=>{ S.cur.lines.splice(+b.dataset.del,1); renderLines(); renderPreview(); }));
+  $$("#lines [data-star]").forEach(b=>b.addEventListener("click",()=>saveToCatalog(S.cur.lines[+b.dataset.star])));
 }
 function autoGrow(t){ if(!t) return; t.style.height="auto"; t.style.height=(t.scrollHeight+3)+"px"; }
 
 async function saveCurrent(){
-  const inv=S.cur;
+  const inv=S.cur, type=docType(inv), T=TYPE[type];
   if(!S.profileLoaded) return toast("Chargement en cours, réessaie dans une seconde.");
-  if(!inv.client.name.trim()) return toast("Indique le nom du client avant d'enregistrer.");
+  if(!inv.client.name.trim()) return toast(`Indique le nom du client avant d'enregistrer ${T.the}.`);
   if(!inv.lines.some(l=>l.desc.trim())) return toast("Ajoute au moins une ligne avec une désignation.");
   const btn=$("#btnSave"); btn.disabled=true;
   try{
@@ -1053,19 +1217,27 @@ async function saveCurrent(){
     let cid = inv.clientId && S.clients[inv.clientId] ? inv.clientId : (Object.values(S.clients).find(x=>(x.name||"").trim().toLowerCase()===nm.toLowerCase())||{}).id;
     if(!cid) cid=uid();
     const prev=S.clients[cid]||{};
-    const rec={...prev,id:cid,name:nm,kind:c.kind,address:c.address||"",siren:c.siren||"",tva:c.tva||""};
+    const rec={...prev,id:cid,name:nm,kind:c.kind,address:c.address||"",siren:c.siren||"",tva:c.tva||"",email:(c.email||prev.email||"").trim()};
     inv.clientId=cid;
     if(JSON.stringify(prev)!==JSON.stringify(rec)){ S.clients[cid]=rec; await Store.saveClient(rec); fillClientPick(); $("#clientPick").value=cid; }
-    // numéro : compteur sûr (transaction)
+    // numéro : compteur sûr (transaction), propre à chaque type de document
     let assigned=false;
     if(!inv.number){
+      const year=(inv.issueDate||todayISO()).slice(0,4);
+      const key=counterKey(S.profile,type,year);
       const n = await runTransaction(db, async tx=>{
-        const snap=await tx.get(R.prof());
-        const cur = snap.exists() && snap.data().nextNumber ? Number(snap.data().nextNumber) : (Number(S.profile.nextNumber)||1);
-        tx.set(R.prof(), {nextNumber:cur+1}, {merge:true});
+        const snap=await tx.get(R.prof()); const d=snap.exists()?snap.data():{};
+        const cs=d.counters||{};
+        let cur = cs[key]!=null ? Number(cs[key]) : (key==="facture" ? Number(d.nextNumber||S.profile.nextNumber||1) : 1);
+        if(!(cur>=1)) cur=1;
+        while(numberExists(fmtNumber(S.profile,cur,inv.issueDate,type), inv.id)) cur++;
+        const upd={counters:{[key]:cur+1}}; if(key==="facture") upd.nextNumber=cur+1;
+        tx.set(R.prof(), upd, {merge:true});
         return cur;
       });
-      inv.number=fmtNumber(S.profile,n,inv.issueDate); S.profile.nextNumber=n+1; assigned=true;
+      inv.number=fmtNumber(S.profile,n,inv.issueDate,type);
+      S.profile.counters={...(S.profile.counters||{}),[key]:n+1}; if(key==="facture") S.profile.nextNumber=n+1;
+      assigned=true;
     }
     inv.lines=inv.lines.map(l=>({...l,qty:num(l.qty),price:num(l.price),tva:num(l.tva)}));
     inv.totals=computeTotals(inv,S.profile);
@@ -1075,8 +1247,7 @@ async function saveCurrent(){
     let archived=false;
     if(window.jspdf){
       try{
-        const docPdf=buildPdf(inv,S.profile);
-        const b64=docPdf.output("datauristring").split(",")[1];
+        const b64=buildPdf(inv,S.profile).output("datauristring").split(",")[1];
         const size=Math.round(b64.length*3/4);
         await Store.savePdf(inv.id,{b64,size,at:Date.now(),number:inv.number});
         inv.pdf={size,at:Date.now()}; archived=true;
@@ -1084,9 +1255,13 @@ async function saveCurrent(){
     }
     await Store.saveInvoice(inv);
     S.invoices[inv.id]=clean(inv);
-    $("#edNum").textContent=inv.number; $("#edSub").textContent=`Créée le ${frDate(inv.issueDate)} — modifie puis enregistre.`;
-    renderLines(); renderPreview();
-    toast((assigned?`Facture ${inv.number} enregistrée`:"Facture mise à jour")+(archived?" et PDF archivé.":" (PDF non archivé)."));
+    // liens devis → facture
+    if(type==="facture" && inv.fromDevis && assigned){
+      const q=S.invoices[inv.fromDevis.id];
+      if(q){ const q2={...clean(q),status:"accepte",convertedTo:{id:inv.id,number:inv.number}}; await Store.saveInvoice(q2); S.invoices[q2.id]=q2; }
+    }
+    loadEditor(S.cur);
+    toast((assigned?`${T.label} ${inv.number} enregistré${type==="facture"?"e":""}`:`${T.label} mis${type==="facture"?"e":""} à jour`)+(archived?" et PDF archivé.":" (PDF non archivé)."));
   }catch(e){ fbErr(e); }
   finally{ btn.disabled=false; }
 }
@@ -1103,61 +1278,76 @@ function companyLines(p){
   return a;
 }
 const NATURE={services:"Prestation de services",biens:"Livraison de biens",mixte:"Mixte (livraison de biens et prestation de services)"};
+function refText(inv){
+  const t=docType(inv);
+  if(t==="avoir" && inv.ref) return `Avoir se rapportant à la facture n° ${inv.ref.number} du ${frDate(inv.ref.date)}.`;
+  if(inv.fromDevis) return `Selon devis n° ${inv.fromDevis.number}.`;
+  return "";
+}
 function conditionsText(inv,p){
-  const a=[];
-  const pt=payText(p);
-  a.push(`Paiement ${inv.dueDate?("au plus tard le "+frDate(inv.dueDate)):"à réception"}${pt?" par "+pt:""}.${p.means?" "+p.means:""}`);
-  if(p.iban && (p.payMeans||[]).includes("virement")) a.push(`IBAN : ${p.iban}${p.bic?"   BIC : "+p.bic:""}`);
-  if(inv.client.kind==="pro"){
-    if(p.penalties) a.push(`Pénalités de retard : ${p.penalties}.`);
-    a.push("Indemnité forfaitaire pour frais de recouvrement en cas de retard : 40 €.");
-    a.push("Pas d'escompte pour paiement anticipé.");
+  const t=docType(inv), a=[], pt=payText(p);
+  if(t==="facture"){
+    a.push(`Paiement ${inv.dueDate?("au plus tard le "+frDate(inv.dueDate)):"à réception"}${pt?" par "+pt:""}.${p.means?" "+p.means:""}`);
+    if(p.iban && (p.payMeans||[]).includes("virement")) a.push(`IBAN : ${p.iban}${p.bic?"   BIC : "+p.bic:""}`);
+    if(inv.client.kind==="pro"){
+      if(p.penalties) a.push(`Pénalités de retard : ${p.penalties}.`);
+      a.push("Indemnité forfaitaire pour frais de recouvrement en cas de retard : 40 €.");
+      a.push("Pas d'escompte pour paiement anticipé.");
+    }
+    if(!p.franchise && p.tvaDebits) a.push("Option pour le paiement de la taxe d'après les débits.");
+  } else if(t==="devis"){
+    a.push(`Devis valable jusqu'au ${frDate(inv.validUntil)||"—"}.${pt?" Paiement accepté par "+pt+".":""}${p.means?" "+p.means:""}`);
+    a.push("Pour accepter ce devis, merci de le retourner daté et signé avec la mention « Bon pour accord ».");
+  } else {
+    a.push("Ce montant sera remboursé ou déduit de votre prochaine facture.");
   }
-  if(!p.franchise && p.tvaDebits) a.push("Option pour le paiement de la taxe d'après les débits.");
   if(p.insurance) a.push("Assurance professionnelle : "+p.insurance);
   return a;
 }
 const footerText = p => p.footer || [p.name,p.siret?("SIRET "+p.siret):""].filter(Boolean).join(" — ");
+function metaBoxes(inv,T){
+  const t=docType(inv), sg=sign(inv);
+  if(t==="devis") return [["Émis le",frDate(inv.issueDate)||"—"],["Valable jusqu'au",frDate(inv.validUntil)||"—"],["Nature",inv.nature==="biens"?"Biens":inv.nature==="mixte"?"Mixte":"Services"],["Total",money(T.ttc),1]];
+  if(t==="avoir") return [["Émis le",frDate(inv.issueDate)||"—"],["Facture d'origine",inv.ref?inv.ref.number:"—"],["Date facture",inv.ref?frDate(inv.ref.date):"—"],["Montant de l'avoir",money(sg*T.ttc),1]];
+  return [["Émise le",frDate(inv.issueDate)||"—"],[inv.nature==="biens"?"Vente le":"Prestation le",frDate(inv.serviceDate)||"—"],["Échéance",frDate(inv.dueDate)||"À réception"],["Montant dû",money(T.ttc),1]];
+}
 function renderPreview(){
   if(!S.cur) return;
-  const inv=S.cur, p=S.profile, T=computeTotals(inv,p), fr=p.franchise;
+  const inv=S.cur, p=S.profile, T=computeTotals(inv,p), fr=p.franchise, t=docType(inv), sg=sign(inv);
   const lines=inv.lines.filter(l=>l.desc.trim()||num(l.price));
   const cl=inv.client;
   const cliExtra=[]; if(cl.kind==="pro"&&cl.siren) cliExtra.push("SIREN : "+cl.siren); if(cl.kind==="pro"&&cl.tva) cliExtra.push("TVA : "+cl.tva);
+  const totLabel = t==="devis" ? (fr?"Total":"Total TTC") : t==="avoir" ? (fr?"Total de l'avoir":"Total TTC de l'avoir") : (fr?"Net à payer":"Total TTC");
+  const ref=refText(inv);
   $("#sheet").innerHTML=`
     <div class="sh-band">
       <div class="l">${p.logo?`<div class="sh-logo"><img src="${logoSrc(p)}" alt=""></div>`:""}<div class="nm">${esc(p.name)||'<span class="sh-empty">Ton entreprise</span>'}</div></div>
-      <div class="r"><div class="big">FACTURE</div><div class="no">N° ${esc(inv.number||"attribué à l'enregistrement")}</div></div>
+      <div class="r"><div class="big">${TYPE[t].title}</div><div class="no">N° ${esc(inv.number||"attribué à l'enregistrement")}</div></div>
     </div>
     <div class="sh-body">
       <div class="sh-parties">
         <div class="sh-em"><div class="lb">Émetteur</div>${companyLines(p).map(esc).join("\n")||'<span class="sh-empty">Complète « Mon entreprise »</span>'}</div>
         <div class="sh-cli">
-          <div class="lb">Facturé à</div>
+          <div class="lb">${t==="devis"?"Client":"Facturé à"}</div>
           <div class="nm">${esc(cl.name)||'<span class="sh-empty">Nom du client</span>'}</div>
           <div class="ad">${esc(cl.address)}${cliExtra.length?"\n"+cliExtra.map(esc).join("\n"):""}</div>
           ${inv.hasDelivery&&inv.deliveryAddress?`<div class="lb" style="margin-top:1.4cqw">Livraison / chantier</div><div class="ad">${esc(inv.deliveryAddress)}</div>`:""}
         </div>
       </div>
-      <div class="sh-meta">
-        <div><small>Émise le</small><b>${frDate(inv.issueDate)||"—"}</b></div>
-        <div><small>${inv.nature==="biens"?"Vente le":"Prestation le"}</small><b>${frDate(inv.serviceDate)||"—"}</b></div>
-        <div><small>Échéance</small><b>${frDate(inv.dueDate)||"À réception"}</b></div>
-        <div class="due"><small>Montant dû</small><b>${money(T.ttc)}</b></div>
-      </div>
-      <div class="sh-nat">Nature de l'opération : ${NATURE[inv.nature]||""}</div>
+      <div class="sh-meta">${metaBoxes(inv,T).map(([k,v,due])=>`<div class="${due?"due":""}"><small>${k}</small><b>${esc(v)}</b></div>`).join("")}</div>
+      <div class="sh-nat">${t==="devis"?"":"Nature de l'opération : "+(NATURE[inv.nature]||"")}${ref?`${t==="devis"?"":" · "}<b>${esc(ref)}</b>`:""}</div>
       <table class="sh-t">
         <thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">PU HT</th>${fr?"":'<th class="r">TVA</th>'}<th class="r">Total HT</th></tr></thead>
-        <tbody>${lines.length?lines.map(l=>`<tr><td class="d">${esc(l.desc)}</td><td class="r">${String(num(l.qty)).replace(".",",")} ${esc(l.unit)}</td><td class="r">${money(num(l.price))}</td>${fr?"":`<td class="r">${pct(num(l.tva))}</td>`}<td class="r">${money(num(l.qty)*num(l.price))}</td></tr>`).join(""):`<tr><td colspan="5" class="sh-empty">Ajoute une prestation…</td></tr>`}</tbody>
+        <tbody>${lines.length?lines.map(l=>`<tr><td class="d">${esc(l.desc)}</td><td class="r">${String(num(l.qty)).replace(".",",")} ${esc(l.unit)}</td><td class="r">${money(num(l.price))}</td>${fr?"":`<td class="r">${pct(num(l.tva))}</td>`}<td class="r">${money(sg*num(l.qty)*num(l.price))}</td></tr>`).join(""):`<tr><td colspan="5" class="sh-empty">Ajoute une prestation…</td></tr>`}</tbody>
       </table>
       <div class="sh-bottom">
-        <div class="sh-notes">${esc(inv.notes)}</div>
+        <div class="sh-notes">${esc(inv.notes)}${t==="devis"?`<div class="sh-accord"><small>Bon pour accord — date et signature du client</small></div>`:""}</div>
         <div style="width:42%;flex:none">
           <table class="sh-tot" style="width:100%">
-            <tr><td>Total HT</td><td>${money(T.ht)}</td></tr>
-            ${fr?"":T.vat.map(v=>`<tr><td>TVA ${pct(v.rate)}</td><td>${money(v.amount)}</td></tr>`).join("")}
-            ${fr?"":`<tr><td>Total TVA</td><td>${money(T.tva)}</td></tr>`}
-            <tr class="g"><td>${fr?"Net à payer":"Total TTC"}</td><td>${money(T.ttc)}</td></tr>
+            <tr><td>Total HT</td><td>${money(sg*T.ht)}</td></tr>
+            ${fr?"":T.vat.map(v=>`<tr><td>TVA ${pct(v.rate)}</td><td>${money(sg*v.amount)}</td></tr>`).join("")}
+            ${fr?"":`<tr><td>Total TVA</td><td>${money(sg*T.tva)}</td></tr>`}
+            <tr class="g"><td>${totLabel}</td><td>${money(sg*T.ttc)}</td></tr>
           </table>
           ${fr?`<div class="sh-mention">TVA non applicable, art. 293 B du CGI</div>`:""}
           ${p.signature&&p.showSignature?`<div class="sh-sign"><small>Signature</small><img src="${p.signature}" alt="">${p.signName?`<div class="who">${esc(p.signName)}</div>`:""}</div>`:""}
@@ -1166,9 +1356,9 @@ function renderPreview(){
       <div class="sh-cond">${conditionsText(inv,p).map(esc).join("\n")}</div>
       <div class="sh-foot">${esc(footerText(p))}</div>
     </div>`;
-  $("#pbLbl").textContent = fr ? "Net à payer" : "Total TTC";
-  $("#pbAmt").textContent = money(T.ttc);
-  $("#pbSub").textContent = fr ? `${lines.length} ligne${lines.length>1?"s":""} · TVA non applicable` : `HT ${money(T.ht)} · TVA ${money(T.tva)}`;
+  $("#pbLbl").textContent = totLabel;
+  $("#pbAmt").textContent = money(sg*T.ttc);
+  $("#pbSub").textContent = fr ? `${lines.length} ligne${lines.length>1?"s":""} · TVA non applicable` : `HT ${money(sg*T.ht)} · TVA ${money(sg*T.tva)}`;
 }
 
 /* ================= PDF ================= */
@@ -1177,7 +1367,7 @@ function buildPdf(inv,p){
   const { jsPDF } = window.jspdf;
   const doc=new jsPDF({unit:"mm",format:"a4",compress:true});
   const W=210,H=297,M=15, ACC=hexToRgb(p.accent), SOFT=tint(p.accent,.9);
-  const T=computeTotals(inv,p), fr=p.franchise;
+  const T=computeTotals(inv,p), fr=p.franchise, tp=docType(inv), sg=sign(inv);
   const t=(s,x,y,o)=>doc.text(pdfSafe(s),x,y,o);
   doc.setFont("helvetica","normal");
   const BH=42;
@@ -1193,7 +1383,7 @@ function buildPdf(inv,p){
   doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(16);
   const nm=doc.splitTextToSize(pdfSafe(p.name||""),W-M-nx-62).slice(0,3);
   doc.text(nm,nx,BH/2+2.5-(nm.length-1)*3.2);
-  doc.setFontSize(27); t("FACTURE",W-M,BH/2+1.5,{align:"right"});
+  doc.setFontSize(27); t(TYPE[tp].title,W-M,BH/2+1.5,{align:"right"});
   doc.setFont("helvetica","normal"); doc.setFontSize(10); t("N° "+(inv.number||"BROUILLON"),W-M,BH/2+8.5,{align:"right"});
   let y=BH+11;
   const colW=(W-2*M-8)/2, cx=M+colW+8;
@@ -1210,19 +1400,23 @@ function buildPdf(inv,p){
   const bh=pad+4.5+cn.length*5.2+wrapped.length*4.2+(dl.length?6+dl.length*4.2:0)+pad-1.5;
   const by=y-4.5;
   doc.setFillColor(...SOFT); doc.roundedRect(cx,by,colW,bh,2.2,2.2,"F");
-  let cy=by+pad+2.5; doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(...ACC); t("FACTURÉ À",cx+pad,cy); cy+=5.5;
+  let cy=by+pad+2.5; doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(...ACC); t(tp==="devis"?"CLIENT":"FACTURÉ À",cx+pad,cy); cy+=5.5;
   doc.setFontSize(12); doc.setTextColor(34); doc.text(cn,cx+pad,cy); cy+=cn.length*5.2;
   doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(68); doc.text(wrapped,cx+pad,cy); cy+=wrapped.length*4.2;
   if(dl.length){ cy+=2; doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(...ACC); t("LIVRAISON / CHANTIER",cx+pad,cy); cy+=4; doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(68); doc.text(dl,cx+pad,cy); }
   y=Math.max(ly,by+bh)+7;
   const mw=(W-2*M-3*3)/4, mh=13;
-  const metas=[["ÉMISE LE",frDate(inv.issueDate)||"-"],[inv.nature==="biens"?"VENTE LE":"PRESTATION LE",frDate(inv.serviceDate)||"-"],["ÉCHÉANCE",frDate(inv.dueDate)||"À réception"],["MONTANT DÛ",money(T.ttc)]];
-  metas.forEach(([k,v],i)=>{ const x=M+i*(mw+3); const due=i===3;
+  metaBoxes(inv,T).forEach(([k,v,due],i)=>{ const x=M+i*(mw+3);
     if(due){ doc.setFillColor(...ACC); doc.roundedRect(x,y,mw,mh,1.8,1.8,"F"); } else { doc.setDrawColor(228); doc.setLineWidth(0.3); doc.roundedRect(x,y,mw,mh,1.8,1.8,"S"); }
-    doc.setFont("helvetica","bold"); doc.setFontSize(6.5); due?doc.setTextColor(225):doc.setTextColor(136); t(k,x+3.5,y+5);
+    doc.setFont("helvetica","bold"); doc.setFontSize(6.5); due?doc.setTextColor(225):doc.setTextColor(136); t(k.toUpperCase(),x+3.5,y+5);
     doc.setFontSize(10); due?doc.setTextColor(255):doc.setTextColor(34); t(v,x+3.5,y+10.3); });
   y+=mh+7;
-  doc.setFont("helvetica","normal"); doc.setFontSize(8.8); doc.setTextColor(102); t("Nature de l'opération : "+(NATURE[inv.nature]||""),M,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.8); doc.setTextColor(102);
+  const ref=refText(inv);
+  const natTxt = tp==="devis" ? "" : "Nature de l'opération : "+(NATURE[inv.nature]||"");
+  if(natTxt) t(natTxt,M,y);
+  if(ref){ doc.setFont("helvetica","bold"); doc.setTextColor(34); t(ref, natTxt? W-M : M, y, natTxt?{align:"right"}:undefined); doc.setFont("helvetica","normal"); }
+  y+=4;
   const cols = fr ? [{k:"d",w:100,l:"DÉSIGNATION"},{k:"q",w:22,l:"QTÉ",r:1},{k:"p",w:29,l:"PU HT",r:1},{k:"t",w:29,l:"TOTAL HT",r:1}]
                   : [{k:"d",w:86,l:"DÉSIGNATION"},{k:"q",w:20,l:"QTÉ",r:1},{k:"p",w:26,l:"PU HT",r:1},{k:"v",w:16,l:"TVA",r:1},{k:"t",w:32,l:"TOTAL HT",r:1}];
   const head=()=>{ doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...ACC); let x=M; cols.forEach(c=>{ c.r?t(c.l,x+c.w-2,y+5.5,{align:"right"}):t(c.l,x+2,y+5.5); x+=c.w; }); y+=8; doc.setDrawColor(...ACC); doc.setLineWidth(0.6); doc.line(M,y,W-M,y); doc.setFont("helvetica","normal"); doc.setTextColor(34); };
@@ -1234,19 +1428,20 @@ function buildPdf(inv,p){
     const dl2=doc.splitTextToSize(pdfSafe(l.desc),cols[0].w-4); const rh=Math.max(8,dl2.length*4.2+4.2);
     if(ensure(rh)) head(); doc.setFontSize(9);
     if(ri++%2===1){ doc.setFillColor(250,250,250); doc.rect(M,y,W-2*M,rh,"F"); }
-    const vals={q:(String(num(l.qty)).replace(".",",")+" "+(l.unit||"")).trim(),p:money(num(l.price)),v:pct(num(l.tva)),t:money(num(l.qty)*num(l.price))};
+    const vals={q:(String(num(l.qty)).replace(".",",")+" "+(l.unit||"")).trim(),p:money(num(l.price)),v:pct(num(l.tva)),t:money(sg*num(l.qty)*num(l.price))};
     let x=M; doc.setTextColor(34); cols.forEach(c=>{ if(c.k==="d") doc.text(dl2,x+2,y+5.3); else t(vals[c.k],x+c.w-2,y+5.3,{align:"right"}); x+=c.w; });
     y+=rh; doc.setDrawColor(236); doc.setLineWidth(0.2); doc.line(M,y,W-M,y);
   });
-  const rows=[["Total HT",money(T.ht)]]; if(!fr){ T.vat.forEach(v=>rows.push(["TVA "+pct(v.rate),money(v.amount)])); rows.push(["Total TVA",money(T.tva)]); }
+  const rows=[["Total HT",money(sg*T.ht)]]; if(!fr){ T.vat.forEach(v=>rows.push(["TVA "+pct(v.rate),money(sg*v.amount)])); rows.push(["Total TVA",money(sg*T.tva)]); }
   const tw=76, tx=W-M-tw;
   const notesL = inv.notes ? doc.splitTextToSize(pdfSafe(inv.notes),W-2*M-tw-10) : [];
-  const blockH=Math.max(rows.length*6+11+(fr?7:0), notesL.length*4.3+4);
+  const blockH=Math.max(rows.length*6+11+(fr?7:0), notesL.length*4.3+4+(tp==="devis"?30:0));
   ensure(blockH+6); y+=6; const y0=y;
   doc.setFontSize(9.5); doc.setTextColor(51);
   rows.forEach(([k,v])=>{ t(k,tx+3.5,y+4.2); t(v,W-M-3.5,y+4.2,{align:"right"}); y+=6; });
-  y+=1; doc.setFillColor(...ACC); doc.roundedRect(tx,y,tw,10,1.8,1.8,"F"); doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(11.5);
-  t(fr?"Net à payer":"Total TTC",tx+4,y+6.7); t(money(T.ttc),W-M-4,y+6.7,{align:"right"}); y+=10;
+  y+=1; doc.setFillColor(...ACC); doc.roundedRect(tx,y,tw,10,1.8,1.8,"F"); doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(tp==="avoir"?10.5:11.5);
+  const totLabel = tp==="devis" ? (fr?"Total":"Total TTC") : tp==="avoir" ? (fr?"Total de l'avoir":"Total TTC avoir") : (fr?"Net à payer":"Total TTC");
+  t(totLabel,tx+4,y+6.7); t(money(sg*T.ttc),W-M-4,y+6.7,{align:"right"}); y+=10;
   doc.setFont("helvetica","normal");
   if(fr){ doc.setFont("helvetica","italic"); doc.setFontSize(8.3); doc.setTextColor(102); y+=5; t("TVA non applicable, art. 293 B du CGI",W-M,y,{align:"right"}); doc.setFont("helvetica","normal"); }
   if(p.signature && p.showSignature){
@@ -1258,8 +1453,13 @@ function buildPdf(inv,p){
       doc.setFont("helvetica","normal");
     }catch(e){}
   }
-  if(notesL.length){ doc.setFontSize(9); doc.setTextColor(68); doc.text(notesL,M,y0+4.2); }
-  y=Math.max(y,y0+notesL.length*4.3)+10;
+  let ny=y0+4.2;
+  if(notesL.length){ doc.setFontSize(9); doc.setTextColor(68); doc.text(notesL,M,ny); ny+=notesL.length*4.3+3; }
+  if(tp==="devis"){ // cadre « Bon pour accord »
+    const bw=W-2*M-tw-10; doc.setDrawColor(190); doc.setLineWidth(0.3); doc.setLineDashPattern([1.2,1.2],0); doc.roundedRect(M,ny,bw,26,2,2,"S"); doc.setLineDashPattern([],0);
+    doc.setFontSize(7.5); doc.setTextColor(120); t("BON POUR ACCORD - date et signature du client",M+3,ny+5); ny+=28;
+  }
+  y=Math.max(y,ny)+10;
   const cond=conditionsText(inv,p).flatMap(s=>doc.splitTextToSize(pdfSafe(s),W-2*M));
   const condH=cond.length*3.8+6;
   if(y+condH < H-24) y=H-24-condH;
@@ -1269,7 +1469,7 @@ function buildPdf(inv,p){
   footer();
   return doc;
 }
-const pdfName = inv => safeName((inv.number?("Facture "+inv.number):"Facture brouillon")+(inv.client&&inv.client.name?(" - "+inv.client.name):""))+".pdf";
+const pdfName = inv => safeName((inv.number?(TYPE[docType(inv)].label+" "+inv.number):TYPE[docType(inv)].label+" brouillon")+(inv.client&&inv.client.name?(" - "+inv.client.name):""))+".pdf";
 async function pdfBytes(inv){
   if(inv.pdf){ try{ const s=await getDoc(R.pdf(inv.id)); if(s.exists()&&s.data().b64) return b64ToBytes(s.data().b64); }catch(e){ console.error(e); } }
   return new Uint8Array(buildPdf(inv,S.profile).output("arraybuffer"));
@@ -1284,36 +1484,160 @@ async function downloadPdf(inv){
   }catch(e){ console.error(e); toast("Le PDF n'a pas pu être créé."); }
 }
 
-/* ================= list ================= */
+/* ================= list (factures + avoirs) ================= */
 const EMPTY_SVG=`<svg viewBox="0 0 120 90" fill="none"><rect x="30" y="8" width="52" height="68" rx="6" fill="#fff" stroke="#d9d3c6" stroke-width="2"/><rect x="30" y="8" width="52" height="15" rx="6" fill="#1f5c45"/><rect x="38" y="32" width="28" height="4" rx="2" fill="#e3ded3"/><rect x="38" y="41" width="36" height="4" rx="2" fill="#e3ded3"/><rect x="38" y="50" width="20" height="4" rx="2" fill="#e3ded3"/><rect x="52" y="60" width="22" height="8" rx="3" fill="#a7e8c3"/><circle cx="88" cy="66" r="13" fill="#f2b33d"/><path d="M84 66h8M88 62v8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+const ttc = d => sign(d)*((d.totals&&d.totals.ttc)||0);
+function sortDocs(a,b){ return (b.issueDate||"").localeCompare(a.issueDate||"") || (b.number||"").localeCompare(a.number||"") || (b.createdAt-a.createdAt); }
+function rowActions(i){
+  const t=docType(i), b=[];
+  if(t==="facture" && i.number && i.status!=="payee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ Payée</button>`);
+  if(t==="avoir" && i.number && i.status!=="payee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ Remboursé</button>`);
+  if(isLate(i)) b.push(`<button class="btn sm" data-remind="${i.id}">✉ Relancer</button>`);
+  if(t==="devis" && i.number && !i.convertedTo && i.status!=="refuse") b.push(`<button class="btn sm primary" data-conv="${i.id}">→ Facture</button>`);
+  b.push(`<button class="btn sm" data-pdf="${i.id}">PDF</button>`);
+  b.push(`<button class="btn sm ghost danger" data-del="${i.id}">✕</button>`);
+  return b.join(" ");
+}
+function docRow(i){
+  const st=effStatus(i);
+  const typePill = docType(i)==="avoir" ? `<span class="pill avoir">Avoir</span> ` : "";
+  const sub = docType(i)==="avoir"&&i.ref ? `<div class="muted" style="font-size:11.5px">sur ${esc(i.ref.number)}</div>` : i.convertedTo ? `<div class="muted" style="font-size:11.5px">→ ${esc(i.convertedTo.number)}</div>` : i.paidAt ? `<div class="muted" style="font-size:11.5px">le ${frDate(i.paidAt)}${i.paidMethod?" · "+esc(PAY_SHORT[i.paidMethod]||i.paidMethod):""}</div>` : "";
+  const due = docType(i)==="devis" ? frDate(i.validUntil) : frDate(i.dueDate);
+  return `<tr class="click" data-id="${i.id}"><td class="inv-no">${typePill}${esc(i.number||"—")}</td><td><div class="cli-cell"><div class="avatar" style="background:${avColor(i.client?.name)}">${esc(initials(i.client?.name))}</div>${esc(i.client?.name)}</div></td><td>${frDate(i.issueDate)}</td><td>${due||"—"}</td><td class="r amount">${money(ttc(i))}</td>
+    <td><span class="pill ${st}">${esc(statusLabel(i))}</span>${sub}</td><td class="r" style="white-space:nowrap">${rowActions(i)}</td></tr>`;
+}
+function bindRows(root){
+  $$(root+" tr.click").forEach(tr=>tr.addEventListener("click",e=>{ if(e.target.closest("button")) return; loadEditor(clean(S.invoices[tr.dataset.id])); showTab("edit"); }));
+  $$(root+" [data-pdf]").forEach(b=>b.addEventListener("click",()=>downloadPdf(S.invoices[b.dataset.pdf])));
+  $$(root+" [data-paid]").forEach(b=>b.addEventListener("click",()=>openPaid(S.invoices[b.dataset.paid])));
+  $$(root+" [data-remind]").forEach(b=>b.addEventListener("click",()=>remind(S.invoices[b.dataset.remind])));
+  $$(root+" [data-conv]").forEach(b=>b.addEventListener("click",()=>devisToInvoice(S.invoices[b.dataset.conv])));
+  $$(root+" [data-del]").forEach(b=>b.addEventListener("click",()=>askDelete(S.invoices[b.dataset.del])));
+}
+function askDelete(i){
+  const t=docType(i), T=TYPE[t];
+  const sent = i.number && i.status!=="brouillon" && t!=="devis";
+  confirmBox(`Supprimer ${T.the} ?`, sent ? `${T.label} ${i.number} a été émis${t==="facture"?"e":""} : le supprimer crée un trou dans ta numérotation, ce qui n'est pas autorisé. Pour annuler une facture, crée plutôt un avoir (ouvre la facture → « Créer un avoir »).` : `${T.label} ${i.number||""} et son PDF seront définitivement supprimés.`, async()=>{
+    try{ await Store.deleteInvoice(i.id); if(i.pdf) await Store.deletePdf(i.id); toast("Document supprimé."); }catch(e){fbErr(e);} });
+}
 function renderList(){
-  const all=Object.values(S.invoices).sort((a,b)=>(b.number||"").localeCompare(a.number||"")||(b.createdAt-a.createdAt));
-  const paid=all.filter(i=>i.status==="payee"), pend=all.filter(i=>i.status==="envoyee"), late=all.filter(isLate);
-  const sum=a=>a.reduce((s,i)=>s+(i.totals?.ttc||0),0);
+  const all=Object.values(S.invoices).filter(i=>docType(i)!=="devis").sort(sortDocs);
+  const fac=all.filter(i=>docType(i)==="facture"), av=all.filter(i=>docType(i)==="avoir");
+  const paid=fac.filter(i=>i.status==="payee"), pend=fac.filter(i=>i.status==="envoyee"), late=fac.filter(isLate);
+  const refunded=av.filter(i=>i.status==="payee");
+  const sum=a=>a.reduce((s,i)=>s+ttc(i),0);
+  const year=todayISO().slice(0,4);
+  const caYear=sum(paid.filter(i=>(i.paidAt||i.issueDate||"").startsWith(year)))+sum(refunded.filter(i=>(i.paidAt||i.issueDate||"").startsWith(year)));
   $("#stats").innerHTML=`
-    <div class="stat g"><div class="k">● Encaissé</div><div class="v">${money(sum(paid))}</div><div class="s">${paid.length} facture${paid.length>1?"s":""} payée${paid.length>1?"s":""}</div></div>
+    <div class="stat g"><div class="k">● Encaissé en ${year}</div><div class="v">${money(caYear)}</div><div class="s">${paid.length} facture${paid.length>1?"s":""} payée${paid.length>1?"s":""} au total</div></div>
     <div class="stat a"><div class="k">◷ En attente</div><div class="v">${money(sum(pend))}</div><div class="s">${pend.length} facture${pend.length>1?"s":""} envoyée${pend.length>1?"s":""}</div></div>
     <div class="stat r ${late.length?"hot":""}"><div class="k">⚠ En retard</div><div class="v">${money(sum(late))}</div><div class="s">${late.length?`${late.length} facture${late.length>1?"s":""} à relancer`:"Rien à relancer 👌"}</div></div>`;
   const qv=($("#search").value||"").toLowerCase(), fs=S.filter;
-  const rows=all.filter(i=>(!qv||(i.number||"").toLowerCase().includes(qv)||(i.client?.name||"").toLowerCase().includes(qv)) && (!fs || (fs==="retard"?isLate(i):i.status===fs)));
-  if(!all.length){ $("#invList").innerHTML=`<div class="empty">${EMPTY_SVG}<h4>Aucune facture pour l'instant</h4><p>Ta première facture, c'est par ici.</p><button class="btn primary" id="btnFirst">Créer ma première facture</button></div>`; $("#btnFirst").addEventListener("click",newEditor); return; }
+  const rows=all.filter(i=>(!qv||(i.number||"").toLowerCase().includes(qv)||(i.client?.name||"").toLowerCase().includes(qv)) && (!fs || (fs==="retard"?isLate(i): fs==="avoir"? docType(i)==="avoir" : (docType(i)==="facture" && i.status===fs))));
+  if(!all.length){ $("#invList").innerHTML=`<div class="empty">${EMPTY_SVG}<h4>Aucune facture pour l'instant</h4><p>Ta première facture, c'est par ici.</p><button class="btn primary" id="btnFirst">Créer ma première facture</button></div>`; $("#btnFirst").addEventListener("click",()=>newEditor("facture")); return; }
   $("#invList").innerHTML=`<div class="tbl"><div class="tbl-scroll"><table class="list"><thead><tr><th>N°</th><th>Client</th><th>Émise le</th><th>Échéance</th><th class="r">Montant</th><th>Statut</th><th></th></tr></thead><tbody>
-  ${rows.map(i=>{ const st=isLate(i)?"retard":i.status; const lbl={brouillon:"Brouillon",envoyee:"Envoyée",payee:"Payée",retard:"En retard"}[st];
-    return `<tr class="click" data-id="${i.id}"><td class="inv-no">${esc(i.number||"—")}</td><td><div class="cli-cell"><div class="avatar" style="background:${avColor(i.client?.name)}">${esc(initials(i.client?.name))}</div>${esc(i.client?.name)}</div></td><td>${frDate(i.issueDate)}</td><td>${frDate(i.dueDate)}</td><td class="r amount">${money(i.totals?.ttc||0)}</td>
-    <td><span class="pill ${st}">${lbl}</span></td>
-    <td class="r" style="white-space:nowrap">${i.status!=="payee"?`<button class="btn sm" data-paid="${i.id}">✓ Payée</button>`:""} <button class="btn sm" data-pdf="${i.id}">PDF</button> <button class="btn sm ghost danger" data-del="${i.id}">Suppr.</button></td></tr>`; }).join("")}
-  </tbody></table></div>${rows.length?"":'<p class="muted" style="text-align:center;padding:16px">Aucun résultat.</p>'}</div>`;
-  $$("#invList tr.click").forEach(tr=>tr.addEventListener("click",e=>{ if(e.target.closest("button")) return; loadEditor(clean(S.invoices[tr.dataset.id])); showTab("edit"); }));
-  $$("#invList [data-pdf]").forEach(b=>b.addEventListener("click",()=>downloadPdf(S.invoices[b.dataset.pdf])));
-  $$("#invList [data-paid]").forEach(b=>b.addEventListener("click",async()=>{ const i=clean(S.invoices[b.dataset.paid]); i.status="payee"; i.paidAt=todayISO(); i.updatedAt=Date.now(); try{ await Store.saveInvoice(i); if(S.cur&&S.cur.id===i.id){S.cur.status="payee";$("#status").value="payee";} toast(`${i.number} marquée payée.`);}catch(e){fbErr(e);} }));
-  $$("#invList [data-del]").forEach(b=>b.addEventListener("click",()=>{
-    const i=S.invoices[b.dataset.del];
-    confirmBox("Supprimer cette facture ?", i.number&&i.status!=="brouillon" ? `La facture ${i.number} a été envoyée : la supprimer crée un trou dans ta numérotation, ce qui n'est pas autorisé. Pour l'annuler, il faut normalement émettre un avoir.` : `La facture ${i.number||""} et son PDF seront définitivement supprimés.`, async()=>{
-      try{ await Store.deleteInvoice(i.id); if(i.pdf) await Store.deletePdf(i.id); toast("Facture supprimée."); }catch(e){fbErr(e);} });
-  }));
+  ${rows.map(docRow).join("")}</tbody></table></div>${rows.length?"":'<p class="muted" style="text-align:center;padding:16px">Aucun résultat.</p>'}</div>`;
+  bindRows("#invList");
 }
 $("#search").addEventListener("input",renderList);
 $$("#chips .chip").forEach(c=>c.addEventListener("click",()=>{ S.filter=c.dataset.v; $$("#chips .chip").forEach(x=>x.classList.toggle("on",x===c)); renderList(); }));
+
+/* ================= devis ================= */
+function renderQuotes(){
+  const all=Object.values(S.invoices).filter(i=>docType(i)==="devis").sort(sortDocs);
+  const open=all.filter(q=>["brouillon","envoye"].includes(q.status)&&!isExpired(q)), acc=all.filter(q=>q.status==="accepte"), exp=all.filter(isExpired);
+  const sum=a=>a.reduce((s,i)=>s+ttc(i),0);
+  const decided=all.filter(q=>["accepte","refuse"].includes(q.status));
+  const rate=decided.length?Math.round(acc.length/decided.length*100):null;
+  $("#qstats").innerHTML=`
+    <div class="stat a"><div class="k">◷ En attente de réponse</div><div class="v">${money(sum(open))}</div><div class="s">${open.length} devis</div></div>
+    <div class="stat g"><div class="k">✓ Acceptés</div><div class="v">${money(sum(acc))}</div><div class="s">${acc.length} devis${rate!=null?` · ${rate} % de réussite`:""}</div></div>
+    <div class="stat r ${exp.length?"hot":""}"><div class="k">⌛ Expirés</div><div class="v">${exp.length}</div><div class="s">${exp.length?"à relancer ou à refaire":"Aucun devis expiré"}</div></div>`;
+  const qv=($("#qsearch").value||"").toLowerCase(), fs=S.qfilter;
+  const rows=all.filter(i=>(!qv||(i.number||"").toLowerCase().includes(qv)||(i.client?.name||"").toLowerCase().includes(qv)) && (!fs || (fs==="expire"?isExpired(i): fs==="attente"? (["brouillon","envoye"].includes(i.status)&&!isExpired(i)) : i.status===fs)));
+  if(!all.length){ $("#qList").innerHTML=`<div class="empty">${EMPTY_SVG}<h4>Aucun devis pour l'instant</h4><p>Fais un devis, puis transforme-le en facture en un clic quand le client accepte.</p><button class="btn primary" id="btnFirstQ">Créer mon premier devis</button></div>`; $("#btnFirstQ").addEventListener("click",()=>newEditor("devis")); return; }
+  $("#qList").innerHTML=`<div class="tbl"><div class="tbl-scroll"><table class="list"><thead><tr><th>N°</th><th>Client</th><th>Émis le</th><th>Valable jusqu'au</th><th class="r">Montant</th><th>Statut</th><th></th></tr></thead><tbody>
+  ${rows.map(docRow).join("")}</tbody></table></div>${rows.length?"":'<p class="muted" style="text-align:center;padding:16px">Aucun résultat.</p>'}</div>`;
+  bindRows("#qList");
+}
+$("#qsearch").addEventListener("input",renderQuotes);
+$$("#qchips .chip").forEach(c=>c.addEventListener("click",()=>{ S.qfilter=c.dataset.v; $$("#qchips .chip").forEach(x=>x.classList.toggle("on",x===c)); renderQuotes(); }));
+
+/* ================= paiement reçu ================= */
+let payTarget=null;
+function openPaid(i){
+  if(!i) return; payTarget=i;
+  const av=docType(i)==="avoir";
+  $("#payTitle").textContent = av ? `Avoir ${i.number} remboursé / déduit` : `Facture ${i.number} payée`;
+  $("#payDate").value=todayISO();
+  const means=(S.profile.payMeans&&S.profile.payMeans.length)?S.profile.payMeans:["virement","cheque","especes","carte"];
+  $("#payMethod").innerHTML=[...new Set([...means,"virement","cheque","especes","carte"])].map(k=>`<option value="${k}">${PAY_SHORT[k]}</option>`).join("")+`<option value="autre">Autre</option>`;
+  $("#payModal").classList.add("on");
+}
+$("#payNo").addEventListener("click",()=>{ $("#payModal").classList.remove("on"); payTarget=null; });
+$("#payYes").addEventListener("click",async()=>{
+  const i=payTarget; if(!i) return; $("#payModal").classList.remove("on");
+  const u={...clean(i), status:"payee", paidAt:$("#payDate").value||todayISO(), paidMethod:$("#payMethod").value, updatedAt:Date.now()};
+  try{ await Store.saveInvoice(u); S.invoices[u.id]=u; if(S.cur&&S.cur.id===u.id){ Object.assign(S.cur,{status:"payee",paidAt:u.paidAt,paidMethod:u.paidMethod}); $("#status").value="payee"; } toast(`${u.number} : paiement enregistré.`); renderList(); }catch(e){ fbErr(e); }
+  payTarget=null;
+});
+
+/* ================= relance par email ================= */
+function remind(i){
+  if(!i) return;
+  const c=S.clients[i.clientId]||{}; const email=(c.email||i.client.email||"").trim(); const p=S.profile;
+  const subject=`Relance — facture n° ${i.number}`;
+  const body=`Bonjour,\n\nSauf erreur de notre part, la facture n° ${i.number} du ${frDate(i.issueDate)}, d'un montant de ${money(ttc(i))}, arrivée à échéance le ${frDate(i.dueDate)}, reste à ce jour impayée.\n\nMerci de bien vouloir procéder à son règlement dans les meilleurs délais${p.iban&&(p.payMeans||[]).includes("virement")?` (IBAN : ${p.iban})`:""}. Si le paiement a été effectué entre-temps, merci de ne pas tenir compte de ce message.\n\nCordialement,\n${p.signName||p.name||""}`;
+  const url=`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href=url;
+  if(navigator.clipboard) navigator.clipboard.writeText(body).catch(()=>{});
+  toast(email?"Email de relance préparé dans ta messagerie (texte aussi copié).":"Pas d'email pour ce client : le texte de relance est copié, colle-le dans ton message.");
+}
+
+/* ================= export comptable ================= */
+function csvCell(v){ v=String(v??""); return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+const csvNum = n => r2(n).toFixed(2).replace(".",",");
+function fillExportYears(){
+  const years=[...new Set(Object.values(S.invoices).filter(i=>i.number&&docType(i)!=="devis").map(i=>(i.issueDate||"").slice(0,4)).filter(Boolean))].sort().reverse();
+  const cur=todayISO().slice(0,4); if(!years.includes(cur)) years.unshift(cur);
+  $("#expYear").innerHTML=`<option value="">Toutes les années</option>`+years.map(y=>`<option value="${y}">${y}</option>`).join("");
+  $("#expYear").value=cur;
+}
+$("#btnExportCsv").addEventListener("click",()=>{ fillExportYears(); $("#expModal").classList.add("on"); });
+$("#expNo").addEventListener("click",()=>$("#expModal").classList.remove("on"));
+$("#expYes").addEventListener("click",()=>{
+  const y=$("#expYear").value;
+  const docs=Object.values(S.invoices).filter(i=>i.number&&docType(i)!=="devis"&&(!y||(i.issueDate||"").startsWith(y))).sort((a,b)=>(a.issueDate||"").localeCompare(b.issueDate||"")||(a.number||"").localeCompare(b.number||""));
+  if(!docs.length){ toast("Aucune facture pour cette période."); return; }
+  const head=["Date","Numéro","Type","Client","SIREN client","Nature","Total HT","TVA","Total TTC","Statut","Date de paiement","Mode de paiement","Facture d'origine"];
+  const rows=docs.map(i=>{ const sg=sign(i), T=i.totals||computeTotals(i,S.profile); return [frDate(i.issueDate),i.number,TYPE[docType(i)].label,i.client?.name||"",i.client?.siren||"",NATURE[i.nature]||"",csvNum(sg*T.ht),csvNum(sg*T.tva),csvNum(sg*T.ttc),statusLabel(i),frDate(i.paidAt||""),i.paidMethod?(PAY_SHORT[i.paidMethod]||i.paidMethod):"",i.ref?i.ref.number:""]; });
+  const csv="﻿"+[head,...rows].map(r=>r.map(csvCell).join(";")).join("\r\n");
+  downloadBlob(new Blob([csv],{type:"text/csv;charset=utf-8"}), `Recettes ${y||"toutes années"} - ${safeName(S.profile.name||"factures")}.csv`);
+  $("#expModal").classList.remove("on"); toast("Export comptable téléchargé (s'ouvre avec Excel).");
+});
+
+/* ================= catalogue de prestations ================= */
+async function saveToCatalog(l){
+  if(!l || !String(l.desc||"").trim()) return toast("Écris d'abord une désignation sur cette ligne.");
+  const ex=Object.values(S.catalog).find(c=>c.desc.trim().toLowerCase()===l.desc.trim().toLowerCase());
+  const it={ id: ex?ex.id:uid(), desc:l.desc.trim(), unit:l.unit||"u", price:num(l.price), tva:num(l.tva) };
+  try{ await Store.saveCat(it); S.catalog[it.id]=it; toast(ex?"Prestation mise à jour dans ton catalogue.":"Prestation ajoutée à ton catalogue ⭐"); }catch(e){ fbErr(e); }
+}
+function renderCatalog(){
+  const qv=($("#catSearch").value||"").toLowerCase();
+  const items=Object.values(S.catalog).filter(c=>!qv||c.desc.toLowerCase().includes(qv)).sort((a,b)=>a.desc.localeCompare(b.desc));
+  $("#catList").innerHTML = items.length ? items.map(c=>`<div class="cat-item" data-add="${c.id}"><div style="min-width:0"><b>${esc(c.desc)}</b><small>${money(c.price)} HT / ${esc(c.unit)}${S.profile.franchise?"":" · TVA "+pct(c.tva)}</small></div><button class="btn sm ghost danger" data-cdel="${c.id}" title="Retirer du catalogue">✕</button></div>`).join("")
+    : `<p class="muted" style="text-align:center;padding:14px">${Object.keys(S.catalog).length?"Aucun résultat.":"Ton catalogue est vide. Sur une ligne de facture, clique sur ☆ pour l'y ajouter."}</p>`;
+  $$("#catList [data-add]").forEach(el=>el.addEventListener("click",e=>{ if(e.target.closest("[data-cdel]")) return; const c=S.catalog[el.dataset.add];
+    const last=S.cur.lines[S.cur.lines.length-1]; const line={desc:c.desc,qty:1,unit:c.unit,price:c.price,tva:c.tva};
+    if(last && !String(last.desc).trim() && !num(last.price)) S.cur.lines[S.cur.lines.length-1]=line; else S.cur.lines.push(line);
+    renderLines(); renderPreview(); $("#catModal").classList.remove("on"); toast("Ligne ajoutée."); }));
+  $$("#catList [data-cdel]").forEach(b=>b.addEventListener("click",async()=>{ try{ await Store.deleteCat(b.dataset.cdel); delete S.catalog[b.dataset.cdel]; renderCatalog(); }catch(e){ fbErr(e); } }));
+}
+$("#btnCatalog").addEventListener("click",()=>{ $("#catSearch").value=""; renderCatalog(); $("#catModal").classList.add("on"); setTimeout(()=>$("#catSearch").focus(),50); });
+$("#catSearch").addEventListener("input",renderCatalog);
+$("#catClose").addEventListener("click",()=>$("#catModal").classList.remove("on"));
+["payModal","expModal","catModal"].forEach(id=>$("#"+id).addEventListener("click",e=>{ if(e.target.id===id) $("#"+id).classList.remove("on"); }));
 
 /* ================= archives ================= */
 let archMode="client";
@@ -1341,10 +1665,10 @@ function renderArchive(){
   const groups=archGroups();
   if(!groups.length){ $("#archList").innerHTML=`<div class="empty">${EMPTY_SVG}<h4>Aucun PDF pour l'instant</h4><p>Chaque facture enregistrée apparaît ici, prête à télécharger.</p></div>`; return; }
   $("#archList").innerHTML=groups.map((g,gi)=>{
-    const tot=g.items.reduce((s,i)=>s+(i.totals?.ttc||0),0);
+    const tot=g.items.filter(i=>docType(i)!=="devis").reduce((s,i)=>s+ttc(i),0);
     const ic = archMode==="client" ? `<div class="avatar" style="background:${avColor(g.label)};width:36px;height:36px">${esc(initials(g.label))}</div>` : `<div class="folder" style="background:var(--amber-soft);color:#8a5d06"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>`;
     return `<details class="group" ${gi<4?"open":""}><summary>${ic}<div><div class="gt">${esc(g.label)}</div><div class="gs">${g.items.length} facture${g.items.length>1?"s":""}</div></div><div class="gr"><div class="amount">${money(tot)}</div></div><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></summary>
-      ${g.items.map(i=>`<div class="file"><div class="pdf">PDF</div><div style="min-width:0"><div class="fn">${esc(i.number)}${archMode==="month"?` <span class="muted" style="font-weight:600">· ${esc(i.client?.name)}</span>`:""}</div><div class="fm">${frDate(i.issueDate)} · ${money(i.totals?.ttc||0)} · ${i.pdf?`<span class="tag-ok">Archivé · ${kb(i.pdf.size||0)}</span>`:`<span class="tag-no">Recréé à la demande</span>`}</div></div>
+      ${g.items.map(i=>`<div class="file"><div class="pdf">PDF</div><div style="min-width:0"><div class="fn">${docType(i)!=="facture"?`<span class="pill ${docType(i)==="avoir"?"avoir":"envoye"}">${TYPE[docType(i)].label}</span> `:""}${esc(i.number)}${archMode==="month"?` <span class="muted" style="font-weight:600">· ${esc(i.client?.name)}</span>`:""}</div><div class="fm">${frDate(i.issueDate)} · ${money(ttc(i))} · ${i.pdf?`<span class="tag-ok">Archivé · ${kb(i.pdf.size||0)}</span>`:`<span class="tag-no">Recréé à la demande</span>`}</div></div>
       <div class="act"><button class="btn sm ghost" data-open="${i.id}">Ouvrir</button><button class="btn sm" data-dl="${i.id}">Télécharger</button></div></div>`).join("")}
     </details>`; }).join("");
   $$("#archList [data-dl]").forEach(b=>b.addEventListener("click",()=>downloadPdf(S.invoices[b.dataset.dl])));
@@ -1357,7 +1681,7 @@ $("#btnZip").addEventListener("click",async()=>{
   try{
     const JSZip=await loadZip(); const zip=new JSZip();
     for(const g of groups){ const f=zip.folder(safeName(archMode==="client"?g.label:g.key+" "+g.label));
-      for(const i of g.items){ const b=await pdfBytes(i); f.file(safeName(`${i.issueDate||""} ${i.number}${archMode==="month"?" - "+(i.client?.name||""):""}`)+".pdf", b); } }
+      for(const i of g.items){ const b=await pdfBytes(i); f.file(safeName(`${i.issueDate||""} ${TYPE[docType(i)].label} ${i.number}${archMode==="month"?" - "+(i.client?.name||""):""}`)+".pdf", b); } }
     const out=await zip.generateAsync({type:"blob",compression:"DEFLATE"});
     downloadBlob(out, `Factures ${archMode==="client"?"par client":"par mois"} ${todayISO()}.zip`);
     toast("Archive ZIP téléchargée.");
@@ -1377,12 +1701,14 @@ function renderClients(){
   const list=Object.values(S.clients).sort((a,b)=>a.name.localeCompare(b.name));
   if(!list.length){ $("#clList").innerHTML=`<div class="empty">${EMPTY_SVG}<h4>Pas encore de client</h4><p>Ajoute-les ici ou directement depuis une facture.</p></div>`; return; }
   $("#clList").innerHTML=`<div class="tbl"><div class="tbl-scroll"><table class="list"><thead><tr><th>Client</th><th>Type</th><th class="r">Facturé</th><th></th></tr></thead><tbody>${list.map(c=>{
-    const inv=Object.values(S.invoices).filter(i=>i.clientId===c.id); const tot=inv.reduce((s,i)=>s+(i.totals?.ttc||0),0);
+    const inv=Object.values(S.invoices).filter(i=>i.clientId===c.id && docType(i)==="facture"); const tot=Object.values(S.invoices).filter(i=>i.clientId===c.id && docType(i)!=="devis").reduce((s,i)=>s+ttc(i),0);
     return `<tr><td><div class="cli-cell"><div class="avatar" style="background:${avColor(c.name)}">${esc(initials(c.name))}</div><div><b>${esc(c.name)}</b><div class="muted" style="font-size:12px">${esc((c.address||"").split("\n").join(", "))}</div></div></div></td><td><span class="pill ${c.kind==="pro"?"envoyee":"brouillon"}">${c.kind==="pro"?"Pro":"Particulier"}</span></td><td class="r amount">${money(tot)}<div class="muted" style="font-size:11.5px;font-family:Manrope;font-weight:600">${inv.length} facture${inv.length>1?"s":""}</div></td>
-    <td class="r" style="white-space:nowrap"><button class="btn sm primary" data-inv="${c.id}">Facturer</button> <button class="btn sm" data-ed="${c.id}">Modifier</button> <button class="btn sm ghost danger" data-del="${c.id}">✕</button></td></tr>`; }).join("")}</tbody></table></div></div>`;
+    <td class="r" style="white-space:nowrap"><button class="btn sm primary" data-inv="${c.id}">Facturer</button> <button class="btn sm" data-quote="${c.id}">Devis</button> <button class="btn sm" data-ed="${c.id}">Modifier</button> <button class="btn sm ghost danger" data-del="${c.id}">✕</button></td></tr>`; }).join("")}</tbody></table></div></div>`;
   $$("#clList [data-ed]").forEach(b=>b.addEventListener("click",()=>{ const c=S.clients[b.dataset.ed]; editingClient=c.id; $("#clFormTitle").textContent="Modifier le client";
     $("#kName").value=c.name||""; kKind=c.kind||"particulier"; setSeg("kKindSeg",kKind); $("#kAddr").value=c.address||""; $("#kSiren").value=c.siren||""; $("#kTva").value=c.tva||""; $("#kEmail").value=c.email||""; $("#kPhone").value=c.phone||""; window.scrollTo({top:0,behavior:"smooth"}); }));
-  $$("#clList [data-inv]").forEach(b=>b.addEventListener("click",()=>{ const c=S.clients[b.dataset.inv]; const inv=newInvoice(); inv.clientId=c.id; inv.client={name:c.name,kind:c.kind,address:c.address,siren:c.siren||"",tva:c.tva||""}; fillClientPick(); loadEditor(inv); showTab("edit"); }));
+  const startFor=(c,type)=>{ const d=newDoc(type); d.clientId=c.id; d.client={name:c.name,kind:c.kind,address:c.address,siren:c.siren||"",tva:c.tva||"",email:c.email||""}; fillClientPick(); loadEditor(d); showTab("edit"); };
+  $$("#clList [data-inv]").forEach(b=>b.addEventListener("click",()=>startFor(S.clients[b.dataset.inv],"facture")));
+  $$("#clList [data-quote]").forEach(b=>b.addEventListener("click",()=>startFor(S.clients[b.dataset.quote],"devis")));
   $$("#clList [data-del]").forEach(b=>b.addEventListener("click",()=>{ const c=S.clients[b.dataset.del]; confirmBox("Supprimer ce client ?",`${c.name} sera retiré de ta liste. Ses factures existantes ne changent pas.`,async()=>{ try{ await Store.deleteClient(c.id); }catch(e){fbErr(e);} }); }));
 }
 function resetClientForm(){ editingClient=null; $("#clFormTitle").textContent="Nouveau client"; ["kName","kAddr","kSiren","kTva","kEmail","kPhone"].forEach(i=>$("#"+i).value=""); kKind="particulier"; setSeg("kKindSeg",kKind); }
@@ -1395,29 +1721,43 @@ $("#btnClSave").addEventListener("click",async()=>{
 });
 
 /* ================= settings ================= */
-const SMAP={sName:"name",sForm:"legalForm",sSiret:"siret",sAddr:"address",sEmail:"email",sPhone:"phone",sRcs:"rcs",sTvaNum:"tvaNumber",sTvaDef:"defaultTva",sDays:"payDays",sMeans:"means",sIban:"iban",sBic:"bic",sPenal:"penalties",sInsur:"insurance",sPrefix:"prefix",sNext:"nextNumber",sDigits:"numDigits",sFooter:"footer",sSigName:"signName"};
+const SMAP={sName:"name",sForm:"legalForm",sSiret:"siret",sAddr:"address",sEmail:"email",sPhone:"phone",sRcs:"rcs",sTvaNum:"tvaNumber",sTvaDef:"defaultTva",sDays:"payDays",sMeans:"means",sIban:"iban",sBic:"bic",sPenal:"penalties",sInsur:"insurance",sPrefix:"prefix",sPrefixD:"prefixDevis",sPrefixA:"prefixAvoir",sQuoteDays:"quoteDays",sDigits:"numDigits",sFooter:"footer",sSigName:"signName"};
+const NUMF={facture:"sNext",devis:"sNextD",avoir:"sNextA"};
+let numOrig={};
 function fillSettings(){
   draftProfile=clean(S.profile);
   Object.entries(SMAP).forEach(([id,k])=>{ $("#"+id).value = draftProfile[k] ?? ""; });
   $("#sFranchise").checked=!!draftProfile.franchise; $("#sDebits").checked=!!draftProfile.tvaDebits; $("#sShowSig").checked=draftProfile.showSignature!==false;
   $("#sYear").value=draftProfile.numYear===false?"0":"1"; $("#sDigits").value=String(draftProfile.numDigits||3);
+  $("#sReset").checked=!!draftProfile.numReset; $("#sYear").disabled=!!draftProfile.numReset;
+  const y=todayISO().slice(0,4);
+  Object.entries(NUMF).forEach(([t,id])=>{ numOrig[t]={key:counterKey(draftProfile,t,y), val:nextFor(draftProfile,t,y)}; $("#"+id).value=numOrig[t].val; });
   $$("#payMeans input").forEach(c=>c.checked=(draftProfile.payMeans||[]).includes(c.value)); payUi();
   showSig();
   $("#tvaFields").style.display=draftProfile.franchise?"none":"block";
   showLogo(); numExample(); renderSwatches();
 }
+const fieldNum = id => Math.max(1,Math.floor(num($("#"+id).value))||1);
+function numClashes(){
+  const y=todayISO(); const out=[];
+  Object.entries(NUMF).forEach(([t,id])=>{ const nb=fmtNumber(draftProfile,fieldNum(id),y,t); if(numberExists(nb)) out.push(nb); });
+  return out;
+}
 function numExample(){
-  const nx=fmtNumber(draftProfile,draftProfile.nextNumber||1,todayISO());
-  $("#numExample").textContent=nx;
-  const clash=Object.values(S.invoices).some(i=>i.number===nx);
-  $("#numWarn").style.display=clash?"block":"none";
-  $("#numWarn").textContent=clash?`⚠️ Le numéro ${nx} existe déjà dans tes factures : choisis un numéro plus grand pour éviter un doublon.`:"";
+  const y=todayISO();
+  $("#numExample").textContent=fmtNumber(draftProfile,fieldNum("sNext"),y,"facture");
+  $("#numExample2").textContent=`Prochain devis : ${fmtNumber(draftProfile,fieldNum("sNextD"),y,"devis")} · Prochain avoir : ${fmtNumber(draftProfile,fieldNum("sNextA"),y,"avoir")}`;
+  const cl=numClashes();
+  $("#numWarn").style.display=cl.length?"block":"none";
+  $("#numWarn").textContent=cl.length?`⚠️ Déjà utilisé : ${cl.join(", ")}. Choisis un numéro plus grand pour éviter un doublon.`:"";
 }
 function payUi(){ const pm=draftProfile.payMeans||[]; $("#cashHint").style.display=pm.includes("especes")?"block":"none"; $("#ibanRow").style.display=pm.includes("virement")?"grid":"none"; }
 $$("#payMeans input").forEach(c=>c.addEventListener("change",()=>{ draftProfile.payMeans=$$("#payMeans input").filter(x=>x.checked).map(x=>x.value); payUi(); }));
 $("#sYear").addEventListener("change",e=>{ draftProfile.numYear=e.target.value==="1"; numExample(); });
+$("#sReset").addEventListener("change",e=>{ draftProfile.numReset=e.target.checked; if(e.target.checked){ draftProfile.numYear=true; $("#sYear").value="1"; } $("#sYear").disabled=e.target.checked; numExample(); });
+Object.values(NUMF).forEach(id=>$("#"+id).addEventListener("input",numExample));
 function showLogo(){ const l=draftProfile.logo; $("#logoPrev").innerHTML=l?`<img src="${l}" alt="">`:"Pas de logo"; $("#logoDel").style.display=l?"inline-flex":"none"; }
-Object.entries(SMAP).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{ let v=e.target.value; if(["defaultTva","payDays","nextNumber","numDigits"].includes(k)) v=num(v); draftProfile[k]=v; if(["prefix","nextNumber","numDigits"].includes(k)) numExample(); }));
+Object.entries(SMAP).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{ let v=e.target.value; if(["defaultTva","payDays","numDigits","quoteDays"].includes(k)) v=num(v); draftProfile[k]=v; if(["prefix","prefixDevis","prefixAvoir","numDigits"].includes(k)) numExample(); }));
 $("#sFranchise").addEventListener("change",e=>{ draftProfile.franchise=e.target.checked; $("#tvaFields").style.display=e.target.checked?"none":"block"; });
 $("#sDebits").addEventListener("change",e=>{ draftProfile.tvaDebits=e.target.checked; });
 $("#logoFile").addEventListener("change",e=>{
@@ -1428,12 +1768,23 @@ $("#logoFile").addEventListener("change",e=>{
 });
 $("#logoDel").addEventListener("click",()=>{ draftProfile.logo=null; showLogo(); });
 async function saveSettings(){
-  draftProfile.nextNumber=Math.max(1,Math.floor(num(draftProfile.nextNumber))||1);
-  const nx=fmtNumber(draftProfile,draftProfile.nextNumber,todayISO());
-  if(Object.values(S.invoices).some(i=>i.number===nx)){ toast(`Le numéro ${nx} existe déjà : choisis un « Prochain numéro » plus grand.`); numExample(); return; }
+  const cl=numClashes();
+  if(cl.length){ toast(`Numéro déjà utilisé (${cl.join(", ")}) : choisis un « Prochain numéro » plus grand.`); numExample(); return; }
   if(!(draftProfile.payMeans||[]).length){ toast("Coche au moins un moyen de paiement."); return; }
-  S.profile=normProfile(draftProfile);
-  try{ await Store.saveProfile(); $("#welcome").style.display="none"; toast("Informations enregistrées."); applyAccent(); renderProfileDependent(); }catch(e){ fbErr(e); }
+  draftProfile.quoteDays=Math.max(1,Math.floor(num(draftProfile.quoteDays))||30);
+  // compteurs : on n'écrit que ce que l'utilisateur a réellement changé
+  const y=todayISO().slice(0,4); const upd={};
+  Object.entries(NUMF).forEach(([t,id])=>{ const key=counterKey(draftProfile,t,y), val=fieldNum(id);
+    if(key!==numOrig[t].key || val!==numOrig[t].val){ upd[key]=val; if(key==="facture") draftProfile.nextNumber=val; } });
+  const newProfile=normProfile(draftProfile);
+  newProfile.counters={...(S.profile.counters||{}),...upd}; if(upd.facture==null) newProfile.nextNumber=S.profile.nextNumber;
+  S.profile=newProfile;
+  try{
+    await Store.saveProfile();
+    if(Object.keys(upd).length){ const w={counters:upd}; if(upd.facture!=null) w.nextNumber=upd.facture; await setDoc(R.prof(),w,{merge:true}); }
+    numOrig={}; Object.entries(NUMF).forEach(([t,id])=>{ numOrig[t]={key:counterKey(S.profile,t,y), val:nextFor(S.profile,t,y)}; });
+    $("#welcome").style.display="none"; toast("Informations enregistrées."); applyAccent(); renderProfileDependent();
+  }catch(e){ fbErr(e); }
 }
 $("#btnSettingsSave").addEventListener("click",saveSettings);
 $("#btnSettingsSave2").addEventListener("click",saveSettings);
