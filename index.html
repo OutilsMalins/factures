@@ -150,6 +150,8 @@ textarea{resize:vertical;min-height:40px}
 .sh-band .l{display:flex;align-items:center;gap:2.6cqw;min-width:0}
 .sh-logo{background:#fff;border-radius:1.2cqw;padding:.9cqw;display:flex;align-items:center;justify-content:center;flex:none}
 .sh-logo img{max-height:11.7cqw;max-width:29cqw;width:auto;height:auto;display:block}
+.sh-logo.full{padding:0;overflow:hidden}
+.sh-logo.full img{max-height:13.5cqw;max-width:31cqw;border-radius:1.2cqw}
 .sh-band .nm{font-weight:700;font-size:3cqw;line-height:1.15}
 .sh-band .r{text-align:right}
 .sh-band .big{font-size:5.2cqw;font-weight:700;letter-spacing:.04em;line-height:1}
@@ -790,49 +792,67 @@ function applyExamples(){
 applyExamples();
 
 /* ================= logo : rogne les marges vides pour qu'il remplisse son cadre ================= */
-function fitLogo(img, max){
+function logoCanvas(img){
   let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height; const sc=Math.min(1,1200/Math.max(w,h)); w=Math.max(1,Math.round(w*sc)); h=Math.max(1,Math.round(h*sc));
   const c=document.createElement("canvas"); c.width=w; c.height=h; const x=c.getContext("2d"); x.drawImage(img,0,0,w,h);
-  const d=x.getImageData(0,0,w,h).data;
-  // 1. on devine la couleur du fond en regardant tout le tour de l'image
-  const S=[], step=Math.max(1,Math.floor(Math.min(w,h)/60));
+  return {c,w,h,d:x.getImageData(0,0,w,h).data};
+}
+// devine la couleur du fond en regardant tout le tour de l'image
+function logoBackground(d,w,h){
+  const S=[], step=Math.max(1,Math.floor(Math.min(w,h)/80));
   const at=(i,j)=>{ const k=(j*w+i)*4; return [d[k],d[k+1],d[k+2],d[k+3]]; };
   for(let i=0;i<w;i+=step){ S.push(at(i,0),at(i,1),at(i,h-1),at(i,h-2)); }
   for(let j=0;j<h;j+=step){ S.push(at(0,j),at(1,j),at(w-1,j),at(w-2,j)); }
   const transp = S.filter(p=>p[3]<60).length > S.length*0.5;
-  let bg=null, uniform=true;
-  if(!transp){
-    const op=S.filter(p=>p[3]>=60);
-    bg=[0,1,2].map(i=>op.reduce((a,p)=>a+p[i],0)/op.length);
-    const dev=op.reduce((a,p)=>a+Math.hypot(p[0]-bg[0],p[1]-bg[1],p[2]-bg[2]),0)/op.length;
-    uniform = dev < 28; // fond uni (blanc, crème, gris, couleur…)
-  }
-  const isInk=k=>{ if(d[k+3]<60) return false; if(transp) return true; if(!uniform) return true; return Math.hypot(d[k]-bg[0],d[k+1]-bg[1],d[k+2]-bg[2])>48; };
-  // 2. on cherche le cadre du vrai contenu (en ignorant les poussières isolées)
+  if(transp) return {transp:true, uniform:true, bg:null};
+  const op=S.filter(p=>p[3]>=60);
+  const med=i=>{ const v=op.map(p=>p[i]).sort((a,b)=>a-b); return v[Math.floor(v.length/2)]; };
+  const bg=[med(0),med(1),med(2)];
+  const near=op.filter(p=>Math.hypot(p[0]-bg[0],p[1]-bg[1],p[2]-bg[2])<45).length/op.length;
+  return {transp:false, uniform: near>=0.65, bg};
+}
+function fitLogo(img, max){
+  const {c,w,h,d}=logoCanvas(img);
+  const {transp,uniform,bg}=logoBackground(d,w,h);
+  const isInk=k=>{ if(d[k+3]<60) return false; if(transp||!uniform) return true; return Math.hypot(d[k]-bg[0],d[k+1]-bg[1],d[k+2]-bg[2])>55; };
+  // cadre du vrai contenu (en ignorant poussières, grain et ombres légères)
   const rows=new Uint32Array(h), cols=new Uint32Array(w);
   for(let j=0;j<h;j++) for(let i=0;i<w;i++){ if(isInk((j*w+i)*4)){ rows[j]++; cols[i]++; } }
-  const minR=Math.max(1,Math.round(w*0.004)), minC=Math.max(1,Math.round(h*0.004));
+  const minR=Math.max(2,Math.round(w*0.008)), minC=Math.max(2,Math.round(h*0.008));
   let y0=0; while(y0<h && rows[y0]<minR) y0++;
   let y1=h-1; while(y1>y0 && rows[y1]<minR) y1--;
   let x0=0; while(x0<w && cols[x0]<minC) x0++;
   let x1=w-1; while(x1>x0 && cols[x1]<minC) x1--;
   if(y0>=h || x0>=w) return null;
-  const pad=Math.round(Math.max(x1-x0,y1-y0)*0.025); x0=Math.max(0,x0-pad); y0=Math.max(0,y0-pad); x1=Math.min(w-1,x1+pad); y1=Math.min(h-1,y1+pad);
+  const pad=Math.round(Math.max(x1-x0,y1-y0)*0.03); x0=Math.max(0,x0-pad); y0=Math.max(0,y0-pad); x1=Math.min(w-1,x1+pad); y1=Math.min(h-1,y1+pad);
   const cw=x1-x0+1, ch=y1-y0+1, s2=Math.min(1,max/Math.max(cw,ch));
   const o=document.createElement("canvas"); o.width=Math.round(cw*s2); o.height=Math.round(ch*s2); o.getContext("2d").drawImage(c,x0,y0,cw,ch,0,0,o.width,o.height);
   let url=o.toDataURL("image/png");
-  if(url.length>300000){ const j=document.createElement("canvas"); j.width=o.width; j.height=o.height; const jx=j.getContext("2d"); jx.fillStyle="#fff"; jx.fillRect(0,0,j.width,j.height); jx.drawImage(o,0,0); url=j.toDataURL("image/jpeg",0.9); }
+  if(url.length>300000){ const j=document.createElement("canvas"); j.width=o.width; j.height=o.height; const jx=j.getContext("2d"); jx.fillStyle=bg&&uniform?`rgb(${bg.join(",")})`:"#fff"; jx.fillRect(0,0,j.width,j.height); jx.drawImage(o,0,0); url=j.toDataURL("image/jpeg",0.9); }
   return url;
 }
-// logos déjà enregistrés avant cette version : ajustés à l'affichage, sans rien modifier dans le compte
-const LOGO_FIT={};
+// logos : ajustés à l'affichage + couleur du cadre = couleur du fond du logo
+const LOGO_FIT={}, LOGO_BG={};
 function logoSrc(p){
   const l=p.logo; if(!l) return null;
   if(LOGO_FIT[l]) return LOGO_FIT[l]==="pending"?l:LOGO_FIT[l];
   LOGO_FIT[l]="pending";
-  const img=new Image(); img.onload=()=>{ try{ LOGO_FIT[l]=fitLogo(img,600)||l; }catch(e){ LOGO_FIT[l]=l; } renderPreview(); }; img.onerror=()=>{ LOGO_FIT[l]=l; }; img.src=l;
+  const img=new Image();
+  img.onload=()=>{
+    try{
+      const fitted=fitLogo(img,600)||l; LOGO_FIT[l]=fitted;
+      const i2=new Image(); i2.onload=()=>{ try{ const {d,w,h}=logoCanvas(i2); LOGO_BG[l]=logoBackground(d,w,h); }catch(e){ LOGO_BG[l]=null; } renderPreview(); if(typeof showLogo==="function"&&draftProfile&&draftProfile.logo===l) showLogo(); }; i2.src=fitted;
+    }catch(e){ LOGO_FIT[l]=l; }
+    renderPreview();
+  };
+  img.onerror=()=>{ LOGO_FIT[l]=l; }; img.src=l;
   return l;
 }
+const logoInfo = p => p.logo ? LOGO_BG[p.logo] : null;
+// image opaque (photo, fond coloré…) : elle remplit tout le cadre. Logo transparent : fond blanc derrière.
+const logoFull = p => { const i=logoInfo(p); return !!(i && !i.transp); };
+const logoBgRgb = p => { const i=logoInfo(p); return (i && !i.transp && i.uniform && i.bg) ? i.bg : [255,255,255]; };
+const logoBgCss = p => `rgb(${logoBgRgb(p).join(",")})`;
 
 /* ================= state ================= */
 const DEFAULT_PROFILE = {
@@ -1342,7 +1362,7 @@ function renderPreview(){
   const ref=refText(inv);
   $("#sheet").innerHTML=`
     <div class="sh-band">
-      <div class="l">${p.logo?`<div class="sh-logo"><img src="${logoSrc(p)}" alt=""></div>`:""}<div class="nm">${esc(p.name)||'<span class="sh-empty">Ton entreprise</span>'}</div></div>
+      <div class="l">${p.logo?`<div class="sh-logo${logoFull(p)?" full":""}" style="background:${logoBgCss(p)}"><img src="${logoSrc(p)}" alt=""></div>`:""}<div class="nm">${esc(p.name)||'<span class="sh-empty">Ton entreprise</span>'}</div></div>
       <div class="r"><div class="big">${TYPE[t].title}</div><div class="no">N° ${esc(inv.number||"attribué à l'enregistrement")}</div></div>
     </div>
     <div class="sh-body">
@@ -1396,10 +1416,18 @@ function buildPdf(inv,p){
   let nx=M;
   if(p.logo){
     try{ const src=logoSrc(p); const pr=doc.getImageProperties(src); const ratio=pr.width/pr.height;
-      const pad=2; let ih=24, iw=ih*ratio; if(iw>60){ iw=60; ih=iw/ratio; }
+      const full=logoFull(p), pad=full?0:2; let ih=full?28:24, iw=ih*ratio; if(iw>(full?62:60)){ iw=full?62:60; ih=iw/ratio; }
       const bw=iw+2*pad, bh=ih+2*pad, by=(BH-bh)/2;
-      doc.setFillColor(255,255,255); doc.roundedRect(M,by,bw,bh,2.5,2.5,"F");
-      doc.addImage(src,pr.fileType||"PNG",M+(bw-iw)/2,by+(bh-ih)/2,iw,ih,undefined,"FAST"); nx=M+bw+6; }catch(e){}
+      if(full){
+        let clipped=false;
+        try{ doc.saveGraphicsState(); doc.roundedRect(M,by,bw,bh,2.5,2.5,null); doc.clip(); doc.discardPath(); clipped=true; }catch(e){}
+        doc.addImage(src,pr.fileType||"PNG",M,by,iw,ih,undefined,"FAST");
+        if(clipped) try{ doc.restoreGraphicsState(); }catch(e){}
+      } else {
+        doc.setFillColor(...logoBgRgb(p)); doc.roundedRect(M,by,bw,bh,2.5,2.5,"F");
+        doc.addImage(src,pr.fileType||"PNG",M+(bw-iw)/2,by+(bh-ih)/2,iw,ih,undefined,"FAST");
+      }
+      nx=M+bw+6; }catch(e){}
   }
   doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(16);
   const nm=doc.splitTextToSize(pdfSafe(p.name||""),W-M-nx-62).slice(0,3);
@@ -1777,7 +1805,7 @@ $$("#payMeans input").forEach(c=>c.addEventListener("change",()=>{ draftProfile.
 $("#sYear").addEventListener("change",e=>{ draftProfile.numYear=e.target.value==="1"; numExample(); });
 $("#sReset").addEventListener("change",e=>{ draftProfile.numReset=e.target.checked; if(e.target.checked){ draftProfile.numYear=true; $("#sYear").value="1"; } $("#sYear").disabled=e.target.checked; numExample(); });
 Object.values(NUMF).forEach(id=>$("#"+id).addEventListener("input",numExample));
-function showLogo(){ const l=draftProfile.logo; $("#logoPrev").innerHTML=l?`<img src="${logoSrc(draftProfile)||l}" alt="">`:"Pas de logo"; $("#logoDel").style.display=l?"inline-flex":"none"; }
+function showLogo(){ const l=draftProfile.logo; $("#logoPrev").innerHTML=l?`<img src="${logoSrc(draftProfile)||l}" alt="">`:"Pas de logo"; $("#logoPrev").style.background=l?logoBgCss(draftProfile):""; $("#logoDel").style.display=l?"inline-flex":"none"; }
 Object.entries(SMAP).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{ let v=e.target.value; if(["defaultTva","payDays","numDigits","quoteDays"].includes(k)) v=num(v); draftProfile[k]=v; if(["prefix","prefixDevis","prefixAvoir","numDigits"].includes(k)) numExample(); }));
 $("#sFranchise").addEventListener("change",e=>{ draftProfile.franchise=e.target.checked; $("#tvaFields").style.display=e.target.checked?"none":"block"; });
 $("#sDebits").addEventListener("change",e=>{ draftProfile.tvaDebits=e.target.checked; });
