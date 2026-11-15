@@ -148,8 +148,8 @@ textarea{resize:vertical;min-height:40px}
 .sh{position:absolute;inset:0;font-size:1.43cqw;line-height:1.35;display:flex;flex-direction:column}
 .sh-band{background:var(--inv);color:#fff;height:20cqw;padding:0 7.14cqw;display:flex;align-items:center;justify-content:space-between;gap:3cqw;flex:none}
 .sh-band .l{display:flex;align-items:center;gap:2.6cqw;min-width:0}
-.sh-logo{background:#fff;border-radius:1.2cqw;width:13cqw;height:11cqw;display:grid;place-items:center;padding:1.2cqw;flex:none}
-.sh-logo img{max-width:100%;max-height:100%;object-fit:contain}
+.sh-logo{background:#fff;border-radius:1.2cqw;padding:.9cqw;display:flex;align-items:center;justify-content:center;flex:none}
+.sh-logo img{max-height:11.7cqw;max-width:29cqw;width:auto;height:auto;display:block}
 .sh-band .nm{font-weight:700;font-size:3cqw;line-height:1.15}
 .sh-band .r{text-align:right}
 .sh-band .big{font-size:5.2cqw;font-weight:700;letter-spacing:.04em;line-height:1}
@@ -712,6 +712,30 @@ function applyExamples(){
 }
 applyExamples();
 
+/* ================= logo : rogne les marges vides pour qu'il remplisse son cadre ================= */
+function fitLogo(img, max){
+  let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height; const sc=Math.min(1,1200/Math.max(w,h)); w=Math.max(1,Math.round(w*sc)); h=Math.max(1,Math.round(h*sc));
+  const c=document.createElement("canvas"); c.width=w; c.height=h; const x=c.getContext("2d"); x.drawImage(img,0,0,w,h);
+  const d=x.getImageData(0,0,w,h).data; let x0=w,y0=h,x1=-1,y1=-1;
+  for(let y=0;y<h;y++) for(let i=0;i<w;i++){ const k=(y*w+i)*4; const a=d[k+3]; if(a>20 && !(d[k]>242&&d[k+1]>242&&d[k+2]>242)){ if(i<x0)x0=i; if(i>x1)x1=i; if(y<y0)y0=y; if(y>y1)y1=y; } }
+  if(x1<0) return null;
+  const pad=Math.round(Math.max(x1-x0,y1-y0)*0.03); x0=Math.max(0,x0-pad); y0=Math.max(0,y0-pad); x1=Math.min(w-1,x1+pad); y1=Math.min(h-1,y1+pad);
+  const cw=x1-x0+1, ch=y1-y0+1, s2=Math.min(1,max/Math.max(cw,ch));
+  const o=document.createElement("canvas"); o.width=Math.round(cw*s2); o.height=Math.round(ch*s2); o.getContext("2d").drawImage(c,x0,y0,cw,ch,0,0,o.width,o.height);
+  let url=o.toDataURL("image/png");
+  if(url.length>300000){ const j=document.createElement("canvas"); j.width=o.width; j.height=o.height; const jx=j.getContext("2d"); jx.fillStyle="#fff"; jx.fillRect(0,0,j.width,j.height); jx.drawImage(o,0,0); url=j.toDataURL("image/jpeg",0.9); }
+  return url;
+}
+// logos déjà enregistrés avant cette version : ajustés à l'affichage, sans rien modifier dans le compte
+const LOGO_FIT={};
+function logoSrc(p){
+  const l=p.logo; if(!l) return null;
+  if(LOGO_FIT[l]) return LOGO_FIT[l]==="pending"?l:LOGO_FIT[l];
+  LOGO_FIT[l]="pending";
+  const img=new Image(); img.onload=()=>{ try{ LOGO_FIT[l]=fitLogo(img,600)||l; }catch(e){ LOGO_FIT[l]=l; } renderPreview(); }; img.onerror=()=>{ LOGO_FIT[l]=l; }; img.src=l;
+  return l;
+}
+
 /* ================= state ================= */
 const DEFAULT_PROFILE = {
   name:"", legalForm:"Entrepreneur individuel (EI)", address:"", siret:"", rcs:"", email:"", phone:"",
@@ -1102,7 +1126,7 @@ function renderPreview(){
   const cliExtra=[]; if(cl.kind==="pro"&&cl.siren) cliExtra.push("SIREN : "+cl.siren); if(cl.kind==="pro"&&cl.tva) cliExtra.push("TVA : "+cl.tva);
   $("#sheet").innerHTML=`
     <div class="sh-band">
-      <div class="l">${p.logo?`<div class="sh-logo"><img src="${p.logo}" alt=""></div>`:""}<div class="nm">${esc(p.name)||'<span class="sh-empty">Ton entreprise</span>'}</div></div>
+      <div class="l">${p.logo?`<div class="sh-logo"><img src="${logoSrc(p)}" alt=""></div>`:""}<div class="nm">${esc(p.name)||'<span class="sh-empty">Ton entreprise</span>'}</div></div>
       <div class="r"><div class="big">FACTURE</div><div class="no">N° ${esc(inv.number||"attribué à l'enregistrement")}</div></div>
     </div>
     <div class="sh-body">
@@ -1160,9 +1184,11 @@ function buildPdf(inv,p){
   doc.setFillColor(...ACC); doc.rect(0,0,W,BH,"F");
   let nx=M;
   if(p.logo){
-    try{ const pr=doc.getImageProperties(p.logo); const bw=27.5,bh=23.5; doc.setFillColor(255,255,255); doc.roundedRect(M,(BH-bh)/2,bw,bh,2.5,2.5,"F");
-      let w=bw-5,h=w*pr.height/pr.width; if(h>bh-5){h=bh-5;w=h*pr.width/pr.height;}
-      doc.addImage(p.logo,pr.fileType||"PNG",M+(bw-w)/2,(BH-h)/2,w,h,undefined,"FAST"); nx=M+bw+6; }catch(e){}
+    try{ const src=logoSrc(p); const pr=doc.getImageProperties(src); const ratio=pr.width/pr.height;
+      const pad=2; let ih=24, iw=ih*ratio; if(iw>60){ iw=60; ih=iw/ratio; }
+      const bw=iw+2*pad, bh=ih+2*pad, by=(BH-bh)/2;
+      doc.setFillColor(255,255,255); doc.roundedRect(M,by,bw,bh,2.5,2.5,"F");
+      doc.addImage(src,pr.fileType||"PNG",M+(bw-iw)/2,by+(bh-ih)/2,iw,ih,undefined,"FAST"); nx=M+bw+6; }catch(e){}
   }
   doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(16);
   const nm=doc.splitTextToSize(pdfSafe(p.name||""),W-M-nx-62).slice(0,3);
@@ -1396,8 +1422,7 @@ $("#sFranchise").addEventListener("change",e=>{ draftProfile.franchise=e.target.
 $("#sDebits").addEventListener("change",e=>{ draftProfile.tvaDebits=e.target.checked; });
 $("#logoFile").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
-  rd.onload=()=>{ const img=new Image(); img.onload=()=>{ const max=360; let w=img.width,h=img.height; const s=Math.min(1,max/Math.max(w,h)); w=Math.round(w*s); h=Math.round(h*s);
-    const c=document.createElement("canvas"); c.width=w; c.height=h; c.getContext("2d").drawImage(img,0,0,w,h); draftProfile.logo=c.toDataURL("image/png"); showLogo(); };
+  rd.onload=()=>{ const img=new Image(); img.onload=()=>{ const u=fitLogo(img,600); if(!u) return toast("Logo introuvable sur l'image."); draftProfile.logo=u; showLogo(); toast("Logo ajusté — pense à enregistrer."); };
     img.onerror=()=>toast("Image illisible."); img.src=rd.result; };
   rd.readAsDataURL(f); e.target.value="";
 });
