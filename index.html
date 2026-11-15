@@ -336,6 +336,9 @@ table.list .r{text-align:right}
 .pill.refuse{background:#efece6;color:#8b3a2e}
 .pill.expire{background:var(--red-soft);color:var(--red)}
 .pill.avoir{background:#efe6f3;color:#6a3f7a}
+.pill.annulee{background:#ececec;color:#6b6b6b;text-decoration:line-through}
+.perm-list{display:grid;gap:4px;margin:8px 0 10px}.perm-list label{display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer;line-height:1.35}.perm-list input{margin-top:2px;flex:none}
+.team-row.col{flex-direction:column;align-items:stretch}.team-row .tr-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .sh-accord{margin-top:2cqw;border:1.5px dashed #c8c8c8;border-radius:.9cqw;height:11cqw;padding:1.2cqw}
 .sh-accord small{font-size:1.05cqw;text-transform:uppercase;letter-spacing:.08em;color:#888}
 details.more{margin-top:14px;border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;background:#faf9f6}
@@ -531,7 +534,7 @@ details.more[open] summary{margin-bottom:12px}
   <div class="toolbar">
     <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="text" id="search" placeholder="Rechercher un n° ou un client…"></div>
     <div class="chips" id="chips">
-      <button class="chip on" data-v="">Toutes</button><button class="chip" data-v="brouillon">Brouillons</button><button class="chip" data-v="envoyee">Émises</button><button class="chip" data-v="payee">Payées</button><button class="chip" data-v="retard">En retard</button><button class="chip" data-v="avoir">Avoirs</button>
+      <button class="chip on" data-v="">Toutes</button><button class="chip" data-v="brouillon">Brouillons</button><button class="chip" data-v="envoyee">Émises</button><button class="chip" data-v="payee">Payées</button><button class="chip" data-v="retard">En retard</button><button class="chip" data-v="annulee">Annulées</button><button class="chip" data-v="avoir">Avoirs</button>
     </div>
   </div>
   <div id="invList"></div>
@@ -573,7 +576,7 @@ details.more[open] summary{margin-bottom:12px}
 <section class="view" id="v-clients">
   <div class="page-head"><div><h1>Clients</h1><p>Enregistre-les une fois, retrouve-les en un clic.</p></div></div>
   <div class="grid-edit">
-    <div class="card">
+    <div class="card" id="clFormCard">
       <div class="card-h"><div class="ico b">+</div><div><h3 id="clFormTitle">Nouveau client</h3><p>Coordonnées reprises sur tes factures</p></div></div>
       <div class="seg" id="kKindSeg"><button data-v="particulier" class="on">Particulier</button><button data-v="pro">Professionnel</button></div>
       <label class="f"><span>Nom / Raison sociale</span><input type="text" id="kName"></label>
@@ -599,7 +602,7 @@ details.more[open] summary{margin-bottom:12px}
 <section class="view" id="v-settings">
   <div class="welcome" id="welcome" style="display:none"><b>Bienvenue ! 👋</b>Commence par remplir les infos de ton entreprise : elles apparaîtront sur toutes tes factures. Tu faisais déjà des factures ailleurs ? Indique ton prochain numéro dans « Numérotation ». Ensuite, clique sur « Enregistrer ».</div>
   <div class="page-head"><div><h1>Mon entreprise</h1><p>Ces infos apparaissent sur toutes tes factures.</p></div><button class="btn primary" id="btnSettingsSave2">Enregistrer</button></div>
-  <div class="ws-note" id="wsNote" style="display:none">Tu travailles dans l'espace d'une autre entreprise : seul son propriétaire peut modifier ces informations.</div>
+  <div class="ws-note" id="wsNote" style="display:none"></div>
   <div class="grid-edit">
     <div id="setCards">
       <div class="card">
@@ -743,9 +746,11 @@ details.more[open] summary{margin-bottom:12px}
       <div class="card" id="teamCard" style="margin-top:16px">
         <div class="card-h"><div class="ico b">👥</div><div><h3>Mon équipe</h3><p>Donner accès à d'autres personnes</p></div></div>
         <label class="f"><span>Email de la personne à inviter</span><input type="email" id="tEmail" placeholder="collegue@exemple.fr"></label>
+        <small class="muted" style="font-weight:700">Ce qu'elle aura le droit de faire :</small>
+        <div class="perm-list" id="tPerms"></div>
         <button class="btn" id="btnInvite" style="width:100%">Inviter</button>
         <div id="teamList" style="margin-top:10px"></div>
-        <p class="hint" style="margin:10px 0 0">La personne se connecte à l'appli avec cette adresse email exacte (adresse vérifiée) : l'invitation s'affiche et elle rejoint ton espace. Elle peut créer factures, devis et clients, mais pas modifier les infos de l'entreprise ni l'équipe.</p>
+        <p class="hint" style="margin:10px 0 0">La personne se connecte à l'appli avec cette adresse email exacte (adresse vérifiée) : l'invitation s'affiche et elle rejoint ton espace. Tu choisis ses droits ici, et tu peux les changer à tout moment. Tout le monde peut consulter les documents ; seul toi (le propriétaire) gères l'équipe.</p>
       </div>
     </div>
   </div>
@@ -954,7 +959,7 @@ const DEFAULT_PROFILE = {
   payMeans:["virement"], footer:"", logo:null, accent:"#1f5c45", signature:null, showSignature:true, signName:""
 };
 // S.uid = la personne connectée ; S.ws = l'entreprise (espace) dont on affiche les données
-const S = { uid:null, user:null, ws:null, isOwner:true, memberOf:{}, members:{}, invites:[], invite:null, profile:{...DEFAULT_PROFILE}, invoices:{}, clients:{}, catalog:{}, cur:null, filter:"", qfilter:"", unsubs:[], wsUnsubs:[], profileLoaded:false };
+const S = { uid:null, user:null, ws:null, isOwner:true, myPerms:{}, memberOf:{}, members:{}, invites:[], invite:null, profile:{...DEFAULT_PROFILE}, invoices:{}, clients:{}, catalog:{}, cur:null, filter:"", qfilter:"", unsubs:[], wsUnsubs:[], profileLoaded:false };
 const R = {
   prof: () => doc(db,"users",S.ws),
   inv: id => doc(db,"users",S.ws,"invoices",id),
@@ -979,18 +984,27 @@ const TYPE = {
 };
 const docType = d => (d && d.type) || "facture";
 const STATUS = {
-  facture:[["brouillon","Brouillon"],["envoyee","Émise"],["payee","Payée"]],
+  facture:[["brouillon","Brouillon"],["envoyee","Émise"],["payee","Payée"],["annulee","Annulée par avoir"]],
   devis:[["brouillon","Brouillon"],["envoye","Envoyé"],["accepte","Accepté"],["refuse","Refusé"]],
   avoir:[["brouillon","Brouillon"],["envoyee","Émis"],["payee","Remboursé / déduit"]]
 };
 // facture / avoir : brouillon (sans numéro) → émis (numéro définitif, verrouillé) → payé
 const isIssued = d => !!(d && d.number) && docType(d)!=="devis";
-const stOf = d => docType(d)==="devis" ? d.status : !d.number ? "brouillon" : (d.status==="payee" ? "payee" : "envoyee");
+const stOf = d => docType(d)==="devis" ? d.status : !d.number ? "brouillon" : isCancelled(d) ? "annulee" : (d.status==="payee" ? "payee" : "envoyee");
 const statusLabel = d => { const st=effStatus(d); if(st==="retard") return "En retard"; if(st==="expire") return "Expiré"; const f=(STATUS[docType(d)]||[]).find(x=>x[0]===st); return f?f[1]:st; };
 const isLate = inv => docType(inv)==="facture" && stOf(inv)==="envoyee" && inv.dueDate && inv.dueDate < todayISO();
 const isExpired = q => docType(q)==="devis" && ["brouillon","envoye"].includes(q.status) && q.validUntil && q.validUntil < todayISO();
 const effStatus = d => isLate(d) ? "retard" : isExpired(d) ? "expire" : stOf(d);
 // verrouillé = émis ET enregistré comme tel dans la base
+// droits des membres d'une équipe (le propriétaire a tous les droits)
+const PERMS=[["invoices","Créer et émettre des factures et des avoirs"],["quotes","Créer et modifier des devis"],["payments","Indiquer les paiements reçus"],["clients","Modifier les clients et le catalogue"],["company","Modifier les infos de l'entreprise (identité, TVA, numérotation…)"]];
+const PERM_DEFAULT = k => k!=="company";
+const can = k => S.isOwner || ((S.myPerms||{})[k] ?? PERM_DEFAULT(k));
+const canDoc = d => can(docType(d)==="devis"?"quotes":"invoices");
+// avoirs : une facture entièrement couverte par ses avoirs est « annulée par avoir » (elle reste dans la numérotation)
+const avoirsOf = f => Object.values(S.invoices).filter(a=>docType(a)==="avoir" && a.number && a.ref && a.ref.id===f.id);
+const creditedOf = f => r2(avoirsOf(f).reduce((s,a)=>s+((a.totals&&a.totals.ttc)||0),0));
+const isCancelled = d => docType(d)==="facture" && !!d.number && !!d.totals && d.totals.ttc>0 && creditedOf(d) >= r2(d.totals.ttc)-0.005;
 const isLockedEd = d => isIssued(d) && !!S.invoices[d.id] && isIssued(S.invoices[d.id]);
 const titleOf = d => d.kind==="acompte" ? "FACTURE D'ACOMPTE" : TYPE[docType(d)].title;
 const labelOf = d => d.kind==="acompte" ? "Facture d'acompte" : TYPE[docType(d)].label;
@@ -1166,12 +1180,12 @@ function stopSession(){
 }
 function openWorkspace(ws){
   S.wsUnsubs.forEach(u=>{ try{u();}catch(_){} }); S.wsUnsubs=[];
-  S.ws=ws; S.isOwner = ws===S.uid;
+  S.ws=ws; S.isOwner = ws===S.uid; S.myPerms={};
   S.profile={...DEFAULT_PROFILE}; S.invoices={}; S.clients={}; S.catalog={}; S.members={}; S.invites=[]; S.profileLoaded=false;
   Backup.cfg=null; Backup.perm=false; Backup.ui();
   lsSet("ws:"+S.uid, ws);
   $("#welcome").style.display="none";
-  renderWsBar();
+  renderWsBar(); applyPerms(true);
   loadEditor(newInvoice()); showTab("edit");
   setSync("Chargement…");
   let first=true;
@@ -1202,6 +1216,11 @@ function openWorkspace(ws){
     const o={}; s.docs.forEach(d=>{ o[d.id]=d.data(); }); S.clients=o;
     renderClients(); fillClientPick();
   }, err));
+  if(!S.isOwner) S.wsUnsubs.push(onSnapshot(R.mem(S.uid), s=>{
+    if(!here()) return;
+    if(!s.exists()) return lostAccess(ws);
+    S.myPerms=(s.data()&&s.data().perms)||{}; applyPerms();
+  }, err));
   if(S.isOwner) S.wsUnsubs.push(onSnapshot(R.col("members"), s=>{
     if(!here()) return;
     const o={}; s.docs.forEach(d=>{ o[d.id]=d.data(); }); S.members=o; renderTeam();
@@ -1215,6 +1234,16 @@ async function lostAccess(ws){
 }
 
 /* ================= espaces partagés / équipe ================= */
+function applyPerms(silent){
+  const show=(sel,on)=>$$(sel).forEach(e=>e.style.display=on?"":"none");
+  show("#btnNewF,#btnNewSide,#btnNew2", can("invoices"));
+  show("#btnNewD,#btnNewSideD,#btnNewQ", can("quotes"));
+  show("#clFormCard", can("clients"));
+  if(silent) return;
+  renderList(); renderQuotes(); renderClients();
+  if($("#v-settings").classList.contains("on")) fillSettings();
+  if(S.cur){ if(!S.cur.number && !canDoc(S.cur) && (can("invoices")||can("quotes"))) loadEditor(newDoc(can("invoices")?"facture":"devis")); else loadEditor(S.cur); }
+}
 function renderWsBar(){
   const ids=Object.keys(S.memberOf||{}), bar=$("#wsBar");
   if(!ids.length && S.isOwner){ bar.style.display="none"; return; }
@@ -1260,7 +1289,7 @@ $("#invYes").addEventListener("click",async()=>{
     }
     try{ await u.getIdToken(true); }catch(_){}
     const em=(u.email||"").toLowerCase();
-    await setDoc(doc(db,"users",iv.owner,"members",S.uid),{email:em, joinedAt:Date.now()});
+    await setDoc(doc(db,"users",iv.owner,"members",S.uid),{email:em, joinedAt:Date.now(), perms:iv.perms||{}});
     await setDoc(R.me(),{memberOf:{[iv.owner]:iv.ownerName||"Entreprise"}},{merge:true});
     try{ await deleteDoc(doc(db,"invites",em)); }catch(_){}
     S.memberOf={...S.memberOf,[iv.owner]:iv.ownerName||"Entreprise"}; S.invite=null;
@@ -1274,13 +1303,21 @@ async function loadInvites(){
   try{ const s=await getDocs(query(collection(db,"invites"),where("owner","==",S.uid))); S.invites=s.docs.map(d=>d.data()); }catch(e){ console.error(e); S.invites=[]; }
   renderTeam();
 }
+const permBoxes = (perms,attr) => PERMS.map(([k,l])=>`<label><input type="checkbox" value="${k}" ${attr||""} ${(perms&&perms[k]!=null?perms[k]:PERM_DEFAULT(k))?"checked":""}><span>${esc(l)}</span></label>`).join("");
+const permSummary = perms => { const on=PERMS.filter(([k])=>(perms&&perms[k]!=null?perms[k]:PERM_DEFAULT(k))); return on.length ? on.map(([,l])=>l.split(" (")[0]).join(" · ") : "Consultation seulement"; };
 function renderTeam(){
   const box=$("#teamList"); if(!box) return;
+  if(!$("#tPerms").children.length) $("#tPerms").innerHTML=permBoxes({});
   const mem=Object.entries(S.members||{}), inv=S.invites||[];
   box.innerHTML = (mem.length||inv.length) ? [
-    ...mem.map(([id,m])=>`<div class="team-row"><div><b>${esc(m.email||"?")}</b><small>A accès${m.joinedAt?" depuis le "+frDate(new Date(m.joinedAt).toISOString().slice(0,10)):""}</small></div><button class="btn sm ghost danger" data-rm="${esc(id)}">Retirer</button></div>`),
-    ...inv.map(i=>`<div class="team-row"><div><b>${esc(i.email)}</b><small>Invitation en attente</small></div><button class="btn sm ghost danger" data-unv="${esc(i.email)}">Annuler</button></div>`)
+    ...mem.map(([id,m])=>`<div class="team-row col"><div class="tr-top"><div><b>${esc(m.email||"?")}</b><small>A accès${m.joinedAt?" depuis le "+frDate(new Date(m.joinedAt).toISOString().slice(0,10)):""}</small></div><button class="btn sm ghost danger" data-rm="${esc(id)}">Retirer</button></div><div class="perm-list" data-pm="${esc(id)}">${permBoxes(m.perms)}</div></div>`),
+    ...inv.map(i=>`<div class="team-row"><div><b>${esc(i.email)}</b><small>Invitation en attente · ${esc(permSummary(i.perms))}</small></div><button class="btn sm ghost danger" data-unv="${esc(i.email)}">Annuler</button></div>`)
   ].join("") : `<p class="muted" style="margin:6px 0 0;font-size:13px">Personne d'autre n'a accès pour l'instant.</p>`;
+  $$("#teamList [data-pm] input").forEach(c=>c.addEventListener("change",async()=>{
+    const id=c.closest("[data-pm]").dataset.pm, perms={};
+    $$(`#teamList [data-pm="${id}"] input`).forEach(x=>perms[x.value]=x.checked);
+    try{ await updateDoc(R.mem(id),{perms}); toast("Droits mis à jour."); }catch(e){ fbErr(e); }
+  }));
   $$("#teamList [data-rm]").forEach(b=>b.addEventListener("click",()=>{ const m=S.members[b.dataset.rm]||{};
     confirmBox("Retirer cette personne ?",`${m.email||"Cette personne"} n'aura plus accès à tes factures. Les documents qu'elle a créés restent dans ton espace.`,async()=>{ try{ await deleteDoc(R.mem(b.dataset.rm)); toast("Accès retiré."); }catch(e){ fbErr(e); } }); }));
   $$("#teamList [data-unv]").forEach(b=>b.addEventListener("click",async()=>{ try{ await deleteDoc(doc(db,"invites",b.dataset.unv)); toast("Invitation annulée."); loadInvites(); }catch(e){ fbErr(e); } }));
@@ -1291,9 +1328,10 @@ $("#btnInvite").addEventListener("click",async()=>{
   if(em===(S.user.email||"").toLowerCase()) return toast("C'est ta propre adresse 🙂");
   if(!S.profile.name) return toast("Enregistre d'abord le nom de ton entreprise.");
   if(Object.values(S.members).some(m=>m.email===em)) return toast("Cette personne a déjà accès.");
+  const perms={}; $$("#tPerms input").forEach(c=>perms[c.value]=c.checked);
   try{
-    await setDoc(doc(db,"invites",em),{owner:S.uid, ownerName:S.profile.name||"", email:em, at:Date.now()});
-    $("#tEmail").value=""; loadInvites();
+    await setDoc(doc(db,"invites",em),{owner:S.uid, ownerName:S.profile.name||"", email:em, at:Date.now(), perms});
+    $("#tEmail").value=""; $("#tPerms").innerHTML=permBoxes({}); loadInvites();
     const link=location.origin+location.pathname;
     const body=`Bonjour,\n\nJe t'ai donné accès aux factures de ${S.profile.name} dans l'appli « Mes factures ».\n\n1. Ouvre ${link}\n2. Connecte-toi (ou crée ton compte) avec cette adresse : ${em}\n3. Accepte l'invitation qui s'affiche.\n\nÀ bientôt !`;
     if(navigator.clipboard) navigator.clipboard.writeText(body).catch(()=>{});
@@ -1353,7 +1391,7 @@ function renderSwatches(){
   $("#swatchesTop").innerHTML="<span>Couleur</span>"+html(S.profile.accent||"#1f5c45");
   $("#swatchesSet").innerHTML=html(cur);
   $$("#swatchesTop .sw").forEach(b=>b.addEventListener("click",async()=>{
-    if(!S.isOwner) return toast("Seul le propriétaire de l'entreprise peut changer la couleur.");
+    if(!can("company")) return toast("Tu n'as pas le droit de modifier les infos de l'entreprise.");
     if(S.profile.accent===b.dataset.c) return;
     S.profile.accent=b.dataset.c; if(draftProfile) draftProfile.accent=b.dataset.c;
     applyAccent(); renderPreview();
@@ -1398,25 +1436,29 @@ function refInfoText(inv){
 function refreshLockUi(){
   const inv=S.cur, t=docType(inv), locked=isLockedEd(inv);
   const lb=$("#lockBanner");
-  if(locked){ lb.className="lock-banner"; lb.style.display="flex";
+  if(locked && isCancelled(inv)){ lb.className="lock-banner"; lb.style.display="flex";
+    lb.innerHTML=`<span>🚫</span><span><b>Facture annulée par avoir</b> (${avoirsOf(inv).map(a=>esc(a.number)).join(", ")}). Elle reste dans ta numérotation et dans tes archives, comme l'exige la loi, mais elle n'est plus à payer.</span>`; }
+  else if(locked){ lb.className="lock-banner"; lb.style.display="flex";
     lb.innerHTML=`<span>🔒</span><span><b>Document émis : il est verrouillé.</b> On ne peut plus le modifier ni le supprimer (la numérotation doit rester continue). Tu peux seulement indiquer le paiement${t==="facture"?". Pour corriger ou annuler cette facture, crée un avoir.":"."}</span>`; }
+  else if(!canDoc(inv)){ lb.className="lock-banner info"; lb.style.display="flex"; lb.innerHTML=`<span>👁️</span><span><b>Lecture seule</b> : tu n'as pas le droit de créer ou modifier ${t==="devis"?"des devis":"des factures"} dans cet espace.</span>`; }
   else if(t==="devis" && inv.convertedTo){ lb.className="lock-banner info"; lb.style.display="flex"; lb.innerHTML=`<span>✅</span><span>Ce devis a été transformé en facture n° <b>${esc(inv.convertedTo.number)}</b>.</span>`; }
   else if(t!=="devis" && !inv.number){ lb.className="lock-banner info"; lb.style.display="flex"; lb.innerHTML=`<span>✏️</span><span><b>Brouillon</b> : modifiable à volonté, sans numéro. Quand tout est bon, clique sur « Émettre » : le numéro définitif est attribué et le document est verrouillé.</span>`; }
   else lb.style.display="none";
+  if(locked && !isCancelled(inv)){ const cr=creditedOf(inv); if(cr>0) lb.querySelector("span:last-child").insertAdjacentHTML("beforeend",` <b>Avoir déjà émis : ${money(cr)}</b> — reste dû ${money(r2(inv.totals.ttc-cr))}.`); }
 }
 function loadEditor(inv){
   if(!inv.type) inv.type="facture";
   if(!inv.client.email) inv.client.email="";
   S.cur=inv; const t=inv.type, T=TYPE[t], L=labelOf(inv);
-  const locked=isLockedEd(inv), draft = t!=="devis" && !inv.number;
+  const locked=isLockedEd(inv), draft = t!=="devis" && !inv.number, ro = !locked && !canDoc(inv), cancelled=isCancelled(inv);
   setLocked(false);
   $("#edTitle").textContent=L;
   $("#edNum").textContent = inv.number || (draft?"Brouillon":"Nouveau");
   $("#edSub").textContent = locked ? `Émis${t==="facture"?"e":""} le ${frDate(inv.issueDate)}${inv.issuedBy?" par "+inv.issuedBy:""}.` : draft ? "Remplis à gauche, l'aperçu se met à jour à droite." : inv.number ? `Créé le ${frDate(inv.issueDate)} — modifie puis enregistre.` : "Le numéro est attribué à l'enregistrement.";
   $("#infoTitle").textContent = `Infos ${t==="facture"?"de la facture":t==="devis"?"du devis":"de l'avoir"}`;
-  fillStatusOptions(t,draft);
+  fillStatusOptions(t,draft); if(cancelled) $("#status").innerHTML=`<option value="annulee">Annulée par avoir</option>`;
   $("#issueDate").value=inv.issueDate||""; $("#serviceDate").value=inv.serviceDate||""; $("#dueDate").value=inv.dueDate||""; $("#validUntil").value=inv.validUntil||"";
-  $("#status").value=stOf(inv); $("#status").disabled=draft; setSeg("natureSeg",inv.nature||"services");
+  $("#status").value=stOf(inv); $("#status").disabled=draft || cancelled || (locked && !can("payments")); setSeg("natureSeg",inv.nature||"services");
   $("#serviceWrap").style.display = t==="devis" ? "none" : "block";
   $("#dueWrap").style.display = t==="facture" ? "block" : "none";
   $("#validWrap").style.display = t==="devis" ? "block" : "none";
@@ -1429,15 +1471,17 @@ function loadEditor(inv){
   $("#hasDelivery").checked=!!inv.hasDelivery; $("#deliveryAddr").value=inv.deliveryAddress||""; $("#deliveryWrap").style.display=inv.hasDelivery?"block":"none";
   $("#notes").value=inv.notes||"";
   // boutons contextuels
-  const quoteOpen = t==="devis" && inv.number && !inv.convertedTo;
+  const quoteOpen = t==="devis" && inv.number && !inv.convertedTo && can("invoices");
   $("#btnToInvoice").style.display = quoteOpen ? "inline-flex" : "none";
   $("#btnAcompte").style.display = (quoteOpen && inv.status!=="refuse") ? "inline-flex" : "none";
-  $("#btnMakeAvoir").style.display = (t==="facture" && locked) ? "inline-flex" : "none";
-  $("#btnDraft").style.display = draft ? "inline-flex" : "none";
-  $("#btnSave").style.display = locked ? "none" : "inline-flex";
+  $("#btnMakeAvoir").style.display = (t==="facture" && locked && !cancelled && can("invoices")) ? "inline-flex" : "none";
+  $("#btnDraft").style.display = draft && !ro ? "inline-flex" : "none";
+  $("#btnSave").style.display = locked || ro ? "none" : "inline-flex";
+  $("#btnDup").style.display = canDoc(inv) ? "" : "none";
   $("#btnSave").textContent = t==="devis" ? (inv.number?"Enregistrer":"Enregistrer le devis") : `✓ Émettre ${t==="avoir"?"l'avoir":"la facture"}`;
   refreshLockUi();
   toggleProRow(); renderLines(); renderPreview();
+  if(ro) setLocked(true);
   $("#btnShare").style.display = SHARE_OK ? "inline-flex" : "none"; if(isLockedEd(inv)||(t==="devis"&&inv.number)) prefetchPdf(inv);
 }
 function autoliqHint(){ $("#autoliqHint").style.display = S.cur && S.cur.autoliq && !S.profile.franchise && !String(S.cur.client.tva||"").trim() ? "block" : "none"; }
@@ -1449,6 +1493,7 @@ $("#status").addEventListener("change",async e=>{
   const v=e.target.value;
   if(!isLockedEd(S.cur)){ S.cur.status=v; renderPreview(); return; }
   const orig=S.invoices[S.cur.id]; if(!orig) return;
+  if(!can("payments")){ e.target.value=stOf(orig); return toast("Tu n'as pas le droit d'indiquer les paiements."); }
   if(v==="payee"){ e.target.value=stOf(orig); openPaid(orig); return; }
   const u=clean(orig); u.status=v; delete u.paidAt; delete u.paidMethod; u.updatedAt=Date.now();
   try{ await Store.saveInvoice(u); S.invoices[u.id]=u; S.cur=clean(u); toast("Statut mis à jour."); renderPreview(); }
@@ -1517,10 +1562,13 @@ function devisToInvoice(q){
 }
 function makeAvoir(inv){
   if(!inv || !inv.number || docType(inv)!=="facture") return;
+  if(!can("invoices")) return toast("Tu n'as pas le droit de créer des avoirs.");
+  if(isCancelled(inv)) return toast("Cette facture est déjà entièrement annulée par avoir.");
+  const done=creditedOf(inv);
   const a=newDoc("avoir");
   Object.assign(a,{ clientId:inv.clientId, client:clean(inv.client), nature:inv.nature, lines:clean(inv.lines), autoliq:!!inv.autoliq, ref:{id:inv.id,number:inv.number,date:inv.issueDate}, notes:"" });
   loadEditor(a); showTab("edit");
-  toast("Avoir préparé : garde toutes les lignes pour annuler la facture, ou modifie-les pour un avoir partiel.");
+  toast(done>0 ? `Attention : ${money(done)} ont déjà été crédités sur cette facture. Ajuste les lignes pour ne pas dépasser ${money(r2(inv.totals.ttc-done))}.` : "Avoir préparé : garde toutes les lignes pour annuler la facture, ou modifie-les pour un avoir partiel.");
 }
 
 function renderLines(){
@@ -1530,7 +1578,7 @@ function renderLines(){
       <div class="ln-idx">${i+1}</div>
       <div class="ln-top">
         <textarea rows="1" data-k="desc" placeholder="Désignation (ex. ${esc(EX.line(i))})">${esc(l.desc)}</textarea>
-        <button class="btn ghost sm" data-star="${i}" title="Ajouter au catalogue">☆</button>
+        ${can("clients")?`<button class="btn ghost sm" data-star="${i}" title="Ajouter au catalogue">☆</button>`:""}
         <button class="btn ghost sm" data-del="${i}" title="Supprimer la ligne" ${S.cur.lines.length<2?"disabled":""}>✕</button>
       </div>
       <div class="ln-grid ${fr?"nofx":""}">
@@ -1553,7 +1601,7 @@ function renderLines(){
   });
   $$("#lines [data-del]").forEach(b=>b.addEventListener("click",()=>{ S.cur.lines.splice(+b.dataset.del,1); renderLines(); renderPreview(); }));
   $$("#lines [data-star]").forEach(b=>b.addEventListener("click",()=>saveToCatalog(S.cur.lines[+b.dataset.star])));
-  if(isLockedEd(S.cur)) setLocked(true);
+  if(isLockedEd(S.cur) || !canDoc(S.cur)) setLocked(true);
 }
 function autoGrow(t){ if(!t) return; t.style.height="auto"; t.style.height=(t.scrollHeight+3)+"px"; }
 
@@ -1562,6 +1610,11 @@ function issueProblem(inv){
   if(!inv.client.name.trim()) return `Indique le nom du client avant d'émettre ${T.the}.`;
   if(!inv.lines.some(l=>String(l.desc).trim())) return "Ajoute au moins une ligne avec une désignation.";
   if(!inv.issueDate) return "Indique la date d'émission.";
+  if(type==="avoir" && inv.ref){
+    const f=S.invoices[inv.ref.id];
+    if(f && f.totals){ const T=computeTotals(inv,S.profile); const left=r2(f.totals.ttc-creditedOf(f));
+      if(T.ttc > left+0.005) return `Le montant de l'avoir (${money(T.ttc)}) dépasse ce qui reste sur la facture ${f.number} (${money(left)}).`; }
+  }
   if(type!=="devis"){
     const last=Object.values(S.invoices).filter(i=>docType(i)===type && i.number && i.id!==inv.id).map(i=>i.issueDate||"").sort().pop();
     if(last && inv.issueDate<last) return `La date d'émission doit être le ${frDate(last)} ou après (date ${type==="avoir"?"du dernier avoir émis":"de la dernière facture émise"}), pour garder l'ordre chronologique.`;
@@ -1572,6 +1625,7 @@ async function saveCurrent(issue){
   const inv=S.cur, type=docType(inv), T=TYPE[type], L=labelOf(inv);
   if(!S.profileLoaded) return toast("Chargement en cours, réessaie dans une seconde.");
   if(isLockedEd(inv)) return toast(`${L} ${inv.number} est émis${type==="avoir"?"":"e"} : on ne peut plus la modifier.`);
+  if(!canDoc(inv)) return toast("Tu n'as pas le droit de modifier ce type de document.");
   const numbered = type==="devis" || !!issue;
   if(numbered){ const pb=issueProblem(inv); if(pb) return toast(pb); }
   if(S.profile.franchise) inv.autoliq=false;
@@ -1579,7 +1633,7 @@ async function saveCurrent(issue){
   try{
     // client : enregistré / mis à jour automatiquement
     const c=inv.client, nm=c.name.trim();
-    if(nm){
+    if(nm && can("clients")){
       let cid = inv.clientId && S.clients[inv.clientId] ? inv.clientId : (Object.values(S.clients).find(x=>(x.name||"").trim().toLowerCase()===nm.toLowerCase())||{}).id;
       if(!cid) cid=uid();
       const prev=S.clients[cid]||{};
@@ -1929,19 +1983,20 @@ const EMPTY_SVG=`<svg viewBox="0 0 120 90" fill="none"><rect x="30" y="8" width=
 const ttc = d => sign(d)*((d.totals&&d.totals.ttc)||0);
 function sortDocs(a,b){ return (b.issueDate||"").localeCompare(a.issueDate||"") || (b.number||"").localeCompare(a.number||"") || (b.createdAt-a.createdAt); }
 function rowActions(i){
-  const t=docType(i), b=[];
-  if(t==="facture" && i.number && i.status!=="payee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ Payée</button>`);
-  if(t==="avoir" && i.number && i.status!=="payee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ Remboursé</button>`);
+  const t=docType(i), b=[], st=stOf(i);
+  if(can("payments") && t==="facture" && st==="envoyee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ Payée</button>`);
+  if(can("payments") && t==="avoir" && i.number && i.status!=="payee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ Remboursé</button>`);
   if(isLate(i)) b.push(`<button class="btn sm" data-remind="${i.id}">✉ Relancer</button>`);
-  if(t==="devis" && i.number && !i.convertedTo && i.status!=="refuse"){ b.push(`<button class="btn sm" data-ac="${i.id}" title="Facture d'acompte">Acompte</button>`); b.push(`<button class="btn sm primary" data-conv="${i.id}">→ Facture</button>`); }
+  if(can("invoices") && t==="devis" && i.number && !i.convertedTo && i.status!=="refuse"){ b.push(`<button class="btn sm" data-ac="${i.id}" title="Facture d'acompte">Acompte</button>`); b.push(`<button class="btn sm primary" data-conv="${i.id}">→ Facture</button>`); }
   b.push(`<button class="btn sm" data-pdf="${i.id}">PDF</button>`);
-  if(!isIssued(i) && !(t==="devis" && (i.convertedTo || acomptesOf(i).length))) b.push(`<button class="btn sm ghost danger" data-del="${i.id}" title="Supprimer">✕</button>`);
+  if(canDoc(i) && !isIssued(i) && !(t==="devis" && (i.convertedTo || acomptesOf(i).length))) b.push(`<button class="btn sm ghost danger" data-del="${i.id}" title="Supprimer">✕</button>`);
   return b.join(" ");
 }
 function docRow(i){
   const st=effStatus(i);
   const typePill = docType(i)==="avoir" ? `<span class="pill avoir">Avoir</span> ` : i.kind==="acompte" ? `<span class="pill envoye">Acompte</span> ` : "";
-  const sub = docType(i)==="avoir"&&i.ref ? `<div class="muted" style="font-size:11.5px">sur ${esc(i.ref.number)}</div>` : i.convertedTo ? `<div class="muted" style="font-size:11.5px">→ ${esc(i.convertedTo.number)}</div>` : i.paidAt ? `<div class="muted" style="font-size:11.5px">le ${frDate(i.paidAt)}${i.paidMethod?" · "+esc(PAY_SHORT[i.paidMethod]||i.paidMethod):""}</div>` : "";
+  const cr = docType(i)==="facture"&&i.number ? creditedOf(i) : 0;
+  const sub = cr>0 ? `<div class="muted" style="font-size:11.5px">${isCancelled(i)?"par ":"avoir −"+money(cr)+" · "}${esc(avoirsOf(i).map(a=>a.number).join(", "))}</div>` : docType(i)==="avoir"&&i.ref ? `<div class="muted" style="font-size:11.5px">sur ${esc(i.ref.number)}</div>` : i.convertedTo ? `<div class="muted" style="font-size:11.5px">→ ${esc(i.convertedTo.number)}</div>` : i.paidAt ? `<div class="muted" style="font-size:11.5px">le ${frDate(i.paidAt)}${i.paidMethod?" · "+esc(PAY_SHORT[i.paidMethod]||i.paidMethod):""}</div>` : "";
   const due = docType(i)==="devis" ? frDate(i.validUntil) : frDate(i.dueDate);
   return `<tr class="click" data-id="${i.id}"><td class="inv-no">${typePill}${esc(i.number||"—")}</td><td><div class="cli-cell"><div class="avatar" style="background:${avColor(i.client?.name)}">${esc(initials(i.client?.name))}</div>${esc(i.client?.name)}</div></td><td>${frDate(i.issueDate)}</td><td>${due||"—"}</td><td class="r amount">${money(ttc(i))}</td>
     <td><span class="pill ${st}">${esc(statusLabel(i))}</span>${sub}</td><td class="r" style="white-space:nowrap">${rowActions(i)}</td></tr>`;
@@ -1968,15 +2023,15 @@ function askDelete(i){
 function renderList(){
   const all=Object.values(S.invoices).filter(i=>docType(i)!=="devis").sort(sortDocs);
   const fac=all.filter(i=>docType(i)==="facture"), av=all.filter(i=>docType(i)==="avoir");
-  const paid=fac.filter(i=>stOf(i)==="payee"), pend=fac.filter(i=>stOf(i)==="envoyee"), late=fac.filter(isLate), drafts=all.filter(i=>!i.number);
-  const refunded=av.filter(i=>stOf(i)==="payee");
-  const sum=a=>a.reduce((s,i)=>s+ttc(i),0);
+  const paid=fac.filter(i=>i.number&&i.status==="payee"), pend=fac.filter(i=>stOf(i)==="envoyee"), late=fac.filter(isLate), drafts=all.filter(i=>!i.number);
+  const refunded=av.filter(i=>i.number&&i.status==="payee");
+  const sum=a=>a.reduce((s,i)=>s+ttc(i),0), sumDue=a=>a.reduce((s,i)=>s+ttc(i)-creditedOf(i),0);
   const year=todayISO().slice(0,4);
   const caYear=sum(paid.filter(i=>(i.paidAt||i.issueDate||"").startsWith(year)))+sum(refunded.filter(i=>(i.paidAt||i.issueDate||"").startsWith(year)));
   $("#stats").innerHTML=`
     <div class="stat g"><div class="k">● Encaissé en ${year}</div><div class="v">${money(caYear)}</div><div class="s">${paid.length} facture${paid.length>1?"s":""} payée${paid.length>1?"s":""} au total</div></div>
-    <div class="stat a"><div class="k">◷ En attente</div><div class="v">${money(sum(pend))}</div><div class="s">${pend.length} facture${pend.length>1?"s":""} émise${pend.length>1?"s":""} non payée${pend.length>1?"s":""}${drafts.length?` · ${drafts.length} brouillon${drafts.length>1?"s":""}`:""}</div></div>
-    <div class="stat r ${late.length?"hot":""}"><div class="k">⚠ En retard</div><div class="v">${money(sum(late))}</div><div class="s">${late.length?`${late.length} facture${late.length>1?"s":""} à relancer`:"Rien à relancer 👌"}</div></div>`;
+    <div class="stat a"><div class="k">◷ En attente</div><div class="v">${money(sumDue(pend))}</div><div class="s">${pend.length} facture${pend.length>1?"s":""} émise${pend.length>1?"s":""} non payée${pend.length>1?"s":""}${drafts.length?` · ${drafts.length} brouillon${drafts.length>1?"s":""}`:""}</div></div>
+    <div class="stat r ${late.length?"hot":""}"><div class="k">⚠ En retard</div><div class="v">${money(sumDue(late))}</div><div class="s">${late.length?`${late.length} facture${late.length>1?"s":""} à relancer`:"Rien à relancer 👌"}</div></div>`;
   const qv=($("#search").value||"").toLowerCase(), fs=S.filter;
   const rows=all.filter(i=>(!qv||(i.number||"").toLowerCase().includes(qv)||(i.client?.name||"").toLowerCase().includes(qv)) && (!fs || (fs==="retard"?isLate(i): fs==="avoir"? docType(i)==="avoir" : fs==="brouillon" ? !i.number : (docType(i)==="facture" && stOf(i)===fs))));
   if(!all.length){ $("#invList").innerHTML=`<div class="empty">${EMPTY_SVG}<h4>Aucune facture pour l'instant</h4><p>Ta première facture, c'est par ici.</p><button class="btn primary" id="btnFirst">Créer ma première facture</button></div>`; $("#btnFirst").addEventListener("click",()=>newEditor("facture")); return; }
@@ -2011,7 +2066,7 @@ $$("#qchips .chip").forEach(c=>c.addEventListener("click",()=>{ S.qfilter=c.data
 /* ================= paiement reçu ================= */
 let payTarget=null;
 function openPaid(i){
-  if(!i) return; payTarget=i;
+  if(!i) return; if(!can("payments")) return toast("Tu n'as pas le droit d'indiquer les paiements."); payTarget=i;
   const av=docType(i)==="avoir";
   $("#payTitle").textContent = av ? `Avoir ${i.number} remboursé / déduit` : `Facture ${i.number} payée`;
   $("#payDate").value=todayISO();
@@ -2063,6 +2118,7 @@ $("#expYes").addEventListener("click",()=>{
 
 /* ================= catalogue de prestations ================= */
 async function saveToCatalog(l){
+  if(!can("clients")) return toast("Tu n'as pas le droit de modifier le catalogue.");
   if(!l || !String(l.desc||"").trim()) return toast("Écris d'abord une désignation sur cette ligne.");
   const ex=Object.values(S.catalog).find(c=>c.desc.trim().toLowerCase()===l.desc.trim().toLowerCase());
   const it={ id: ex?ex.id:uid(), desc:l.desc.trim(), unit:l.unit||"u", price:num(l.price), tva:num(l.tva) };
@@ -2071,7 +2127,7 @@ async function saveToCatalog(l){
 function renderCatalog(){
   const qv=($("#catSearch").value||"").toLowerCase();
   const items=Object.values(S.catalog).filter(c=>!qv||c.desc.toLowerCase().includes(qv)).sort((a,b)=>a.desc.localeCompare(b.desc));
-  $("#catList").innerHTML = items.length ? items.map(c=>`<div class="cat-item" data-add="${c.id}"><div style="min-width:0"><b>${esc(c.desc)}</b><small>${money(c.price)} HT / ${esc(c.unit)}${S.profile.franchise?"":" · TVA "+pct(c.tva)}</small></div><button class="btn sm ghost danger" data-cdel="${c.id}" title="Retirer du catalogue">✕</button></div>`).join("")
+  $("#catList").innerHTML = items.length ? items.map(c=>`<div class="cat-item" data-add="${c.id}"><div style="min-width:0"><b>${esc(c.desc)}</b><small>${money(c.price)} HT / ${esc(c.unit)}${S.profile.franchise?"":" · TVA "+pct(c.tva)}</small></div>${can("clients")?`<button class="btn sm ghost danger" data-cdel="${c.id}" title="Retirer du catalogue">✕</button>`:""}</div>`).join("")
     : `<p class="muted" style="text-align:center;padding:14px">${Object.keys(S.catalog).length?"Aucun résultat.":"Ton catalogue est vide. Sur une ligne de facture, clique sur ☆ pour l'y ajouter."}</p>`;
   $$("#catList [data-add]").forEach(el=>el.addEventListener("click",e=>{ if(e.target.closest("[data-cdel]")) return; const c=S.catalog[el.dataset.add];
     const last=S.cur.lines[S.cur.lines.length-1]; const line={desc:c.desc,qty:1,unit:c.unit,price:c.price,tva:c.tva};
@@ -2149,7 +2205,7 @@ function renderClients(){
   $("#clList").innerHTML=`<div class="tbl"><div class="tbl-scroll"><table class="list"><thead><tr><th>Client</th><th>Type</th><th class="r">Facturé</th><th></th></tr></thead><tbody>${list.map(c=>{
     const inv=Object.values(S.invoices).filter(i=>i.clientId===c.id && docType(i)==="facture"); const tot=Object.values(S.invoices).filter(i=>i.clientId===c.id && docType(i)!=="devis").reduce((s,i)=>s+ttc(i),0);
     return `<tr><td><div class="cli-cell"><div class="avatar" style="background:${avColor(c.name)}">${esc(initials(c.name))}</div><div><b>${esc(c.name)}</b><div class="muted" style="font-size:12px">${esc((c.address||"").split("\n").join(", "))}</div></div></div></td><td><span class="pill ${c.kind==="pro"?"envoyee":"brouillon"}">${c.kind==="pro"?"Pro":"Particulier"}</span></td><td class="r amount">${money(tot)}<div class="muted" style="font-size:11.5px;font-family:Manrope;font-weight:600">${inv.length} facture${inv.length>1?"s":""}</div></td>
-    <td class="r" style="white-space:nowrap"><button class="btn sm primary" data-inv="${c.id}">Facturer</button> <button class="btn sm" data-quote="${c.id}">Devis</button> <button class="btn sm" data-ed="${c.id}">Modifier</button> <button class="btn sm ghost danger" data-del="${c.id}">✕</button></td></tr>`; }).join("")}</tbody></table></div></div>`;
+    <td class="r" style="white-space:nowrap">${can("invoices")?`<button class="btn sm primary" data-inv="${c.id}">Facturer</button> `:""}${can("quotes")?`<button class="btn sm" data-quote="${c.id}">Devis</button> `:""}${can("clients")?`<button class="btn sm" data-ed="${c.id}">Modifier</button> <button class="btn sm ghost danger" data-del="${c.id}">✕</button>`:""}</td></tr>`; }).join("")}</tbody></table></div></div>`;
   $$("#clList [data-ed]").forEach(b=>b.addEventListener("click",()=>{ const c=S.clients[b.dataset.ed]; editingClient=c.id; $("#clFormTitle").textContent="Modifier le client";
     $("#kName").value=c.name||""; kKind=c.kind||"particulier"; setSeg("kKindSeg",kKind); $("#kAddr").value=c.address||""; $("#kSiren").value=c.siren||""; $("#kTva").value=c.tva||""; $("#kEmail").value=c.email||""; $("#kPhone").value=c.phone||""; window.scrollTo({top:0,behavior:"smooth"}); }));
   const startFor=(c,type)=>{ const d=newDoc(type); d.clientId=c.id; d.client={name:c.name,kind:c.kind,address:c.address,siren:c.siren||"",tva:c.tva||"",email:c.email||""}; fillClientPick(); loadEditor(d); showTab("edit"); };
@@ -2160,6 +2216,7 @@ function renderClients(){
 function resetClientForm(){ editingClient=null; $("#clFormTitle").textContent="Nouveau client"; ["kName","kAddr","kSiren","kTva","kEmail","kPhone"].forEach(i=>$("#"+i).value=""); kKind="particulier"; setSeg("kKindSeg",kKind); }
 $("#btnClReset").addEventListener("click",resetClientForm);
 $("#btnClSave").addEventListener("click",async()=>{
+  if(!can("clients")) return toast("Tu n'as pas le droit de modifier les clients.");
   const name=$("#kName").value.trim(); if(!name) return toast("Le nom est obligatoire.");
   const id=editingClient||uid();
   const c={id,name,kind:kKind,address:$("#kAddr").value,siren:$("#kSiren").value.trim(),tva:$("#kTva").value.trim(),email:$("#kEmail").value.trim(),phone:$("#kPhone").value.trim()};
@@ -2182,13 +2239,14 @@ function fillSettings(){
   showSig();
   $("#tvaFields").style.display=draftProfile.franchise?"none":"block";
   showLogo(); numExample(); renderSwatches();
-  const ro=!S.isOwner;
+  const ro=!can("company");
+  $("#wsNote").innerHTML = S.isOwner ? "" : `Tu travailles dans l'espace de « ${esc(S.profile.name||"…")} ». Tes droits : <b>${esc(permSummary(S.myPerms))}</b>.${ro?" Les infos de l'entreprise sont en lecture seule pour toi.":""}`;
   $("#setCards").querySelectorAll("input,textarea,select,button").forEach(el=>{ el.disabled=ro; });
   $$("#setCards label.btn").forEach(l=>l.style.pointerEvents=ro?"none":"");
   $("#btnSettingsSave").style.display=ro?"none":""; $("#btnSettingsSave2").style.display=ro?"none":"";
-  $("#wsNote").style.display=ro?"block":"none"; $("#teamCard").style.display=ro?"none":"block";
+  $("#wsNote").style.display=S.isOwner?"none":"block"; $("#teamCard").style.display=S.isOwner?"block":"none";
   if(ro) $("#sYear").disabled=true; else $("#sYear").disabled=!!draftProfile.numReset;
-  Backup.ui(); if(!ro) loadInvites();
+  Backup.ui(); if(S.isOwner) loadInvites();
 }
 const fieldNum = id => Math.max(1,Math.floor(num($("#"+id).value))||1);
 function numClashes(){
@@ -2221,7 +2279,7 @@ $("#logoFile").addEventListener("change",e=>{
 });
 $("#logoDel").addEventListener("click",()=>{ draftProfile.logo=null; showLogo(); });
 async function saveSettings(){
-  if(!S.isOwner) return toast("Seul le propriétaire de l'entreprise peut modifier ces informations.");
+  if(!can("company")) return toast("Tu n'as pas le droit de modifier les infos de l'entreprise.");
   const cl=numClashes();
   if(cl.length){ toast(`Numéro déjà utilisé (${cl.join(", ")}) : choisis un « Prochain numéro » plus grand.`); numExample(); return; }
   if(!(draftProfile.payMeans||[]).length){ toast("Coche au moins un moyen de paiement."); return; }
