@@ -1132,7 +1132,7 @@ $("#btnLogout2").addEventListener("click",logout);
 onAuthStateChanged(auth, user=>{
   $("#splash").style.display="none";
   if(user){ startSession(user); }
-  else { stopSession(); $("#app").style.display="none"; $("#auth").style.display="grid"; setAuthMode(authMode); }
+  else { stopSession(); $$(".modal-bg.on").forEach(m=>m.classList.remove("on")); $("#app").style.display="none"; $("#auth").style.display="grid"; setAuthMode(authMode); }
 });
 
 function startSession(user){
