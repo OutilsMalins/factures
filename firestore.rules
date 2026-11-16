@@ -1,0 +1,85 @@
+// COPIE DE RÉFÉRENCE (V3, 15/11/2026). La version active est dans la console Firebase :
+// Firestore Database > Règles. Toute modification doit y être collée puis publiée.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function isMember(uid) {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(uid)/members/$(request.auth.uid));
+    }
+    function canUse(uid) { return isOwner(uid) || isMember(uid); }
+    // droits d'un membre (le propriétaire a tous les droits) ; par défaut tout sauf « company »
+    function memberPerms(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)/members/$(request.auth.uid)).data.get('perms', {});
+    }
+    function perm(uid, k) { return isOwner(uid) || (isMember(uid) && memberPerms(uid).get(k, k != 'company')); }
+    function typePerm(uid, d) { return perm(uid, d.get('type', 'facture') == 'devis' ? 'quotes' : 'invoices'); }
+    function onlyKeys(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    function myEmail() { return request.auth.token.email.lower(); }
+    // fermeture du compte en cours (moins d'une heure) : permet d'effacer les documents verrouillés
+    function closing(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.get('closing', 0) > request.time.toMillis() - 3600000;
+    }
+    // facture ou avoir sans numéro (brouillon), ou devis : modifiable
+    // loi anti-fraude : pas de suivi des paiements des particuliers pour une entreprise assujettie à la TVA
+    function b2cTaxed(d) { return d.get('franchise', false) == false && d.get('client', {}).get('kind', 'particulier') != 'pro'; }
+    function unlocked(d) { return d.get('type', 'facture') == 'devis' || d.get('number', null) == null; }
+
+    // invitations : une invitation en attente par adresse email
+    match /invites/{email} {
+      allow get: if signedIn() && (myEmail() == email || resource.data.owner == request.auth.uid);
+      allow list: if signedIn() && resource.data.owner == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid
+                    && request.resource.data.email == email && email == email.lower();
+      allow update: if signedIn() && resource.data.owner == request.auth.uid
+                    && request.resource.data.owner == request.auth.uid && request.resource.data.email == email;
+      allow delete: if signedIn() && (resource.data.owner == request.auth.uid || myEmail() == email);
+    }
+
+    match /users/{userId} {
+      // fiche de l'entreprise : le propriétaire fait tout ; un membre lit et fait avancer les compteurs
+      allow get: if canUse(userId);
+      allow create, delete: if isOwner(userId);
+      allow update: if isOwner(userId)
+                    || (isMember(userId) && onlyKeys(['counters', 'nextNumber']))
+                    || (perm(userId, 'company') && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['closing', 'memberOf']));
+
+      match /members/{memberId} {
+        allow get: if isOwner(userId) || isOwner(memberId);
+        allow list: if isOwner(userId);
+        allow delete: if isOwner(userId) || isOwner(memberId);
+        allow create: if isOwner(memberId) && !isOwner(userId)
+                      && request.auth.token.email_verified == true
+                      && request.resource.data.email == myEmail()
+                      && get(/databases/$(database)/documents/invites/$(myEmail())).data.owner == userId
+                      && request.resource.data.get('perms', {}) == get(/databases/$(database)/documents/invites/$(myEmail())).data.get('perms', {});
+        // seul le propriétaire change les droits
+        allow update: if isOwner(userId) && onlyKeys(['perms']);
+      }
+
+      match /invoices/{id} {
+        allow read: if canUse(userId);
+        allow create: if canUse(userId) && typePerm(userId, request.resource.data);
+        allow update: if canUse(userId) && (
+             (unlocked(resource.data) && typePerm(userId, resource.data) && typePerm(userId, request.resource.data))
+          || (onlyKeys(['status', 'paidAt', 'paidMethod', 'updatedAt']) && perm(userId, 'payments') && !b2cTaxed(resource.data))
+          || (resource.data.get('type', 'facture') == 'devis' && onlyKeys(['status', 'convertedTo', 'updatedAt']) && perm(userId, 'invoices')));
+        allow delete: if (canUse(userId) && unlocked(resource.data) && typePerm(userId, resource.data)) || (isOwner(userId) && closing(userId));
+      }
+
+      match /pdfs/{id} {
+        allow read: if canUse(userId);
+        allow create: if perm(userId, 'invoices') || perm(userId, 'quotes');
+        allow update: if (perm(userId, 'invoices') || perm(userId, 'quotes')) && resource.data.get('locked', false) == false;
+        allow delete: if ((perm(userId, 'invoices') || perm(userId, 'quotes')) && resource.data.get('locked', false) == false) || (isOwner(userId) && closing(userId));
+      }
+
+      match /clients/{id} { allow read: if canUse(userId); allow write: if perm(userId, 'clients'); }
+      match /catalog/{id} { allow read: if canUse(userId); allow write: if perm(userId, 'clients'); }
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
