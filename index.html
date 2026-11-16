@@ -1127,6 +1127,7 @@ details.more[open] summary{margin-bottom:12px}
       <div class="card">
         <div class="card-h"><div class="ico p">F</div><div><h3>Assurance &amp; pied de page</h3><p>Mentions pro facultatives</p></div></div>
         <label class="f"><span>Assurance professionnelle (ex. décennale pour les travaux)</span><textarea id="sInsur" rows="2" placeholder="Assureur, n° de contrat, zone géographique couverte"></textarea></label>
+        <label class="f"><span>Médiateur de la consommation (obligatoire si tu travailles pour des particuliers)</span><input type="text" id="sMediator" placeholder="Nom du médiateur et site internet"></label>
         <label class="f"><span>Pied de page (facultatif)</span><input type="text" id="sFooter"></label>
       </div>
       <div class="actions" style="justify-content:flex-end;margin-bottom:20px"><button class="btn primary" id="btnSettingsSave">Enregistrer mes informations</button></div>
@@ -1369,7 +1370,7 @@ const DEFAULT_PROFILE = {
   franchise:true, tvaNumber:"", defaultTva:20, tvaDebits:false,
   payDays:30, means:"", iban:"", bic:"", quoteDays:30,
   penalties:"Taux d'intérêt appliqué par la BCE à son opération de refinancement la plus récente, majoré de 10 points",
-  insurance:"", prefix:"F", prefixDevis:"D", prefixAvoir:"A", nextNumber:1, counters:{}, numDigits:3, numYear:true, numReset:false,
+  insurance:"", mediator:"", prefix:"F", prefixDevis:"D", prefixAvoir:"A", nextNumber:1, counters:{}, numDigits:3, numYear:true, numReset:false,
   payMeans:["virement"], footer:"", logo:null, accent:"#1f5c45", signature:null, showSignature:true, signName:""
 };
 // S.uid = la personne connectée ; S.ws = l'entreprise (espace) dont on affiche les données
@@ -1491,7 +1492,7 @@ function fbErr(e){
 }
 const Store = {
   // les compteurs ne sont jamais écrasés ici (ils sont gérés à part, de façon sûre)
-  saveProfile: () => { const o=clean(S.profile); ["counters","nextNumber","memberOf","closing"].forEach(k=>delete o[k]); return setDoc(R.prof(), o, {merge:true}); },
+  saveProfile: () => { const o=clean(S.profile); ["counters","nextNumber","lastIssue","lastIssuedId","memberOf","closing"].forEach(k=>delete o[k]); return setDoc(R.prof(), o, {merge:true}); },
   saveInvoice: inv => setDoc(R.inv(inv.id), clean(inv)),
   deleteInvoice: id => deleteDoc(R.inv(id)),
   saveClient: c => setDoc(R.cli(c.id), clean(c)),
@@ -1779,7 +1780,7 @@ $("#btnDeleteAcc").addEventListener("click",()=>{
       await setDoc(doc(db,"users",me),{closing:Date.now()},{merge:true});
       for(const name of ["invoices","clients","pdfs","catalog","members"]){
         const snap=await getDocs(collection(db,"users",me,name)); let batch=writeBatch(db), n=0;
-        for(const d of snap.docs){ batch.delete(d.ref); n++; if(n>=400){ await batch.commit(); batch=writeBatch(db); n=0; } }
+        for(const d of snap.docs){ batch.delete(d.ref); n++; if(n>=10){ await batch.commit(); batch=writeBatch(db); n=0; } }
         if(n) await batch.commit();
       }
       try{ const iv=await getDocs(query(collection(db,"invites"),where("owner","==",me))); for(const d of iv.docs) await deleteDoc(d.ref); }catch(e){ console.error(e); }
@@ -1944,7 +1945,7 @@ $("#btnNewQ").addEventListener("click",()=>newEditor("devis"));
 $("#btnNewSide").addEventListener("click",()=>newEditor("facture"));
 $("#btnNewSideD").addEventListener("click",()=>newEditor("devis"));
 $("#btnDup").addEventListener("click",()=>{
-  const c=clean(S.cur); ["pdf","totals","ref","fromDevis","convertedTo","paidAt","paidMethod","kind","acomptes","issuedBy","issuedAt","franchise"].forEach(k=>delete c[k]);
+  const c=clean(S.cur); ["pdf","totals","ref","fromDevis","convertedTo","paidAt","paidMethod","kind","acomptes","issuedBy","issuedAt","franchise","seq","seqKey","updatedAt"].forEach(k=>delete c[k]);
   c.lines=(c.lines||[]).filter(l=>!l.ded).map(l=>{ const o={...l}; delete o.ded; return o; }); if(!c.lines.length) c.lines=[newLine()];
   c.id=uid(); c.number=null; c.status="brouillon"; const t=todayISO(); c.issueDate=t; c.serviceDate=t;
   if(c.type==="facture") c.dueDate=addDays(t,S.profile.payDays); if(c.type==="devis") c.validUntil=addDays(t,S.profile.quoteDays||30);
@@ -2060,46 +2061,56 @@ async function saveCurrent(issue){
       inv.clientId=cid;
       if(JSON.stringify(prev)!==JSON.stringify(rec)){ S.clients[cid]=rec; await Store.saveClient(rec); fillClientPick(); $("#clientPick").value=cid; }
     }
-    // numéro : attribué à l'émission, compteur sûr (transaction), propre à chaque type de document
-    let assigned=false;
+    inv.lines=inv.lines.map(l=>({...l,qty:num(l.qty),price:num(l.price),tva:num(l.tva)}));
+    inv.totals=computeTotals(inv,S.profile);
+    inv.franchise=!!S.profile.franchise;
+    // PDF archivé dans la base (compressé) — seulement pour les documents numérotés ; trop lourd → non archivé
+    const makePdf = d => { if(!window.jspdf) return null; try{ const b64=buildPdf(d,S.profile).output("datauristring").split(",")[1]; return b64.length<1000000 ? {b64, size:Math.round(b64.length*3/4)} : null; }catch(e){ console.error(e); return null; } };
+    let assigned=false, archived=false, bytes=null;
     if(numbered && !inv.number){
+      // numéro : attribué à l'émission, propre à chaque type de document.
+      // Compteur + document (+ PDF) écrits dans UNE transaction : aucun numéro perdu en cas de coupure,
+      // et les règles Firestore (V4) vérifient la suite des numéros et l'ordre des dates.
       const year=(inv.issueDate||todayISO()).slice(0,4);
       const key=counterKey(S.profile,type,year);
-      const n = await runTransaction(db, async tx=>{
+      const res = await runTransaction(db, async tx=>{
         const snap=await tx.get(R.prof()); const d=snap.exists()?snap.data():{};
+        const ps=await tx.get(R.pdf(inv.id));
         const cs=d.counters||{};
         let cur = cs[key]!=null ? Number(cs[key]) : (key==="facture" ? Number(d.nextNumber||S.profile.nextNumber||1) : 1);
         if(!(cur>=1)) cur=1;
         while(numberExists(fmtNumber(S.profile,cur,inv.issueDate,type), inv.id)) cur++;
-        const upd={counters:{[key]:cur+1}}; if(key==="facture") upd.nextNumber=cur+1;
+        const last=(d.lastIssue||{})[type];
+        if(type!=="devis" && last && inv.issueDate<last){ const er=new Error("chrono"); er.chrono=last; throw er; }
+        const now=Date.now();
+        const nd={...clean(inv), number:fmtNumber(S.profile,cur,inv.issueDate,type), seq:cur, seqKey:key, updatedAt:now};
+        if(type!=="devis"){ nd.status = inv.status==="payee" ? "payee" : "envoyee"; nd.issuedAt=now; nd.issuedBy=(S.user&&S.user.email)||""; }
+        delete nd.pdf;
+        const pdf=makePdf(nd);
+        if(pdf && !(ps.exists() && ps.data().locked)){
+          nd.pdf={size:pdf.size,at:now};
+          tx.set(R.pdf(inv.id),{b64:pdf.b64,size:pdf.size,at:now,number:nd.number,locked:type!=="devis"});
+        }
+        const upd={counters:{[key]:cur+1}, lastIssuedId:inv.id}; if(key==="facture") upd.nextNumber=cur+1;
+        if(type!=="devis") upd.lastIssue={[type]:inv.issueDate};
         tx.set(R.prof(), upd, {merge:true});
-        return cur;
+        tx.set(R.inv(inv.id), clean(nd));
+        return {nd, pdf:nd.pdf?pdf:null};
       });
-      inv.number=fmtNumber(S.profile,n,inv.issueDate,type);
-      S.profile.counters={...(S.profile.counters||{}),[key]:n+1}; if(key==="facture") S.profile.nextNumber=n+1;
+      Object.keys(inv).forEach(k=>{ if(!(k in res.nd)) delete inv[k]; }); Object.assign(inv, res.nd);
+      S.profile.counters={...(S.profile.counters||{}),[key]:res.nd.seq+1}; if(key==="facture") S.profile.nextNumber=res.nd.seq+1;
+      if(type!=="devis") S.profile.lastIssue={...(S.profile.lastIssue||{}),[type]:inv.issueDate};
+      if(res.pdf){ bytes=b64ToBytes(res.pdf.b64); archived=true; }
       assigned=true;
+    } else {
+      if(type!=="devis") inv.status="brouillon";
+      inv.updatedAt=Date.now();
+      if(inv.number){ // devis déjà numéroté : on remplace son PDF
+        const pdf=makePdf(inv);
+        if(pdf){ try{ await Store.savePdf(inv.id,{b64:pdf.b64,size:pdf.size,at:Date.now(),number:inv.number,locked:false}); inv.pdf={size:pdf.size,at:Date.now()}; bytes=b64ToBytes(pdf.b64); archived=true; }catch(e){ console.error(e); } }
+      }
+      await Store.saveInvoice(inv);
     }
-    if(type!=="devis"){
-      if(!inv.number) inv.status="brouillon";
-      else if(inv.status!=="payee"){ inv.status="envoyee"; }
-      if(inv.number && !inv.issuedAt){ inv.issuedAt=Date.now(); inv.issuedBy=(S.user&&S.user.email)||""; }
-    }
-    inv.lines=inv.lines.map(l=>({...l,qty:num(l.qty),price:num(l.price),tva:num(l.tva)}));
-    inv.totals=computeTotals(inv,S.profile);
-    inv.franchise=!!S.profile.franchise;
-    inv.updatedAt=Date.now();
-    // PDF archivé dans la base (compressé) — seulement pour les documents numérotés
-    let archived=false, bytes=null;
-    if(inv.number && window.jspdf){
-      try{
-        const b64=buildPdf(inv,S.profile).output("datauristring").split(",")[1];
-        bytes=b64ToBytes(b64);
-        const size=Math.round(b64.length*3/4);
-        await Store.savePdf(inv.id,{b64,size,at:Date.now(),number:inv.number,locked:type!=="devis"});
-        inv.pdf={size,at:Date.now()}; archived=true;
-      }catch(e){ console.error(e); }
-    }
-    await Store.saveInvoice(inv);
     S.invoices[inv.id]=clean(inv);
     // liens devis → facture (acompte : le devis est accepté ; facture finale : il est « transformé »)
     if(type==="facture" && inv.fromDevis && assigned){
@@ -2111,7 +2122,10 @@ async function saveCurrent(issue){
     if(!inv.number) toast("Brouillon enregistré.");
     else toast((assigned?`${L} ${inv.number} ${type==="devis"?"enregistré":"émis"+(type==="avoir"?"":"e")}`:`${L} mis à jour`)+(archived?" et PDF archivé.":" (PDF non archivé)."));
     if(inv.number && bytes) Backup.onDoc(clean(inv),bytes);
-  }catch(e){ fbErr(e); }
+  }catch(e){
+    if(e && e.chrono) toast(`La date d'émission doit être le ${frDate(e.chrono)} ou après (dernier document émis), pour garder l'ordre chronologique.`);
+    else fbErr(e);
+  }
   finally{ btns.forEach(b=>b.disabled=false); }
 }
 
@@ -2196,6 +2210,7 @@ function conditionsText(inv,p){
     a.push("Ce montant sera remboursé ou déduit de votre prochaine facture.");
   }
   if(p.insurance) a.push("Assurance professionnelle : "+p.insurance);
+  if(p.mediator && inv.client.kind!=="pro" && t!=="avoir") a.push("En cas de litige, médiateur de la consommation : "+p.mediator);
   return a;
 }
 const footerText = p => p.footer || [p.name,p.siret?("SIRET "+p.siret):""].filter(Boolean).join(" — ");
@@ -2404,7 +2419,7 @@ function sortDocs(a,b){ return (b.issueDate||"").localeCompare(a.issueDate||"") 
 function rowActions(i){
   const t=docType(i), b=[], st=stOf(i);
   if(can("payments") && !noPayTrack(i) && t==="facture" && st==="envoyee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ Payée</button>`);
-  if(can("payments") && !noPayTrack(i) && t==="avoir" && i.number && i.status!=="payee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ Remboursé</button>`);
+  if(can("payments") && !noPayTrack(i) && t==="avoir" && i.number && i.status!=="payee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ ${i.ref&&S.invoices[i.ref.id]&&S.invoices[i.ref.id].status!=="payee"?"Déduit":"Remboursé"}</button>`);
   if(isLate(i)) b.push(`<button class="btn sm" data-remind="${i.id}">✉ Relancer</button>`);
   if(can("invoices") && t==="devis" && i.number && !i.convertedTo && i.status!=="refuse"){ b.push(`<button class="btn sm" data-ac="${i.id}" title="Facture d'acompte">Acompte</button>`); b.push(`<button class="btn sm primary" data-conv="${i.id}">→ Facture</button>`); }
   b.push(`<button class="btn sm" data-pdf="${i.id}">PDF</button>`);
@@ -2644,7 +2659,7 @@ $("#btnClSave").addEventListener("click",async()=>{
 });
 
 /* ================= settings ================= */
-const SMAP={sName:"name",sForm:"legalForm",sSiret:"siret",sAddr:"address",sEmail:"email",sPhone:"phone",sRcs:"rcs",sTvaNum:"tvaNumber",sTvaDef:"defaultTva",sDays:"payDays",sMeans:"means",sIban:"iban",sBic:"bic",sPenal:"penalties",sInsur:"insurance",sPrefix:"prefix",sPrefixD:"prefixDevis",sPrefixA:"prefixAvoir",sQuoteDays:"quoteDays",sDigits:"numDigits",sFooter:"footer",sSigName:"signName"};
+const SMAP={sName:"name",sForm:"legalForm",sSiret:"siret",sAddr:"address",sEmail:"email",sPhone:"phone",sRcs:"rcs",sTvaNum:"tvaNumber",sTvaDef:"defaultTva",sDays:"payDays",sMeans:"means",sIban:"iban",sBic:"bic",sPenal:"penalties",sInsur:"insurance",sMediator:"mediator",sPrefix:"prefix",sPrefixD:"prefixDevis",sPrefixA:"prefixAvoir",sQuoteDays:"quoteDays",sDigits:"numDigits",sFooter:"footer",sSigName:"signName"};
 const NUMF={facture:"sNext",devis:"sNextD",avoir:"sNextA"};
 let numOrig={};
 function fillSettings(){
@@ -2698,10 +2713,16 @@ $("#logoFile").addEventListener("change",e=>{
   rd.readAsDataURL(f); e.target.value="";
 });
 $("#logoDel").addEventListener("click",()=>{ draftProfile.logo=null; showLogo(); });
-async function saveSettings(){
+async function saveSettings(force){
   if(!can("company")) return toast("Tu n'as pas le droit de modifier les infos de l'entreprise.");
   const cl=numClashes();
   if(cl.length){ toast(`Numéro déjà utilisé (${cl.join(", ")}) : choisis un « Prochain numéro » plus grand.`); numExample(); return; }
+  // numérotation continue : sauter des numéros après des factures / avoirs déjà émis crée un trou
+  if(force!==true){
+    const y0=todayISO().slice(0,4);
+    const jumps=["facture","avoir"].filter(t=>{ const id=NUMF[t], o=numOrig[t]; return o && counterKey(draftProfile,t,y0)===o.key && fieldNum(id)>o.val && Object.values(S.invoices).some(i=>docType(i)===t && i.number); });
+    if(jumps.length) return confirmBox("Sauter des numéros ?",`Tu as déjà émis des ${jumps.map(t=>t==="avoir"?"avoirs":"factures").join(" et des ")} : augmenter le « Prochain numéro » laissera un trou dans la numérotation. La loi demande une numérotation continue, sans trou. Ne le fais que si ces numéros ont déjà été utilisés ailleurs (par exemple dans un ancien logiciel) et garde-en une trace.`,()=>saveSettings(true));
+  }
   if(!(draftProfile.payMeans||[]).length){ toast("Coche au moins un moyen de paiement."); return; }
   draftProfile.quoteDays=Math.max(1,Math.floor(num(draftProfile.quoteDays))||30);
   // compteurs : on n'écrit que ce que l'utilisateur a réellement changé
