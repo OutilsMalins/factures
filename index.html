@@ -888,6 +888,7 @@ details.more[open] summary{margin-bottom:12px}
           <select id="clientPick"><option value="">— Saisir un nouveau client —</option></select>
         </label>
         <div class="seg" id="kindSeg"><button data-v="particulier">Particulier</button><button data-v="pro">Professionnel</button></div>
+        <p class="hint" id="medHint" style="display:none;margin:6px 0 12px;color:#8a5a00"></p>
         <label class="f"><span>Nom / Raison sociale</span><input type="text" id="cName" placeholder="Ex. Dupont SARL" data-ex="client"></label>
         <label class="f"><span>Adresse de facturation</span><textarea id="cAddr" rows="2" placeholder="N°, rue&#10;Code postal Ville"></textarea></label>
         <div class="row" id="cProRow">
@@ -1125,7 +1126,7 @@ details.more[open] summary{margin-bottom:12px}
       </div>
 
       <div class="card">
-        <div class="card-h"><div class="ico p">F</div><div><h3>Assurance &amp; pied de page</h3><p>Mentions pro facultatives</p></div></div>
+        <div class="card-h"><div class="ico p">F</div><div><h3>Médiateur, assurance &amp; pied de page</h3><p>Médiateur obligatoire si tu as des clients particuliers ; le reste est facultatif</p></div></div>
         <label class="f"><span>Assurance professionnelle (ex. décennale pour les travaux)</span><textarea id="sInsur" rows="2" placeholder="Assureur, n° de contrat, zone géographique couverte"></textarea></label>
         <label class="f"><span>Médiateur de la consommation (obligatoire si tu travailles pour des particuliers)</span><input type="text" id="sMediator" placeholder="Nom du médiateur et site internet"></label>
         <label class="f"><span>Pied de page (facultatif)</span><input type="text" id="sFooter"></label>
@@ -1904,7 +1905,12 @@ function loadEditor(inv){
   $("#btnShare").style.display = SHARE_OK ? "inline-flex" : "none"; if(isLockedEd(inv)||(t==="devis"&&inv.number)) prefetchPdf(inv);
 }
 function autoliqHint(){ $("#autoliqHint").style.display = S.cur && S.cur.autoliq && !S.profile.franchise && !String(S.cur.client.tva||"").trim() ? "block" : "none"; }
-function toggleProRow(){ $("#cProRow").style.display = S.cur.client.kind==="pro" ? "grid" : "none"; }
+// médiateur de la consommation : obligatoire dès qu'on travaille pour des particuliers (Code de la consommation)
+const medMissing = d => !!d && docType(d)!=="avoir" && ((d.client&&d.client.kind)||"particulier")!=="pro" && !String(S.profile.mediator||"").trim();
+function medHint(){ const h=$("#medHint"); if(!h) return; const on=medMissing(S.cur) && !isLockedEd(S.cur);
+  h.style.display=on?"block":"none";
+  if(on) h.textContent="⚠️ Client particulier : le médiateur de la consommation n'est pas renseigné. Il est obligatoire quand on travaille pour des particuliers. "+(can("company")?"Remplis-le dans « Mon entreprise » (cadre F).":"Demande au responsable du compte de le remplir dans « Mon entreprise »."); }
+function toggleProRow(){ medHint(); $("#cProRow").style.display = S.cur.client.kind==="pro" ? "grid" : "none"; }
 function newEditor(type="facture"){ loadEditor(newDoc(type)); showTab("edit"); }
 
 const m = {issueDate:"issueDate",serviceDate:"serviceDate",dueDate:"dueDate",validUntil:"validUntil",notes:"notes",deliveryAddr:"deliveryAddress"};
@@ -1958,7 +1964,7 @@ $("#btnSave").addEventListener("click",()=>{
   const year=(inv.issueDate||todayISO()).slice(0,4);
   let n=inv.number?null:nextFor(S.profile,t,year); if(n) while(numberExists(fmtNumber(S.profile,n,inv.issueDate,t),inv.id)) n++;
   const nb=inv.number||fmtNumber(S.profile,n,inv.issueDate,t), av=t==="avoir";
-  confirmBox(`Émettre ${av?"l'avoir":"la facture"} ?`,`${av?"Il":"Elle"} recevra le numéro ${nb}, daté du ${frDate(inv.issueDate)}, et ne pourra plus être modifié${av?"":"e"} ni supprimé${av?"":"e"} : seul le paiement pourra être indiqué.${av?"":" Pour corriger ensuite, il faudra créer un avoir."}`,()=>saveCurrent(true));
+  confirmBox(`Émettre ${av?"l'avoir":"la facture"} ?`,`${av?"Il":"Elle"} recevra le numéro ${nb}, daté du ${frDate(inv.issueDate)}, et ne pourra plus être modifié${av?"":"e"} ni supprimé${av?"":"e"} : seul le paiement pourra être indiqué.${av?"":" Pour corriger ensuite, il faudra créer un avoir."}${medMissing(inv)?" ⚠️ Attention : le médiateur de la consommation n'est pas renseigné (obligatoire avec un client particulier).":""}`,()=>saveCurrent(true));
 });
 $("#btnDraft").addEventListener("click",()=>saveCurrent(false));
 $("#btnAcompte").addEventListener("click",()=>openAcompte(S.cur));
@@ -2908,7 +2914,7 @@ async function sharePdf(inv){
 }
 $("#btnShare").addEventListener("click",()=>sharePdf(S.cur));
 /* ================= misc ================= */
-function renderProfileDependent(){
+function renderProfileDependent(){ if(S.cur) medHint();
   if(S.cur){ renderLines(); renderPreview(); }
   if($("#v-settings").classList.contains("on") && !document.activeElement.closest("#v-settings")) fillSettings();
 }
