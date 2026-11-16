@@ -32,7 +32,7 @@ const val = f => f == null ? undefined : f.stringValue ?? f.integerValue ?? f.bo
 
 let pass = 0, fail = 0; const ok = (c, m) => { if (c) { pass++; console.log("  ok   " + m); } else { fail++; console.log("  FAIL " + m); } };
 const browser = await chromium.launch();
-const page = await browser.newPage();
+const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: process.env.SHOT ? 2 : 1 });
 const errs = []; page.on("pageerror", e => errs.push(e.message)); page.on("console", m => { if (m.type() === "error") errs.push(m.text()); });
 await page.route(/www\.gstatic\.com\/firebasejs\/13\.3\.0\/(.*)$/, (route) => { const f = route.request().url().split("/").pop(); route.fulfill({ status: 200, contentType: "application/javascript", body: fs.readFileSync(FB + f) }); });
 page.on("dialog", d => d.accept());
@@ -131,6 +131,25 @@ await page.click('#kindSeg button[data-v="particulier"]');
 await page.click('[data-tab="settings"]'); await page.fill("#sMediator", "Médiateur Test"); await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
 await page.click('[data-tab="edit"]');
 ok(!(await page.locator("#medHint").isVisible()), "alerte masquée une fois le médiateur rempli");
+
+// case « Indiquer mon médiateur » + « i »
+await page.click('[data-tab="settings"]');
+ok(await page.locator("#sMedOn").isChecked() && await page.locator("#sMediator").isVisible(), "case cochée par défaut, champ visible");
+await page.click(".med-info summary");
+if (process.env.SHOT) await page.locator(".card", { has: page.locator("#sMedOn") }).screenshot({ path: process.env.SHOT });
+ok(/pas une mention obligatoire de la facture/.test(await page.locator(".med-info").textContent()) && await page.locator(".med-info p").first().isVisible(), "le « i » s'ouvre et explique (obligatoire, mais pas forcément sur la facture)");
+await page.fill("#sMediator", ""); await page.uncheck("#sMedOn");
+ok(!(await page.locator("#sMediator").isVisible()), "case décochée : champ masqué");
+await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
+ok(val((await docGet(`users/${uid}`)).mediatorOnDocs) === false, "choix « décoché » enregistré");
+await newInvoice({ client: "M. Durand", kind: "particulier", desc: "Coupe", price: 20 });
+ok(!(await page.locator("#medHint").isVisible()), "case décochée : pas d'alerte pour un particulier");
+ok(!/médiateur/i.test(await page.locator(".sh-cond").first().textContent()), "case décochée : médiateur non imprimé");
+await page.click('[data-tab="settings"]'); await page.check("#sMedOn");
+ok(await page.locator("#sMediator").isVisible(), "case recochée : champ réaffiché");
+await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
+await page.click('[data-tab="edit"]');
+ok(await page.locator("#medHint").isVisible() && /décoche la case/.test(await page.locator("#medHint").textContent()), "case cochée mais vide : alerte de retour (avec l'option de décocher)");
 
 ok(errs.filter(e => !/favicon|ERR_|net::/.test(e)).length === 0, "aucune erreur JavaScript" + (errs.length ? " : " + errs.slice(0, 3).join(" | ") : ""));
 console.log(`\n${pass} ok, ${fail} échec(s)`);
