@@ -117,6 +117,21 @@ let t5 = await waitToast(/mis à jour|Échec|refus/); ok(/Devis mis à jour/.tes
 // mention du médiateur dans l'aperçu du devis (client particulier)
 ok(/médiateur de la consommation : Médiateur Test/i.test(await page.locator(".sh-cond").first().textContent()), "médiateur affiché sur le devis (particulier)");
 
+// alerte « médiateur manquant » : on vide le champ dans « Mon entreprise »
+await page.click('[data-tab="settings"]'); await page.fill("#sMediator", ""); await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
+ok(/Médiateur, assurance/.test(await page.locator("#setCards").textContent()), "cadre F renommé (médiateur obligatoire)");
+await newInvoice({ client: "Mme Petit", kind: "particulier", desc: "Coupe", price: 25 });
+ok(await page.locator("#medHint").isVisible() && /médiateur de la consommation n'est pas renseigné/.test(await page.locator("#medHint").textContent()), "alerte affichée : client particulier sans médiateur");
+await page.click("#btnSave"); await page.waitForSelector("#modal.on");
+ok(/médiateur de la consommation n'est pas renseigné/.test(await page.locator("#mText").textContent()), "rappel dans la confirmation d'émission");
+await page.click("#mNo");
+await page.click('#kindSeg button[data-v="pro"]');
+ok(!(await page.locator("#medHint").isVisible()), "alerte masquée pour un client pro");
+await page.click('#kindSeg button[data-v="particulier"]');
+await page.click('[data-tab="settings"]'); await page.fill("#sMediator", "Médiateur Test"); await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
+await page.click('[data-tab="edit"]');
+ok(!(await page.locator("#medHint").isVisible()), "alerte masquée une fois le médiateur rempli");
+
 ok(errs.filter(e => !/favicon|ERR_|net::/.test(e)).length === 0, "aucune erreur JavaScript" + (errs.length ? " : " + errs.slice(0, 3).join(" | ") : ""));
 console.log(`\n${pass} ok, ${fail} échec(s)`);
 await browser.close(); srv.close();
