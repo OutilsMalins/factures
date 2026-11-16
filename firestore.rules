@@ -1,5 +1,8 @@
-// COPIE DE RÉFÉRENCE (V3, 15/11/2026). La version active est dans la console Firebase :
+// COPIE DE RÉFÉRENCE (V4, 16/11/2026). La version active est dans la console Firebase :
 // Firestore Database > Règles. Toute modification doit y être collée puis publiée.
+// V4 : numérotation contrôlée par le serveur (numéro attribué dans la même opération que le compteur,
+//      jamais en arrière, ordre chronologique des dates), numéro de devis non modifiable,
+//      anciennes factures sans champ « franchise » : on reprend le réglage de l'entreprise.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -18,14 +21,63 @@ service cloud.firestore {
     function typePerm(uid, d) { return perm(uid, d.get('type', 'facture') == 'devis' ? 'quotes' : 'invoices'); }
     function onlyKeys(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
     function myEmail() { return request.auth.token.email.lower(); }
+    function profilePath(uid) { return /databases/$(database)/documents/users/$(uid); }
+    function invoicePath(uid, id) { return /databases/$(database)/documents/users/$(uid)/invoices/$(id); }
     // fermeture du compte en cours (moins d'une heure) : permet d'effacer les documents verrouillés
     function closing(uid) {
-      return get(/databases/$(database)/documents/users/$(uid)).data.get('closing', 0) > request.time.toMillis() - 3600000;
+      return get(profilePath(uid)).data.get('closing', 0) > request.time.toMillis() - 3600000;
     }
+    // loi anti-fraude : pas de suivi des paiements des particuliers pour une entreprise assujettie à la TVA.
+    // Le régime est figé sur le document à l'émission ; s'il manque (anciens documents), on prend celui de l'entreprise.
+    function inFranchise(uid, d) {
+      return d.get('franchise', null) == true
+          || (d.get('franchise', null) == null && get(profilePath(uid)).data.get('franchise', false) == true);
+    }
+    function b2cTaxed(uid, d) { return !inFranchise(uid, d) && d.get('client', {}).get('kind', 'particulier') != 'pro'; }
     // facture ou avoir sans numéro (brouillon), ou devis : modifiable
-    // loi anti-fraude : pas de suivi des paiements des particuliers pour une entreprise assujettie à la TVA
-    function b2cTaxed(d) { return d.get('franchise', false) == false && d.get('client', {}).get('kind', 'particulier') != 'pro'; }
     function unlocked(d) { return d.get('type', 'facture') == 'devis' || d.get('number', null) == null; }
+
+    // ---------- numérotation ----------
+    // Le document reçoit son numéro (facture, avoir ou devis) : il doit être écrit dans la MÊME opération
+    // que le compteur de l'entreprise, avec seq = numéro du compteur (jamais en arrière), et pour les
+    // factures et avoirs une date d'émission qui ne recule pas.
+    function getsNumber(d) {
+      return request.resource.data.get('number', null) != null
+          && (d == null || d.get('number', null) == null);
+    }
+    function numberingOk(uid, id) {
+      let n = request.resource.data;
+      let t = n.get('type', 'facture');
+      let k = n.get('seqKey', '');
+      let before = exists(profilePath(uid)) ? get(profilePath(uid)).data : {};
+      let after = getAfter(profilePath(uid)).data;
+      let prev = before.get('counters', {}).get(k, k == 'facture' ? before.get('nextNumber', 1) : 1);
+      return n.get('seq', 0) is int && n.seq >= 1 && n.seq >= prev
+          && (k == t || k.matches(t + ':[0-9]{4}'))
+          && n.number is string && n.number.matches('(.+-)?0*' + string(n.seq))
+          && after.get('counters', {}).get(k, 0) == n.seq + 1
+          && after.get('lastIssuedId', '') == id
+          && (t == 'devis'
+              || (n.get('issueDate', '') is string && n.get('issueDate', '') != ''
+                  && n.issueDate >= before.get('lastIssue', {}).get(t, '')
+                  && after.get('lastIssue', {}).get(t, '') == n.issueDate
+                  // loi anti-fraude : pas d'émission directement « payée » pour un particulier (entreprise assujettie)
+                  && (n.get('status', '') != 'payee' || !b2cTaxed(uid, n))));
+    }
+    // fiche entreprise : un membre ne fait avancer le compteur qu'en numérotant un document dans la même opération
+    function counterWriteOk(uid) {
+      let id = request.resource.data.get('lastIssuedId', '');
+      let inv = getAfter(invoicePath(uid, id)).data;
+      let wasDraft = !exists(invoicePath(uid, id)) || get(invoicePath(uid, id)).data.get('number', null) == null;
+      return onlyKeys(['counters', 'nextNumber', 'lastIssue', 'lastIssuedId'])
+          && wasDraft && inv.get('number', null) != null
+          && request.resource.data.get('counters', {}).diff(resource.data.get('counters', {})).affectedKeys().hasOnly([inv.seqKey])
+          && request.resource.data.counters[inv.seqKey] == inv.seq + 1
+          && request.resource.data.get('lastIssue', {}).diff(resource.data.get('lastIssue', {})).affectedKeys()
+               .hasOnly(inv.get('type', 'facture') == 'devis' ? [] : [inv.get('type', 'facture')])
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['nextNumber'])
+              || (inv.seqKey == 'facture' && request.resource.data.nextNumber == inv.seq + 1));
+    }
 
     // invitations : une invitation en attente par adresse email
     match /invites/{email} {
@@ -39,12 +91,12 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // fiche de l'entreprise : le propriétaire fait tout ; un membre lit et fait avancer les compteurs
+      // fiche de l'entreprise : le propriétaire fait tout ; un membre lit et fait avancer les compteurs (en émettant)
       allow get: if canUse(userId);
       allow create, delete: if isOwner(userId);
       allow update: if isOwner(userId)
-                    || (isMember(userId) && onlyKeys(['counters', 'nextNumber']))
-                    || (perm(userId, 'company') && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['closing', 'memberOf']));
+                    || (isMember(userId) && counterWriteOk(userId))
+                    || (perm(userId, 'company') && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['closing', 'memberOf', 'lastIssue']));
 
       match /members/{memberId} {
         allow get: if isOwner(userId) || isOwner(memberId);
@@ -61,11 +113,21 @@ service cloud.firestore {
 
       match /invoices/{id} {
         allow read: if canUse(userId);
-        allow create: if canUse(userId) && typePerm(userId, request.resource.data);
+        allow create: if canUse(userId) && typePerm(userId, request.resource.data)
+                      && (!getsNumber(null) || numberingOk(userId, id));
         allow update: if canUse(userId) && (
-             (unlocked(resource.data) && typePerm(userId, resource.data) && typePerm(userId, request.resource.data))
-          || (onlyKeys(['status', 'paidAt', 'paidMethod', 'updatedAt']) && perm(userId, 'payments') && !b2cTaxed(resource.data))
-          || (resource.data.get('type', 'facture') == 'devis' && onlyKeys(['status', 'convertedTo', 'updatedAt']) && perm(userId, 'invoices')));
+             // brouillon ou devis : modifiable ; un numéro déjà attribué ne change plus
+             (unlocked(resource.data) && typePerm(userId, resource.data) && typePerm(userId, request.resource.data)
+               && request.resource.data.get('type', 'facture') == resource.data.get('type', 'facture')
+               && (resource.data.get('number', null) == null
+                   ? (!getsNumber(resource.data) || numberingOk(userId, id))
+                   : request.resource.data.get('number', null) == resource.data.number))
+             // paiement (sauf particuliers d'une entreprise assujettie à la TVA)
+          || (onlyKeys(['status', 'paidAt', 'paidMethod', 'updatedAt']) && perm(userId, 'payments') && !b2cTaxed(userId, resource.data))
+             // devis accepté / transformé en facture
+          || (resource.data.get('type', 'facture') == 'devis' && onlyKeys(['status', 'convertedTo', 'updatedAt']) && perm(userId, 'invoices'))
+             // PDF archivé après coup (une seule fois)
+          || (onlyKeys(['pdf', 'updatedAt']) && resource.data.get('pdf', null) == null && typePerm(userId, resource.data)));
         allow delete: if (canUse(userId) && unlocked(resource.data) && typePerm(userId, resource.data)) || (isOwner(userId) && closing(userId));
       }
 
