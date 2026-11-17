@@ -27,3 +27,9 @@ PYTHON=.venv/bin/python VERAPDF_CP="verapdf/lib/*" npm run test:einvoice
 
 Sans `VERAPDF_CP`, le contrôle PDF/A est sauté (les XML sont quand même vérifiés). Les fichiers produits restent dans `einvoice-out/`.
 `python validate_einvoice.py fichier.pdf fichier.xml …` vérifie n'importe quel fichier.
+
+## E-reporting
+
+`npm run test:ereporting` crée des factures à des dates choisies (franchise, réel simplifié, réel normal mensuel)
+et vérifie le récapitulatif e-reporting au centime près (ventes aux particuliers, encaissements, rappel des factures pro
+payées, périodes et dates limites), ainsi que le fichier CSV.
