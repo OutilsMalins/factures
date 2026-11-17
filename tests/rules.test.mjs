@@ -116,6 +116,18 @@ await seed({ franchise: true });
 await t("ancienne facture particulier sans champ franchise, entreprise en franchise", () => assertSucceeds(updateDoc(doc(ctx(A), P("invoices/legacyB2C")), { status: "payee", paidAt: "2026-11-16", paidMethod: "cheque", updatedAt: 1 })));
 await t("REFUS facture figée « assujettie » même si l'entreprise est passée en franchise", () => assertFails(updateDoc(doc(ctx(A), P("invoices/b2c")), { status: "payee", paidAt: "2026-11-16", paidMethod: "cheque", updatedAt: 1 })));
 
+console.log("Retenue de garantie (V5)");
+await seed();
+await env.withSecurityRulesDisabled(async c => { const db = c.firestore();
+  await setDoc(doc(db, P("invoices/rgPro")), { type: "facture", number: "F-2026-010", issueDate: "2026-11-10", status: "payee", paidAt: "2026-11-12", rg: 5, franchise: false, client: { kind: "pro" }, lines: [] });
+  await setDoc(doc(db, P("invoices/rgB2C")), { type: "facture", number: "F-2026-011", issueDate: "2026-11-10", status: "envoyee", rg: 5, franchise: false, client: { kind: "particulier" }, lines: [] }); });
+await t("date de versement de la retenue enregistrée (membre avec droit paiements)", () => assertSucceeds(updateDoc(doc(ctx(B), P("invoices/rgPro")), { rgPaidAt: "2027-11-15", updatedAt: 1 })));
+await t("REFUS retenue sur une facture sans retenue", () => assertFails(updateDoc(doc(ctx(A), P("invoices/old4")), { rgPaidAt: "2027-11-15", updatedAt: 1 })));
+await t("REFUS retenue d'un particulier (entreprise assujettie, loi anti-fraude)", () => assertFails(updateDoc(doc(ctx(A), P("invoices/rgB2C")), { rgPaidAt: "2027-11-15", updatedAt: 1 })));
+await t("REFUS en profiter pour changer le montant de la retenue", () => assertFails(updateDoc(doc(ctx(A), P("invoices/rgPro")), { rgPaidAt: "2027-11-16", rg: 2, updatedAt: 2 })));
+await env.withSecurityRulesDisabled(c => setDoc(doc(c.firestore(), P("members/" + C)), { email: "carol@ex.fr", perms: { payments: false } }));
+await t("REFUS membre sans droit paiements", () => assertFails(updateDoc(doc(ctx(C), P("invoices/rgPro")), { rgPaidAt: "2027-11-17", updatedAt: 3 })));
+
 console.log("Suppression du compte");
 await seed();
 await env.withSecurityRulesDisabled(async c => { const db = c.firestore(); for (let i = 0; i < 30; i++) await setDoc(doc(db, P("invoices/L" + i)), { type: "facture", number: "F-" + i, status: "envoyee", lines: [] }); });

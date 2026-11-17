@@ -102,6 +102,52 @@ await page.locator("#qList tr.click").first().click();
 await page.waitForTimeout(400);
 if (await page.locator("#btnToInvoice").isVisible()) { await page.click("#btnToInvoice"); t = await issue(); ok(/émise/.test(t), "facture finale (acompte déduit) émise : " + t); all.push(...await exportAll("5-facture-finale")); }
 else ok(false, "devis introuvable pour la facture finale");
+// situations de travaux + retenue de garantie (devis 10 000 € HT à 10 % + 3 000 € HT à 20 %)
+await newDoc({ type: "devis", client: "SCI Les Érables", lines: [{ desc: "Gros œuvre", qty: 1, unit: "forfait", price: 10000, tva: 10 }, { desc: "Électricité", qty: 1, unit: "forfait", price: 3000, tva: 20 }] });
+await clearToast(); await page.click("#btnSave"); await waitToast(/enregistré/);
+ok(await page.locator("#btnSituation").isVisible(), "devis : bouton « Situation de travaux »");
+const devisUrl = await page.evaluate(() => document.querySelector("#edNum").textContent);
+async function situation(cums, rg) {
+  await page.click("#btnSituation"); await page.waitForSelector("#sitModal.on");
+  if (typeof cums === "number") await page.fill("#sitAll", String(cums));
+  else for (let i = 0; i < cums.length; i++) await page.locator("#sitLines [data-sit]").nth(i).fill(String(cums[i]));
+  if (rg && !(await page.locator("#sitRgOn").isChecked())) { await page.check("#sitRgOn"); await page.fill("#sitRg", String(rg)); }
+  const res = await page.locator("#sitRes").textContent();
+  await page.click("#sitYes"); return res;
+}
+let res = await situation(40, 5);
+ok(/5 200,00 € HT/.test(res), "situation 1 à 40 % : 5 200,00 € HT annoncés (" + res + ")");
+let prev = (await page.locator("#preview, .sheet, #sheet").first().textContent()).replace(/\s+/g, " ").replace(/ /g, " ");
+ok(/FACTURE - SITUATION N° 1/.test(prev) && /5 840,00 €/.test(prev) && /Retenue de garantie 5 %/.test(prev) && /292,00 €/.test(prev) && /Net à payer/.test(prev) && /5 548,00 €/.test(prev), "aperçu : TTC 5 840,00 €, retenue 5 % = 292,00 €, net à payer 5 548,00 €");
+ok(/loi n° 71-584/.test(prev), "aperçu : mention légale de la retenue de garantie");
+t = await issue(); ok(/situation .*émise/i.test(t), "situation 1 émise : " + t);
+all.push(...await exportAll("7-situation-1-rg"));
+// paiement puis versement de la retenue un an plus tard
+await page.click('[data-tab="list"]'); await page.waitForTimeout(400);
+let rowS = page.locator("#invList tr").filter({ hasText: "F-2026-005" }).first();
+await rowS.locator("[data-paid]").click(); await page.fill("#payDate", "2026-11-20"); await clearToast(); await page.click("#payYes"); await waitToast(/paiement enregistré/);
+rowS = page.locator("#invList tr").filter({ hasText: "F-2026-005" }).first();
+ok(/retenue 292,00 € à recevoir/.test(await rowS.textContent()) && /Retenues de garantie à recevoir/.test(await page.locator("#stats").textContent()), "facture payée : « retenue 292,00 € à recevoir » + total des retenues à recevoir");
+await rowS.locator("[data-rg]").click(); await page.waitForSelector("#rgModal.on"); await page.fill("#rgDate", "2027-11-25"); await clearToast(); await page.click("#rgYes");
+ok(/retenue de garantie reçue le 25\/11\/2027/.test(await waitToast(/retenue|Accès|Échec/)), "« ✓ Retenue reçue » enregistrée (facture verrouillée, règles V5)");
+rowS = page.locator("#invList tr").filter({ hasText: "F-2026-005" }).first();
+ok(/reçue le 25\/11\/2027/.test(await rowS.textContent()) && !(await rowS.locator("[data-rg]").count()), "liste : « retenue reçue le 25/11/2027 », bouton retiré");
+await page.click('[data-tab="quotes"]'); await page.waitForTimeout(400); await page.locator("#qList tr.click").filter({ hasText: "SCI Les Érables" }).first().click(); await page.waitForTimeout(300);
+ok(!(await page.locator("#btnToInvoice").isVisible()) && await page.locator("#btnSituation").isVisible(), "devis facturé par situations : « Transformer en facture » masqué");
+res = await situation([100, 70]);
+ok(/6 900,00 € HT/.test(res), "situation 2 (100 % / 70 %) : 6 900,00 € HT = 60 % de 10 000 + 30 % de 3 000");
+t = await issue(); ok(/émise/.test(t), "situation 2 émise : " + t);
+all.push(...await exportAll("8-situation-2"));
+await page.click('[data-tab="quotes"]'); await page.waitForTimeout(400); await page.locator("#qList tr.click").filter({ hasText: "SCI Les Érables" }).first().click(); await page.waitForTimeout(300);
+res = await situation(100);
+ok(/900,00 € HT/.test(res) && /dernière situation/.test(res), "situation 3 : 900,00 € HT, dernière situation");
+t = await issue(); ok(/émise/.test(t), "situation 3 (finale) émise : " + t);
+all.push(...await exportAll("9-situation-3-finale"));
+await page.click('[data-tab="quotes"]'); await page.waitForTimeout(400); await page.locator("#qList tr.click").filter({ hasText: "SCI Les Érables" }).first().click(); await page.waitForTimeout(300);
+ok(!(await page.locator("#btnSituation").isVisible()), "chantier à 100 % : le devis est clos");
+const sx = fs.readFileSync(path.join(OUT, "7-situation-1-rg-cii.xml"), "utf8");
+ok(sx.includes("<ram:SubjectCode>ABU</ram:SubjectCode>") && sx.includes("<ram:DuePayableAmount>5840.00</ram:DuePayableAmount>") && sx.includes('unitCode="P1"'), "facture électronique : mention ABU, montant dû complet (le client pratique la retenue), unité %");
+
 // client particulier : export refusé avec explication
 await newDoc({ kind: "particulier", client: "Mme Petit", lines: [{ desc: "Coupe", qty: 1, unit: "u", price: 30, tva: 20 }] });
 t = await issue(); await page.click("#btnEInv"); await page.waitForSelector("#eiModal.on");
