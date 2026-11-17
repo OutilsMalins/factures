@@ -890,6 +890,7 @@ details.more[open] summary{margin-bottom:12px}
           <select id="clientPick"><option value="">— Saisir un nouveau client —</option></select>
         </label>
         <div class="seg" id="kindSeg"><button data-v="particulier">Particulier</button><button data-v="pro">Professionnel</button></div>
+        <p class="hint" id="proTip" style="display:none;margin:-4px 0 12px">Client professionnel (entreprise, artisan, association…) ? Choisis « Professionnel » pour indiquer son SIREN ou SIRET et son n° de TVA.</p>
         <p class="hint" id="medHint" style="display:none;margin:6px 0 12px;color:#8a5a00"></p>
         <label class="f"><span>Nom / Raison sociale</span><input type="text" id="cName" placeholder="Ex. Dupont SARL" data-ex="client"></label>
         <label class="f"><span>Adresse de facturation</span><textarea id="cAddr" rows="2" placeholder="N°, rue&#10;Code postal Ville"></textarea></label>
@@ -996,6 +997,7 @@ details.more[open] summary{margin-bottom:12px}
     <div class="card" id="clFormCard">
       <div class="card-h"><div class="ico b">+</div><div><h3 id="clFormTitle">Nouveau client</h3><p>Coordonnées reprises sur tes factures</p></div></div>
       <div class="seg" id="kKindSeg"><button data-v="particulier" class="on">Particulier</button><button data-v="pro">Professionnel</button></div>
+      <p class="hint" id="kProTip" style="margin:-4px 0 12px">Client professionnel (entreprise, artisan, association…) ? Choisis « Professionnel » pour indiquer son SIREN ou SIRET et son n° de TVA.</p>
       <label class="f"><span>Nom / Raison sociale</span><input type="text" id="kName"></label>
       <label class="f"><span>Adresse</span><textarea id="kAddr" rows="2"></textarea></label>
       <div class="row">
@@ -1952,7 +1954,7 @@ const medMissing = d => !!d && docType(d)!=="avoir" && ((d.client&&d.client.kind
 function medHint(){ const h=$("#medHint"); if(!h) return; const on=medMissing(S.cur) && !isLockedEd(S.cur);
   h.style.display=on?"block":"none";
   if(on) h.textContent="⚠️ Client particulier : le médiateur de la consommation n'est pas renseigné. Il est obligatoire quand on travaille pour des particuliers. "+(can("company")?"Remplis-le dans « Mon entreprise » (cadre F), ou décoche la case si tu donnes ses coordonnées ailleurs (site internet, conditions de vente…).":"Demande au responsable du compte de le remplir dans « Mon entreprise »."); }
-function toggleProRow(){ medHint(); sirenHint(); $("#cProRow").style.display = S.cur.client.kind==="pro" ? "grid" : "none"; }
+function toggleProRow(){ medHint(); sirenHint(); $("#proTip").style.display = S.cur.client.kind!=="pro" && !isLockedEd(S.cur) ? "block" : "none"; $("#cProRow").style.display = S.cur.client.kind==="pro" ? "grid" : "none"; }
 function newEditor(type="facture"){ loadEditor(newDoc(type)); showTab("edit"); }
 
 const m = {issueDate:"issueDate",serviceDate:"serviceDate",dueDate:"dueDate",validUntil:"validUntil",notes:"notes",deliveryAddr:"deliveryAddress"};
@@ -2890,9 +2892,10 @@ $("#btnZip").addEventListener("click",async()=>{
 
 /* ================= clients ================= */
 let editingClient=null, kKind="particulier";
-function kSirenHint(){ const st=sirenState($("#kSiren").value), on=kKind==="pro"&&st!=="ok"; $("#kSirenHint").style.display=on?"block":"none"; if(on) $("#kSirenHint").textContent="⚠️ "+SIREN_TXT[st]; }
+function kSirenHint(){ $("#kProTip").style.display=kKind==="pro"?"none":"block"; $("#kSiren").closest(".row").style.display=kKind==="pro"?"":"none"; const st=sirenState($("#kSiren").value), on=kKind==="pro"&&st!=="ok"; $("#kSirenHint").style.display=on?"block":"none"; if(on) $("#kSirenHint").textContent="⚠️ "+SIREN_TXT[st]; }
 $("#kSiren").addEventListener("input",()=>kSirenHint());
 bindSeg("kKindSeg",v=>{ kKind=v; kSirenHint(); });
+kSirenHint();
 function fillClientPick(){
   const sel=$("#clientPick"), v=sel.value;
   sel.innerHTML=`<option value="">— Saisir un nouveau client —</option>`+Object.values(S.clients).sort((a,b)=>a.name.localeCompare(b.name)).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
