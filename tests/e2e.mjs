@@ -2,6 +2,7 @@
 import { createRequire } from "node:module"; const { chromium } = createRequire(import.meta.url)("playwright");
 import fs from "node:fs";
 import http from "node:http";
+import crypto from "node:crypto";
 import path from "node:path";
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
@@ -17,7 +18,7 @@ html = html.replace('signOut, GoogleAuthProvider', 'signOut, connectAuthEmulator
            .replace('projectId: "factures-outilsmalins"', `projectId: "${PROJECT}"`);
 const srv = http.createServer((q, r) => {
   const f = q.url.split("?")[0] === "/" ? "/index.html" : q.url.split("?")[0];
-  if (f === "/index.html") { r.writeHead(200, { "content-type": "text/html" }); return r.end(html); }
+  if (f === "/index.html") { r.writeHead(200, { "content-type": "text/html", etag: '"' + crypto.createHash("md5").update(html).digest("hex") + '"' }); return r.end(q.method === "HEAD" ? undefined : html); }
   const p = path.join(SRC, f); if (!fs.existsSync(p)) { r.writeHead(404); return r.end(); }
   r.writeHead(200, f.endsWith(".js") ? { "content-type": "application/javascript" } : f.endsWith(".webmanifest") ? { "content-type": "application/manifest+json" } : {}); r.end(fs.readFileSync(p));
 }).listen(5055);
@@ -150,6 +151,26 @@ ok(await page.locator("#sMediator").isVisible(), "case recochée : champ réaffi
 await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
 await page.click('[data-tab="edit"]');
 ok(await page.locator("#medHint").isVisible() && /décoche la case/.test(await page.locator("#medHint").textContent()), "case cochée mais vide : alerte de retour (avec l'option de décocher)");
+
+// mise à jour automatique
+const marker = () => page.evaluate(() => window.__mark === 1);
+await page.click('[data-tab="edit"]'); await page.click("#btnNewF"); await page.click('[data-tab="list"]'); await page.evaluate(() => { document.activeElement && document.activeElement.blur(); window.__mark = 1; });
+html += "\n<!-- nouvelle version 1 -->";
+await page.evaluate(() => window.__upd.check(true));
+await page.waitForLoadState("load"); await page.waitForTimeout(1500);
+ok(!(await marker()), "nouvelle version : rechargement automatique quand personne ne saisit");
+await page.waitForSelector("#app", { state: "visible", timeout: 15000 });
+await page.waitForFunction(() => window.__upd && window.__upd.base, null, { timeout: 15000 });
+await page.waitForTimeout(1200); if (await page.locator("#bkModal.on").count()) await page.click("#bkLater");
+await newInvoice({ client: "Saisie en cours", kind: "pro", desc: "Ligne pas enregistrée", price: 12 });
+await page.evaluate(() => { window.__mark = 1; });
+html += "\n<!-- nouvelle version 2 -->";
+await page.locator('[data-k="desc"]').first().focus();
+await page.evaluate(() => window.__upd.check(true)); await page.waitForTimeout(1500);
+ok(await marker() && await page.locator("#updBar").isVisible(), "saisie en cours : pas de rechargement, bandeau « Mettre à jour » affiché");
+ok((await page.locator('[data-k="desc"]').first().inputValue()) === "Ligne pas enregistrée", "rien n'est perdu pendant la saisie");
+await page.click("#updNow"); await page.waitForLoadState("load"); await page.waitForTimeout(1500);
+ok(!(await marker()), "bouton « Mettre à jour » : rechargement");
 
 ok(errs.filter(e => !/favicon|ERR_|net::/.test(e)).length === 0, "aucune erreur JavaScript" + (errs.length ? " : " + errs.slice(0, 3).join(" | ") : ""));
 console.log(`\n${pass} ok, ${fail} échec(s)`);

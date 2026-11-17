@@ -10,7 +10,8 @@ Tani n'est pas développeur : réponses en français, simples, tutoiement ; il v
   - **jsPDF 2.5.1 et JSZip 3.10.1 intégrés dans la page** (pas de fichier séparé : le téléchargement de `.js` est bloqué chez Tani, et c'est voulu pour le RGPD).
   - Polices **Manrope** et **Bricolage Grotesque** intégrées en base64 (`@font-face`). **Aucun appel à Google Fonts ni à un CDN** : seul Firebase est autorisé (RGPD, déclaré dans les mentions légales). Ne pas réintroduire de ressource externe.
 - `mentions-legales.html` : mentions légales + politique de confidentialité + CGU + clause de sous-traitance art. 28 RGPD (version du 15/11/2026, polices intégrées aussi).
-- `sw.js` (cache `factures-v2`, réseau d'abord) + `manifest.webmanifest` + icônes : appli installable (PWA).
+- `sw.js` (cache `factures-v3`, réseau d'abord, requêtes en `cache: "no-cache"` pour toujours avoir la dernière version) + `manifest.webmanifest` + icônes : appli installable (PWA).
+- **Mise à jour automatique** (fin de `index.html`, objet `Upd`) : au chargement, l'appli note l'ETag de `index.html` ; elle revérifie au retour sur l'appli et toutes les 30 min. Nouvelle version → rechargement automatique si personne ne saisit (pas de fenêtre ouverte, pas l'onglet « Mon entreprise », pas de champ actif, document de l'éditeur identique à son état chargé/enregistré), sinon bandeau « Mettre à jour » puis rechargement au prochain clic sans saisie en cours.
 - Les PDF émis sont archivés **en base64 dans Firestore** (`pdfs/{id}`), logo compressé < 300 Ko (attention à la limite de 1 Mo par document).
 
 ## Modèle de données (Firestore)
@@ -45,7 +46,7 @@ Tani n'est pas développeur : réponses en français, simples, tutoiement ; il v
 - Quotas de l'offre Spark : OK pour quelques entreprises, à surveiller si beaucoup d'utilisateurs.
 - Suppression des comptes inactifs après 3 ans : annoncée dans la politique, non automatisée.
 - La permission du dossier de sauvegarde doit parfois être redonnée après redémarrage du navigateur (bandeau « Reconnecter »).
-- Tests automatiques dans `tests/` (émulateur Firebase) : `npm run test:rules` (47 cas) et `npm run test:e2e` (28 étapes, vraie page dans Chromium). Voir `tests/README.md`.
+- Tests automatiques dans `tests/` (émulateur Firebase) : `npm run test:rules` (47 cas) et `npm run test:e2e` (32 étapes, vraie page dans Chromium). Voir `tests/README.md`.
 - Le propriétaire (et un membre avec le droit « entreprise ») peut toujours changer les compteurs dans les réglages : le serveur ne l'empêche pas de les baisser (l'appli refuse seulement un numéro déjà utilisé).
 - Contrôles faits seulement dans l'appli : avoir ≤ reste dû sur la facture.
 - Pas de mentions pour l'international : prestations à une entreprise de l'UE (autoliquidation art. 283-2 / 259-1 du CGI), livraisons intracommunautaires (art. 262 ter I), export (art. 262 I). L'autoliquidation proposée est seulement celle de la sous-traitance BTP.

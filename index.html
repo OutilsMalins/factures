@@ -846,6 +846,7 @@ details.more[open] summary{margin-bottom:12px}
 
 <main>
 <div class="topnote" id="wsBar" style="display:none"><span>🏢</span><span id="wsTxt"></span><span class="sp"></span><select id="wsPick" aria-label="Espace de travail"></select><button class="btn sm ghost" id="wsLeave" style="display:none">Quitter cet espace</button></div>
+<div class="topnote" id="updBar" style="display:none"><span>✨</span><span>Une nouvelle version de l'appli est disponible. Enregistre ce que tu es en train de faire, puis mets à jour.</span><span class="sp"></span><button class="btn sm primary" id="updNow">Mettre à jour</button></div>
 <div class="topnote warn" id="bkBar" style="display:none"><span>💾</span><span id="bkBarTxt"></span><span class="sp"></span><button class="btn sm primary" id="bkReconnect">Reconnecter</button></div>
 <!-- EDITOR -->
 <section class="view on" id="v-edit">
@@ -1878,7 +1879,8 @@ function refreshLockUi(){
 function loadEditor(inv){
   if(!inv.type) inv.type="facture";
   if(!inv.client.email) inv.client.email="";
-  S.cur=inv; const t=inv.type, T=TYPE[t], L=labelOf(inv);
+  S.cur=inv; S.curSnap=null; queueMicrotask(()=>{ if(S.cur===inv) S.curSnap=JSON.stringify(inv); }); // état « enregistré » (pour la mise à jour auto)
+  const t=inv.type, T=TYPE[t], L=labelOf(inv);
   const locked=isLockedEd(inv), draft = t!=="devis" && !inv.number, ro = !locked && !canDoc(inv), cancelled=isCancelled(inv);
   setLocked(false);
   $("#edTitle").textContent=L;
@@ -2937,7 +2939,36 @@ $("#mYes").addEventListener("click",()=>{ $("#modal").classList.remove("on"); co
 $("#modal").addEventListener("click",e=>{ if(e.target.id==="modal"){ $("#modal").classList.remove("on"); mCb=null; } });
 
 /* ================= appli installable ================= */
-if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).catch(()=>{})); }
+
+/* ================= mise à jour automatique ================= */
+// L'appli compare l'empreinte (ETag) de index.html sur le serveur avec celle du chargement.
+// Nouvelle version → rechargement automatique si personne n'est en train de saisir, sinon bandeau.
+const Upd = {
+  base:null, ready:false, last:0,
+  async tag(){ try{ const r=await fetch("./index.html",{method:"HEAD",cache:"no-cache"}); return r.ok ? (r.headers.get("etag")||r.headers.get("last-modified")) : null; }catch(_){ return null; } },
+  busy(){
+    if($$(".modal-bg.on").length) return true;                                        // une fenêtre est ouverte
+    if($("#v-settings") && $("#v-settings").classList.contains("on")) return true;     // réglages en cours
+    const a=document.activeElement; if(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true; // saisie en cours
+    if(S.cur && (S.curSnap==null || JSON.stringify(S.cur)!==S.curSnap)) return true;  // document modifié non enregistré
+    return false;
+  },
+  apply(){ if(this.busy()){ $("#updBar").style.display="flex"; return false; } location.reload(); return true; },
+  async check(force){
+    if(!force && Date.now()-this.last<20000) return; this.last=Date.now();
+    if(!this.base){ this.base=await this.tag(); return; }
+    if(this.ready) return void this.apply();
+    const t=await this.tag(); if(t && t!==this.base){ this.ready=true; this.apply(); }
+  }
+};
+window.__upd=Upd; // pour les tests
+$("#updNow").addEventListener("click",()=>location.reload());
+Upd.check(true);
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") Upd.check(); });
+setInterval(()=>{ if(document.visibilityState==="visible") Upd.check(true); }, 30*60*1000);
+// version prête mais on était occupé : on réessaie après chaque clic (changement d'onglet, fenêtre fermée, enregistrement…)
+document.addEventListener("click",()=>{ if(Upd.ready) setTimeout(()=>{ if(!Upd.busy()) location.reload(); }, 600); });
 
 </script>
 </body>
