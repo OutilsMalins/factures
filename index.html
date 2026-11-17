@@ -505,6 +505,7 @@ textarea{resize:vertical;min-height:40px}
 .seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 6px;font-weight:700;color:var(--muted);cursor:pointer;font-size:13px}
 .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .chk{display:flex;gap:9px;align-items:flex-start;margin:4px 0 12px;cursor:pointer}
+.med-info{margin:0 0 12px 27px;font-size:12.5px;color:var(--muted)}.med-info summary{cursor:pointer;font-weight:600;display:inline-block}.med-info p{margin:6px 0}
 .chk input{margin-top:3px;accent-color:var(--brand);width:16px;height:16px}
 .hint{font-size:12px;color:var(--muted);margin:-4px 0 12px}
 .btn{border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:9px 15px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;transition:transform .08s, box-shadow .15s, border-color .15s, background .15s}
@@ -1126,9 +1127,16 @@ details.more[open] summary{margin-bottom:12px}
       </div>
 
       <div class="card">
-        <div class="card-h"><div class="ico p">F</div><div><h3>Médiateur, assurance &amp; pied de page</h3><p>Médiateur obligatoire si tu as des clients particuliers ; le reste est facultatif</p></div></div>
+        <div class="card-h"><div class="ico p">F</div><div><h3>Médiateur, assurance &amp; pied de page</h3><p>Médiateur : obligatoire si tu as des clients particuliers. Le reste est facultatif.</p></div></div>
         <label class="f"><span>Assurance professionnelle (ex. décennale pour les travaux)</span><textarea id="sInsur" rows="2" placeholder="Assureur, n° de contrat, zone géographique couverte"></textarea></label>
-        <label class="f"><span>Médiateur de la consommation (obligatoire si tu travailles pour des particuliers)</span><input type="text" id="sMediator" placeholder="Nom du médiateur et site internet"></label>
+        <label class="chk" style="margin-bottom:4px"><input type="checkbox" id="sMedOn"><span><b>Indiquer mon médiateur de la consommation</b> sur mes factures et devis pour les clients particuliers</span></label>
+        <details class="med-info"><summary>ⓘ Est-ce obligatoire ?</summary>
+          <p>Si tu vends à des <b>particuliers</b>, la loi t'oblige à <b>adhérer à un médiateur de la consommation</b> (souvent via ta fédération ou ta chambre de métiers) et à <b>donner ses coordonnées à tes clients</b> (Code de la consommation, art. L612-1 et R616-1).</p>
+          <p>Ce n'est <b>pas une mention obligatoire de la facture</b> : tu peux les indiquer sur ton site internet, tes conditions générales de vente, tes devis ou tes factures.</p>
+          <p>Si tes devis et factures sont tes seuls documents, <b>laisse la case cochée</b>. Décoche-la seulement si tu donnes déjà ces coordonnées ailleurs.</p>
+          <p>Pas concerné si tous tes clients sont des professionnels.</p>
+        </details>
+        <label class="f" id="medField"><span>Médiateur de la consommation</span><input type="text" id="sMediator" placeholder="Nom du médiateur et site internet"></label>
         <label class="f"><span>Pied de page (facultatif)</span><input type="text" id="sFooter"></label>
       </div>
       <div class="actions" style="justify-content:flex-end;margin-bottom:20px"><button class="btn primary" id="btnSettingsSave">Enregistrer mes informations</button></div>
@@ -1371,7 +1379,7 @@ const DEFAULT_PROFILE = {
   franchise:true, tvaNumber:"", defaultTva:20, tvaDebits:false,
   payDays:30, means:"", iban:"", bic:"", quoteDays:30,
   penalties:"Taux d'intérêt appliqué par la BCE à son opération de refinancement la plus récente, majoré de 10 points",
-  insurance:"", mediator:"", prefix:"F", prefixDevis:"D", prefixAvoir:"A", nextNumber:1, counters:{}, numDigits:3, numYear:true, numReset:false,
+  insurance:"", mediator:"", mediatorOnDocs:true, prefix:"F", prefixDevis:"D", prefixAvoir:"A", nextNumber:1, counters:{}, numDigits:3, numYear:true, numReset:false,
   payMeans:["virement"], footer:"", logo:null, accent:"#1f5c45", signature:null, showSignature:true, signName:""
 };
 // S.uid = la personne connectée ; S.ws = l'entreprise (espace) dont on affiche les données
@@ -1455,6 +1463,7 @@ function normProfile(p){
   if(/^virement bancaire\.?$/i.test(String(o.means||"").trim())) o.means="";
   o.numDigits=Math.min(5,Math.max(1,Number(o.numDigits)||3)); if(o.numDigits===2) o.numDigits=1;
   o.numYear = o.numYear!==false;
+  o.mediatorOnDocs = o.mediatorOnDocs!==false;
   o.numReset = !!o.numReset; if(o.numReset) o.numYear=true;
   o.counters = (o.counters && typeof o.counters==="object") ? o.counters : {};
   if(o.prefixDevis==null) o.prefixDevis="D"; if(o.prefixAvoir==null) o.prefixAvoir="A";
@@ -1906,10 +1915,10 @@ function loadEditor(inv){
 }
 function autoliqHint(){ $("#autoliqHint").style.display = S.cur && S.cur.autoliq && !S.profile.franchise && !String(S.cur.client.tva||"").trim() ? "block" : "none"; }
 // médiateur de la consommation : obligatoire dès qu'on travaille pour des particuliers (Code de la consommation)
-const medMissing = d => !!d && docType(d)!=="avoir" && ((d.client&&d.client.kind)||"particulier")!=="pro" && !String(S.profile.mediator||"").trim();
+const medMissing = d => !!d && docType(d)!=="avoir" && ((d.client&&d.client.kind)||"particulier")!=="pro" && S.profile.mediatorOnDocs!==false && !String(S.profile.mediator||"").trim();
 function medHint(){ const h=$("#medHint"); if(!h) return; const on=medMissing(S.cur) && !isLockedEd(S.cur);
   h.style.display=on?"block":"none";
-  if(on) h.textContent="⚠️ Client particulier : le médiateur de la consommation n'est pas renseigné. Il est obligatoire quand on travaille pour des particuliers. "+(can("company")?"Remplis-le dans « Mon entreprise » (cadre F).":"Demande au responsable du compte de le remplir dans « Mon entreprise »."); }
+  if(on) h.textContent="⚠️ Client particulier : le médiateur de la consommation n'est pas renseigné. Il est obligatoire quand on travaille pour des particuliers. "+(can("company")?"Remplis-le dans « Mon entreprise » (cadre F), ou décoche la case si tu donnes ses coordonnées ailleurs (site internet, conditions de vente…).":"Demande au responsable du compte de le remplir dans « Mon entreprise »."); }
 function toggleProRow(){ medHint(); $("#cProRow").style.display = S.cur.client.kind==="pro" ? "grid" : "none"; }
 function newEditor(type="facture"){ loadEditor(newDoc(type)); showTab("edit"); }
 
@@ -2216,7 +2225,7 @@ function conditionsText(inv,p){
     a.push("Ce montant sera remboursé ou déduit de votre prochaine facture.");
   }
   if(p.insurance) a.push("Assurance professionnelle : "+p.insurance);
-  if(p.mediator && inv.client.kind!=="pro" && t!=="avoir") a.push("En cas de litige, médiateur de la consommation : "+p.mediator);
+  if(p.mediator && p.mediatorOnDocs!==false && inv.client.kind!=="pro" && t!=="avoir") a.push("En cas de litige, médiateur de la consommation : "+p.mediator);
   return a;
 }
 const footerText = p => p.footer || [p.name,p.siret?("SIRET "+p.siret):""].filter(Boolean).join(" — ");
@@ -2671,7 +2680,7 @@ let numOrig={};
 function fillSettings(){
   draftProfile=clean(S.profile);
   Object.entries(SMAP).forEach(([id,k])=>{ $("#"+id).value = draftProfile[k] ?? ""; });
-  $("#sFranchise").checked=!!draftProfile.franchise; $("#sDebits").checked=!!draftProfile.tvaDebits; $("#sShowSig").checked=draftProfile.showSignature!==false;
+  $("#sFranchise").checked=!!draftProfile.franchise; $("#sDebits").checked=!!draftProfile.tvaDebits; $("#sShowSig").checked=draftProfile.showSignature!==false; $("#sMedOn").checked=draftProfile.mediatorOnDocs!==false; medField();
   $("#sYear").value=draftProfile.numYear===false?"0":"1"; $("#sDigits").value=String(draftProfile.numDigits||3);
   $("#sReset").checked=!!draftProfile.numReset; $("#sYear").disabled=!!draftProfile.numReset;
   const y=todayISO().slice(0,4);
@@ -2779,6 +2788,8 @@ $("#sigOk").addEventListener("click",()=>{ if(!sig.has) return toast("Signe d'ab
 $("#sigRedo").addEventListener("click",()=>{ draftProfile.signature=null; showSig(); });
 $("#sigDel").addEventListener("click",()=>{ draftProfile.signature=null; showSig(); });
 $("#sShowSig").addEventListener("change",e=>{ draftProfile.showSignature=e.target.checked; });
+function medField(){ $("#medField").style.display=$("#sMedOn").checked?"":"none"; }
+$("#sMedOn").addEventListener("change",e=>{ draftProfile.mediatorOnDocs=e.target.checked; medField(); });
 $("#sigFile").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
   rd.onload=()=>{ const img=new Image(); img.onload=()=>{ const c=document.createElement("canvas"); c.width=img.width; c.height=img.height; const x=c.getContext("2d"); x.drawImage(img,0,0);
