@@ -136,9 +136,9 @@ ok(!(await page.locator("#medHint").isVisible()), "alerte masquée une fois le m
 // case « Indiquer mon médiateur » + « i »
 await page.click('[data-tab="settings"]');
 ok(await page.locator("#sMedOn").isChecked() && await page.locator("#sMediator").isVisible(), "case cochée par défaut, champ visible");
-await page.click(".med-info summary");
+await page.click("#setCards .med-info summary");
 if (process.env.SHOT) await page.locator(".card", { has: page.locator("#sMedOn") }).screenshot({ path: process.env.SHOT });
-ok(/pas une mention obligatoire de la facture/.test(await page.locator(".med-info").textContent()) && await page.locator(".med-info p").first().isVisible(), "le « i » s'ouvre et explique (obligatoire, mais pas forcément sur la facture)");
+ok(/pas une mention obligatoire de la facture/.test(await page.locator("#setCards .med-info").textContent()) && await page.locator("#setCards .med-info p").first().isVisible(), "le « i » s'ouvre et explique (obligatoire, mais pas forcément sur la facture)");
 await page.fill("#sMediator", ""); await page.uncheck("#sMedOn");
 ok(!(await page.locator("#sMediator").isVisible()), "case décochée : champ masqué");
 await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);

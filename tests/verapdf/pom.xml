@@ -1,0 +1,5 @@
+<!-- Récupère veraPDF (validateur de référence PDF/A) : mvn -q dependency:copy-dependencies -DoutputDirectory=lib -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+  <groupId>factures</groupId><artifactId>verapdf</artifactId><version>1</version>
+  <dependencies><dependency><groupId>org.verapdf.apps</groupId><artifactId>greenfield-apps</artifactId><version>1.28.2</version></dependency></dependencies>
+</project>
