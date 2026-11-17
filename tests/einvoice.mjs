@@ -105,13 +105,33 @@ else ok(false, "devis introuvable pour la facture finale");
 // client particulier : export refusé avec explication
 await newDoc({ kind: "particulier", client: "Mme Petit", lines: [{ desc: "Coupe", qty: 1, unit: "u", price: 30, tva: 20 }] });
 t = await issue(); await page.click("#btnEInv"); await page.waitForSelector("#eiModal.on");
-ok(/clients professionnels/.test(await page.locator("#eiPb").textContent()) && await page.locator('#eiOpts [data-ei="fx"]').isDisabled(), "client particulier : export désactivé avec explication");
+ok(/clients professionnels/.test(await page.locator("#eiPb").textContent()) && (await page.locator("#eiPb li").count()) === 1 && await page.locator('#eiOpts [data-ei="fx"]').isDisabled(), "client particulier : export désactivé, une seule explication");
 await page.click("#eiClose");
 // client pro sans SIREN : explication
 await newDoc({ client: "Sans Siren SARL", siren: "", lines: [{ desc: "Conseil", qty: 1, unit: "h", price: 80, tva: 20 }] });
 await issue(); await page.click("#btnEInv"); await page.waitForSelector("#eiModal.on");
 ok(/SIREN du client/.test(await page.locator("#eiPb").textContent()), "client pro sans SIREN : on demande le SIREN");
 await page.click("#eiClose");
+
+// SIREN du client : aide dans l'éditeur, l'onglet Clients et la confirmation d'émission
+await newDoc({ client: "Test Siren SARL", siren: "", lines: [{ desc: "Conseil", qty: 1, unit: "h", price: 80, tva: 20 }] });
+ok(await page.locator("#sirenHint").isVisible() && /obligatoire pour un client professionnel/.test(await page.locator("#sirenHint").textContent()), "éditeur : SIREN vide → explication");
+await page.fill("#cSiren", "123 456 789");
+ok(/semble incorrect/.test(await page.locator("#sirenHint").textContent()), "éditeur : SIREN faux (clé de contrôle) → faute de frappe signalée");
+await page.click("#btnSave"); await page.waitForSelector("#modal.on");
+ok(/SIREN du client semble incorrect/.test(await page.locator("#mText").textContent()), "confirmation d'émission : avertissement SIREN");
+await page.click("#mNo");
+await page.fill("#cSiren", "552 100 554");
+ok(!(await page.locator("#sirenHint").isVisible()), "éditeur : SIREN correct → plus de message");
+await page.fill("#cSiren", "55210055400013");
+ok(!(await page.locator("#sirenHint").isVisible()), "éditeur : SIRET correct (14 chiffres) accepté");
+await page.click('#kindSeg button[data-v="particulier"]');
+ok(!(await page.locator("#sirenHint").isVisible()), "éditeur : client particulier → pas de message SIREN");
+await page.click('[data-tab="clients"]'); await page.click('#kKindSeg button[data-v="pro"]');
+ok(await page.locator("#kSirenHint").isVisible(), "onglet Clients : SIREN vide → explication");
+await page.fill("#kSiren", "552100554");
+ok(!(await page.locator("#kSirenHint").isVisible()), "onglet Clients : SIREN correct → plus de message");
+await page.click('#kKindSeg button[data-v="particulier"]');
 
 console.log("Entreprise en franchise de TVA");
 await page.click("#btnLogout"); await page.waitForTimeout(500); if (await page.locator("#modal.on").count()) await page.click("#mYes");
