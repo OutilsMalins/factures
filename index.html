@@ -1823,7 +1823,7 @@ $("#btnInvite").addEventListener("click",async()=>{
     await setDoc(doc(db,"invites",em),{owner:S.uid, ownerName:S.profile.name||"", email:em, at:Date.now(), perms});
     $("#tEmail").value=""; $("#tPerms").innerHTML=permBoxes({}); loadInvites();
     const link=location.origin+location.pathname;
-    const body=`Bonjour,\n\nJe t'ai donné accès aux factures de ${S.profile.name} dans l'appli « Mes factures ».\n\n1. Ouvre ${link}\n2. Connecte-toi (ou crée ton compte) avec cette adresse : ${em}\n3. Accepte l'invitation qui s'affiche.\n\nÀ bientôt !`;
+    const body=`Bonjour,\n\nJe t'ai donné accès aux factures de ${S.profile.name} dans l'appli « Mes factures ».\n\n1. Ouvre ${link}\n2. Crée ton compte avec cette adresse : ${em} (ou connecte-toi si tu en as déjà un).\n3. Confirme ton adresse email : tu vas recevoir un email avec un lien de confirmation, clique dessus (regarde aussi dans les courriers indésirables). Si ton compte était déjà confirmé, passe cette étape.\n4. Reviens sur l'appli (recharge la page si besoin) et clique sur « Rejoindre » dans l'invitation qui s'affiche.\n\nÀ bientôt !`;
     if(navigator.clipboard) navigator.clipboard.writeText(body).catch(()=>{});
     confirmBox("Invitation enregistrée ✅",`Préviens ${em} : ouvre un email tout prêt (le texte est aussi copié) ?`,()=>{ window.location.href=`mailto:${encodeURIComponent(em)}?subject=${encodeURIComponent("Accès à Mes factures")}&body=${encodeURIComponent(body)}`; });
   }catch(e){
