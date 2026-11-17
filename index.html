@@ -2654,7 +2654,7 @@ const EI = (()=>{
     if(String(inv.notes||"").trim()) notes.push(["",String(inv.notes).trim()]);
     if(p.insurance) notes.push(["","Assurance professionnelle : "+p.insurance]);
     // retenue de garantie : pratiquée par le client sur le montant dû (cas « clause de réserve contractuelle », code sujet ABU)
-    if(rgRate(inv)){ const rg=rgAmount(inv,computeTotals(inv,p)); notes.push(["ABU",`Retenue de garantie de ${String(rgRate(inv)).replace(".",",")} % (loi n° 71-584 du 16 juillet 1971) : ${money(rg)} retenus sur le montant dû, à restituer un an après la réception des travaux.`]); }
+    if(rgRate(inv)){ const rg=rgAmount(inv,computeTotals(inv,p)); notes.push(["ABU",`Clause de réserve : retenue de garantie de ${String(rgRate(inv)).replace(".",",")} % (loi n° 71-584 du 16 juillet 1971), soit ${money(rg)} retenus par l'acheteur sur le montant dû, à régler à la levée de la réserve (un an après la réception des travaux).`]); }
     const means=(p.payMeans||[]).length?p.payMeans:["virement"], iban=String(p.iban||"").replace(/\s/g,"");
     const pay = t==="avoir" ? null : (means.includes("virement") ? {code:iban?"58":"30", iban, bic:String(p.bic||"").replace(/\s/g,"")} : {code:PAYCODE[means[0]]||"1"});
     return { inv, p, t, typeCode, cadre, notes, L, vat, ht, tva, ttc, pay,
