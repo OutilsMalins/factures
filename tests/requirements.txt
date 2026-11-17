@@ -1,0 +1,4 @@
+# Validateurs officiels pour les factures électroniques (npm run test:einvoice)
+factur-x==7.9
+saxonche
+lxml
