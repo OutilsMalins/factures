@@ -25,6 +25,8 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 PYTHON=.venv/bin/python VERAPDF_CP="verapdf/lib/*" npm run test:einvoice
 ```
 
+`PREFIX=XX` change le préfixe des numéros (FX-2026-001…) : utile pour déposer les fichiers sur une plateforme agréée, qui refuse les numéros déjà déposés.
+
 Sans `VERAPDF_CP`, le contrôle PDF/A est sauté (les XML sont quand même vérifiés). Les fichiers produits restent dans `einvoice-out/`.
 `python validate_einvoice.py fichier.pdf fichier.xml …` vérifie n'importe quel fichier.
 

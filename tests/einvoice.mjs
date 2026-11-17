@@ -50,6 +50,7 @@ async function settings({ franchise }) {
   await page.fill("#sAddr", "12 rue de la Paix\n75002 Paris"); await page.fill("#sEmail", "contact@atelier.example"); await page.fill("#sPhone", "01 23 45 67 89");
   if (franchise) await page.check("#sFranchise"); else { await page.uncheck("#sFranchise"); await page.fill("#sTvaNum", "FR44732829320"); }
   await page.fill("#sIban", "FR76 3000 6000 0112 3456 7890 189"); await page.fill("#sBic", "AGRIFRPP");
+  if (process.env.PREFIX) { const px = process.env.PREFIX + (franchise ? "Z" : ""); await page.evaluate(px => { for (const [id, v] of [["sPrefix", px], ["sPrefixA", px + "A"], ["sPrefixD", px + "D"]]) { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); } }, px); }   // numéros uniques (essais sur une plateforme)
   await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i); await closeBackup();
 }
 async function newDoc({ kind = "pro", client = "Dupont SARL", siren = "552 100 554", tva = "", addr = "5 avenue Victor Hugo\n69002 Lyon", lines, nature = "services", autoliq = false, type = "facture" }) {
@@ -124,13 +125,13 @@ t = await issue(); ok(/situation .*émise/i.test(t), "situation 1 émise : " + t
 all.push(...await exportAll("7-situation-1-rg"));
 // paiement puis versement de la retenue un an plus tard
 await page.click('[data-tab="list"]'); await page.waitForTimeout(400);
-let rowS = page.locator("#invList tr").filter({ hasText: "F-2026-005" }).first();
+let rowS = page.locator("#invList tr").filter({ hasText: /-2026-005/ }).first();
 await rowS.locator("[data-paid]").click(); await page.fill("#payDate", "2026-11-20"); await clearToast(); await page.click("#payYes"); await waitToast(/paiement enregistré/);
-rowS = page.locator("#invList tr").filter({ hasText: "F-2026-005" }).first();
+rowS = page.locator("#invList tr").filter({ hasText: /-2026-005/ }).first();
 ok(/retenue 292,00 € à recevoir/.test(await rowS.textContent()) && /Retenues de garantie à recevoir/.test(await page.locator("#stats").textContent()), "facture payée : « retenue 292,00 € à recevoir » + total des retenues à recevoir");
 await rowS.locator("[data-rg]").click(); await page.waitForSelector("#rgModal.on"); await page.fill("#rgDate", "2027-11-25"); await clearToast(); await page.click("#rgYes");
 ok(/retenue de garantie reçue le 25\/11\/2027/.test(await waitToast(/retenue|Accès|Échec/)), "« ✓ Retenue reçue » enregistrée (facture verrouillée, règles V5)");
-rowS = page.locator("#invList tr").filter({ hasText: "F-2026-005" }).first();
+rowS = page.locator("#invList tr").filter({ hasText: /-2026-005/ }).first();
 ok(/reçue le 25\/11\/2027/.test(await rowS.textContent()) && !(await rowS.locator("[data-rg]").count()), "liste : « retenue reçue le 25/11/2027 », bouton retiré");
 await page.click('[data-tab="quotes"]'); await page.waitForTimeout(400); await page.locator("#qList tr.click").filter({ hasText: "SCI Les Érables" }).first().click(); await page.waitForTimeout(300);
 ok(!(await page.locator("#btnToInvoice").isVisible()) && await page.locator("#btnSituation").isVisible(), "devis facturé par situations : « Transformer en facture » masqué");
