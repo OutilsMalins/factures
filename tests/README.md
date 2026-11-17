@@ -35,3 +35,11 @@ Sans `VERAPDF_CP`, le contrôle PDF/A est sauté (les XML sont quand même véri
 `npm run test:ereporting` crée des factures à des dates choisies (franchise, réel simplifié, réel normal mensuel)
 et vérifie le récapitulatif e-reporting au centime près (ventes aux particuliers, encaissements, rappel des factures pro
 payées, périodes et dates limites), ainsi que le fichier CSV.
+
+## Sauvegarde dans un dossier
+
+`npm run test:sauvegarde` vérifie le rangement du dossier de sauvegarde : `<client>/PDF/numéro - type - client.pdf`,
+`<client>/Facture électronique/numéro - Factur-X.pdf | UBL.xml` (copie faite à l'export), et le déplacement des PDF
+de l'ancien rangement (directement dans `<client>/`) vers `PDF/`. Le dossier choisi par l'utilisateur est remplacé par
+le stockage privé du navigateur (OPFS), qui a la même interface. Chromium est lancé avec `LANG=C.UTF-8` : sans locale
+UTF-8, il ne sait pas créer un dossier au nom accentué sous Linux (sur un vrai ordinateur, la locale est toujours UTF-8).

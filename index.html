@@ -1273,7 +1273,7 @@ details.more[open] summary{margin-bottom:12px}
   <h4>💾 Où garder une copie de tes factures ?</h4>
   <p>Tes documents sont déjà enregistrés en ligne dans l'appli. Choisis en plus où en garder une copie automatique, sur cet appareil :</p>
   <div class="bk-opts">
-    <button class="bk-opt" id="bkFolder"><b>📁 Dans un dossier de mon choix</b><small>Sur ton PC, une clé USB, un disque dur, ou un dossier Google Drive / OneDrive synchronisé. Chaque document y est copié en PDF, rangé dans un dossier par client et classé par numéro, avec un fichier de sauvegarde de toutes tes données.</small></button>
+    <button class="bk-opt" id="bkFolder"><b>📁 Dans un dossier de mon choix</b><small>Sur ton PC, une clé USB, un disque dur, ou un dossier Google Drive / OneDrive synchronisé. Chaque document y est copié en PDF, rangé dans un dossier par client (avec un sous-dossier « PDF » et un sous-dossier « Facture électronique »), classé par numéro, avec un fichier de sauvegarde de toutes tes données.</small></button>
     <button class="bk-opt" id="bkDl"><b>⬇ Télécharger chaque document automatiquement</b><small>Le PDF part dans tes Téléchargements à chaque émission. Fonctionne partout (tablette, téléphone, Mac…).</small></button>
     <button class="bk-opt" id="bkNone"><b>☁️ Seulement dans l'appli (déconseillé)</b><small>Aucune copie externe : tes documents ne sont conservés que dans l'application.</small></button>
   </div>
@@ -2791,14 +2791,17 @@ function openEInv(inv){
   $$("#eiOpts .bk-opt").forEach(b=>{ b.disabled=!!m.pb; b.style.opacity=m.pb?".45":""; });
   $("#eiModal").classList.add("on");
 }
-$$("#eiOpts [data-ei]").forEach(b=>b.addEventListener("click",()=>{
+$$("#eiOpts [data-ei]").forEach(b=>b.addEventListener("click",async()=>{
   const inv=S.cur; if(!inv) return; const m=EI.model(inv); if(m.pb) return;
   try{
     const base=safeName(inv.number), f=b.dataset.ei;
-    if(f==="fx"){ if(!window.jspdf) return toast("Le module PDF n'a pas pu se charger. Recharge la page.");
-      downloadBlob(new Blob([EI.facturxPdf(m)],{type:"application/pdf"}), `${base} - Factur-X.pdf`); }
-    else downloadBlob(new Blob([f==="cii"?EI.cii(m):EI.ubl(m)],{type:"application/xml"}), `${base} - ${f==="cii"?"CII":"UBL"}.xml`);
-    $("#eiModal").classList.remove("on"); toast("Fichier prêt : dépose-le sur ta plateforme agréée.");
+    if(f==="fx" && !window.jspdf) return toast("Le module PDF n'a pas pu se charger. Recharge la page.");
+    const suffix = f==="fx" ? "Factur-X.pdf" : f==="cii" ? "CII.xml" : "UBL.xml";
+    const data = f==="fx" ? EI.facturxPdf(m) : f==="cii" ? EI.cii(m) : EI.ubl(m);
+    downloadBlob(new Blob([data],{type:f==="fx"?"application/pdf":"application/xml"}), `${base} - ${suffix}`);
+    $("#eiModal").classList.remove("on");
+    const kept = await Backup.writeEi(inv,suffix,data);
+    toast(kept ? `Fichier prêt (copie rangée dans « ${folderName(inv)} / Facture électronique »). Dépose-le sur ta plateforme agréée.` : "Fichier prêt : dépose-le sur ta plateforme agréée.");
   }catch(e){ console.error(e); toast("Le fichier n'a pas pu être créé."); }
 }));
 $("#eiClose").addEventListener("click",()=>$("#eiModal").classList.remove("on"));
@@ -3356,8 +3359,28 @@ const Backup = {
     try{ let st=await c.handle.queryPermission({mode:"readwrite"}); if(st!=="granted"&&ask) st=await c.handle.requestPermission({mode:"readwrite"}); this.perm = st==="granted"; }catch(e){ console.error(e); this.perm=false; }
     this.ui(); return this.perm;
   },
-  // rangement : un dossier par client, fichiers nommés « numéro - type - client » (donc classés par numéro)
-  path(inv){ return `${folderName(inv)}/${pdfName(inv)}`; },
+  // rangement : un dossier par client, avec un sous-dossier « PDF » (fichiers « numéro - type - client ») et un sous-dossier « Facture électronique », donc classés par numéro
+  // rangement : <dossier choisi>/<client>/PDF/<numéro - type - client>.pdf  et  <client>/Facture électronique/<numéro - format>
+  path(inv){ return `${folderName(inv)}/PDF/${pdfName(inv)}`; },
+  oldPath(inv){ return `${folderName(inv)}/${pdfName(inv)}`; },   // ancien rangement (avant le 17/11/2026), directement dans le dossier du client
+  eiPath(inv,suffix){ return `${folderName(inv)}/Facture électronique/${safeName(inv.number)} - ${suffix}`; },
+  // déplace les PDF de l'ancien rangement vers le sous-dossier « PDF » (copie vérifiée, puis suppression de l'ancienne copie)
+  async migrate(){
+    let n=0;
+    for(const i of Object.values(S.invoices).filter(x=>x.number)){
+      const o=this.oldPath(i), nw=this.path(i); if(!(await this.exists(o))) continue;
+      const [od,oname]=await this.dirOf(o,false); const f=await (await od.getFileHandle(oname)).getFile();
+      if(!(await this.exists(nw))) await this.write(nw, await f.arrayBuffer());
+      const [nd,nname]=await this.dirOf(nw,false); const g=await (await nd.getFileHandle(nname)).getFile();
+      if(g.size===f.size){ await od.removeEntry(oname); n++; }
+    }
+    return n;
+  },
+  async writeEi(inv,suffix,data){   // copie d'un fichier de facture électronique dans le dossier du client
+    const c=this.cfg; if(!c||c.mode!=="folder") return false;
+    if(!(await this.ensurePerm(true))) return false;
+    try{ await this.write(this.eiPath(inv,suffix),data); return true; }catch(e){ console.error(e); return false; }
+  },
   async dirOf(path,create){ let d=this.cfg.handle; const parts=path.split("/"); for(const p of parts.slice(0,-1)) d=await d.getDirectoryHandle(p,{create}); return [d,parts[parts.length-1]]; },
   async write(path,data){ const [d,name]=await this.dirOf(path,true); const fh=await d.getFileHandle(name,{create:true}); const w=await fh.createWritable(); await w.write(data); await w.close(); },
   async exists(path){ try{ const [d,name]=await this.dirOf(path,false); await d.getFileHandle(name); return true; }catch(_){ return false; } },
@@ -3378,6 +3401,7 @@ const Backup = {
     clearTimeout(this.tTouch); this.tTouch=setTimeout(async()=>{ if(!this.perm) return; try{ await this.write(this.jsonName(),this.dataJson()); }catch(e){ console.error(e); this.perm=false; this.ui(); } },4000);
   },
   async flush(){
+    if(this.perm && !lsGet(this.key()+":rangement2")){ try{ await this.migrate(); lsSet(this.key()+":rangement2","1"); }catch(e){ console.error(e); } }
     const ids=this.pending(); if(!ids.length||!this.perm||this.busy) return; this.busy=true;
     const left=ids.filter(id=>!S.invoices[id]);
     try{
@@ -3394,10 +3418,11 @@ const Backup = {
     const btn=$("#bkSync"); btn.disabled=true; const old=btn.textContent; btn.textContent="Copie en cours…";
     let n=0;
     try{
+      const moved=await this.migrate(); lsSet(this.key()+":rangement2","1");
       const docs=Object.values(S.invoices).filter(i=>i.number);
       for(const i of docs){ const path=this.path(i); if(isIssued(i) && await this.exists(path)) continue; await this.write(path,await pdfBytes(i)); n++; }
       await this.write(this.jsonName(),this.dataJson()); this.setPending([]); await this.save({...c,last:Date.now()});
-      toast(`Sauvegarde à jour dans « ${c.name} » (${n} PDF copié${n>1?"s":""}).`);
+      toast(`Sauvegarde à jour dans « ${c.name} » (${n} PDF copié${n>1?"s":""}${moved?`, ${moved} rangé${moved>1?"s":""} dans les dossiers « PDF »`:""}).`);
     }catch(e){ this.fail(e,[]); }
     finally{ btn.disabled=false; btn.textContent=old; }
   },
@@ -3489,7 +3514,7 @@ const Upd = {
     const t=await this.tag(); if(t && t!==this.base){ this.ready=true; this.apply(); }
   }
 };
-window.__upd=Upd; // pour les tests
+window.__upd=Upd; window.__bk=Backup; // pour les tests
 $("#updNow").addEventListener("click",()=>location.reload());
 Upd.check(true);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") Upd.check(); });
