@@ -5,7 +5,8 @@
   "scripts": {
     "test:rules": "firebase emulators:exec --only firestore --project demo-factures \"node rules.test.mjs\"",
     "test:e2e": "firebase emulators:exec --only firestore,auth --project demo-factures \"node e2e.mjs\"",
-    "test:einvoice": "firebase emulators:exec --only firestore,auth --project demo-factures \"node einvoice.mjs\""
+    "test:einvoice": "firebase emulators:exec --only firestore,auth --project demo-factures \"node einvoice.mjs\"",
+    "test:ereporting": "firebase emulators:exec --only firestore,auth --project demo-factures \"node ereporting.mjs\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "3.0.4",

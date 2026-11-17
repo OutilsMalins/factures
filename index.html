@@ -946,7 +946,7 @@ details.more[open] summary{margin-bottom:12px}
 <section class="view" id="v-list">
   <div class="page-head">
     <div><h1>Factures &amp; avoirs</h1><p>Suis ce qui est payé, en attente ou en retard.</p></div>
-    <div class="actions"><button class="btn" id="btnExportCsv">⬇ Export comptable</button><button class="btn primary" id="btnNew2">+ Nouvelle facture</button></div>
+    <div class="actions"><button class="btn" id="btnEReport" title="Ventes aux particuliers et encaissements à transmettre à ta plateforme agréée">📡 E-reporting</button><button class="btn" id="btnExportCsv">⬇ Export comptable</button><button class="btn primary" id="btnNew2">+ Nouvelle facture</button></div>
   </div>
   <div class="stats" id="stats"></div>
   <div class="toolbar">
@@ -1079,6 +1079,7 @@ details.more[open] summary{margin-bottom:12px}
             <label class="f"><span>N° TVA intracommunautaire</span><input type="text" id="sTvaNum"></label>
             <label class="f"><span>Taux par défaut</span><select id="sTvaDef"><option value="20">20 %</option><option value="10">10 %</option><option value="5.5">5,5 %</option><option value="0">0 %</option></select></label>
           </div>
+          <label class="f"><span>Régime de TVA (fixe le rythme du e-reporting)</span><select id="sRegime"><option value="simplifie">Réel simplifié</option><option value="normal_m">Réel normal, déclaration mensuelle</option><option value="normal_t">Réel normal, déclaration trimestrielle</option></select></label>
           <label class="chk"><input type="checkbox" id="sDebits"><span>J'ai opté pour le paiement de la TVA d'après les débits</span></label>
         </div>
       </div>
@@ -1212,6 +1213,18 @@ details.more[open] summary{margin-bottom:12px}
   <label class="f"><span>Date du paiement</span><input type="date" id="payDate"></label>
   <label class="f"><span>Mode de paiement</span><select id="payMethod"></select></label>
   <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="payNo">Annuler</button><button class="btn primary" id="payYes">Enregistrer</button></div>
+</div></div>
+<div class="modal-bg" id="erModal"><div class="modal" style="max-width:760px;max-height:92vh;overflow:auto">
+  <h4>E-reporting</h4>
+  <p>Le résumé de tes <b>ventes aux particuliers</b> et de tes <b>encaissements</b>, à transmettre à ta <b>plateforme agréée</b> : c'est elle qui l'envoie à l'administration. Obligatoire à partir du <b>1er septembre 2027</b>.</p>
+  <label class="f"><span>Période</span><select id="erPeriod"></select></label>
+  <div id="erBody"></div>
+  <details class="med-info" style="margin-left:0"><summary>ⓘ C'est quoi, le e-reporting ?</summary>
+    <p>Les factures à tes clients <b>professionnels</b> passent par ta plateforme (facture électronique). Pour tes clients <b>particuliers</b>, la facture ne change pas, mais tu dois transmettre un résumé de tes ventes : le montant hors taxe et la TVA, <b>par jour</b> et par taux, sans le nom des clients.</p>
+    <p>Pour les <b>prestations de services</b>, tu transmets aussi les sommes encaissées, par jour. Ce n'est pas nécessaire si tu as opté pour la TVA sur les débits.</p>
+    <p>Rythme : tous les 2 mois en franchise de TVA, tous les mois au réel simplifié, tous les 10 jours au réel normal mensuel. Ton régime se règle dans « Mon entreprise ». Les chiffres sont calculés à partir de tes factures émises, avoirs déduits, selon les spécifications officielles de l'administration (version 3.2).</p>
+  </details>
+  <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="erClose">Fermer</button><button class="btn primary" id="erCsv">⬇ Télécharger (.csv)</button></div>
 </div></div>
 <div class="modal-bg" id="expModal"><div class="modal">
   <h4>Export comptable</h4><p>Un tableau de toutes tes factures et avoirs (date, n°, client, montants, paiement), à ouvrir avec Excel ou à envoyer à ton comptable. Utile aussi pour tenir ton livre des recettes.</p>
@@ -1398,7 +1411,7 @@ const logoBgCss = p => `rgb(${logoBgRgb(p).join(",")})`;
 /* ================= state ================= */
 const DEFAULT_PROFILE = {
   name:"", legalForm:"Entrepreneur individuel (EI)", address:"", siret:"", rcs:"", email:"", phone:"",
-  franchise:true, tvaNumber:"", defaultTva:20, tvaDebits:false,
+  franchise:true, tvaNumber:"", defaultTva:20, tvaDebits:false, tvaRegime:"simplifie",
   payDays:30, means:"", iban:"", bic:"", quoteDays:30,
   penalties:"Taux d'intérêt appliqué par la BCE à son opération de refinancement la plus récente, majoré de 10 points",
   insurance:"", mediator:"", mediatorOnDocs:true, prefix:"F", prefixDevis:"D", prefixAvoir:"A", nextNumber:1, counters:{}, numDigits:3, numYear:true, numReset:false,
@@ -2511,7 +2524,9 @@ const EI = (()=>{
     const lines=(inv.lines||[]).filter(l=>String(l.desc||"").trim() || num(l.price));
     lines.forEach(l=>{ if(!fr && !al && !RATES.includes(num(l.tva))) pb.push(`Taux de TVA ${pct(num(l.tva))} non reconnu par la réglementation française.`); });
     if(pb.length) return {pb:[...new Set(pb)]};
-    const cat = l => fr ? {c:"E",r:0} : al ? {c:"AE",r:0} : {c:num(l.tva)===0?"Z":"S", r:num(l.tva)};
+    // franchise : « E » + VATEX-FR-FRANCHISE si l'entreprise a un n° de TVA, sinon « Z » (règle G1.47 des spécifications DGFiP)
+    const frVat = fr ? String(p.tvaNumber||"").replace(/\s/g,"") : "";
+    const cat = l => fr ? {c:frVat?"E":"Z",r:0} : al ? {c:"AE",r:0} : {c:num(l.tva)===0?"Z":"S", r:num(l.tva)};
     const exo = c => c==="E" ? {txt:"TVA non applicable, art. 293 B du CGI", code:"VATEX-FR-FRANCHISE"} : c==="AE" ? {txt:AUTOLIQ_TXT, code:"VATEX-FR-AE"} : null;
     const L=lines.map((l,i)=>{ let qty=num(l.qty), price=num(l.price); if(price<0){ price=-price; qty=-qty; }   // prix unitaire jamais négatif (règle BR-27)
       const k=cat(l); return { id:i+1, name:String(l.desc||"").trim()||"Prestation", qty, unit:unit(l.unit), price, net:r2(num(l.qty)*num(l.price)), ...k }; });
@@ -2532,7 +2547,7 @@ const EI = (()=>{
     const means=(p.payMeans||[]).length?p.payMeans:["virement"], iban=String(p.iban||"").replace(/\s/g,"");
     const pay = t==="avoir" ? null : (means.includes("virement") ? {code:iban?"58":"30", iban, bic:String(p.bic||"").replace(/\s/g,"")} : {code:PAYCODE[means[0]]||"1"});
     return { inv, p, t, typeCode, cadre, notes, L, vat, ht, tva, ttc, pay,
-      seller:{ name:p.name||"", siret, siren:siret.slice(0,9), vat:fr?"":String(p.tvaNumber||"").replace(/\s/g,""), fc:fr?siret.slice(0,9):"", legal:[p.legalForm,p.rcs].filter(Boolean).join(" - "), email:p.email||"", phone:p.phone||"", a:addr(p.address) },
+      seller:{ name:p.name||"", siret, siren:siret.slice(0,9), vat:fr?frVat:String(p.tvaNumber||"").replace(/\s/g,""), fc:fr&&!frVat?siret.slice(0,9):"", legal:[p.legalForm,p.rcs].filter(Boolean).join(" - "), email:p.email||"", phone:p.phone||"", a:addr(p.address) },
       buyer:{ name:inv.client.name||"", siren:cs.slice(0,9), siret:cs.length===14?cs:"", vat:String(inv.client.tva||"").replace(/\s/g,""), email:inv.client.email||"", a:addr(inv.client.address) },
       ship: inv.hasDelivery && String(inv.deliveryAddress||"").trim() ? addr(inv.deliveryAddress) : null,
       terms: t==="avoir" ? "" : conditionsText(inv,p)[0]||"", due: t==="avoir" ? "" : (inv.dueDate||""),
@@ -2675,6 +2690,124 @@ $$("#eiOpts [data-ei]").forEach(b=>b.addEventListener("click",()=>{
 }));
 $("#eiClose").addEventListener("click",()=>$("#eiModal").classList.remove("on"));
 $("#btnEInv").addEventListener("click",()=>openEInv(S.cur));
+
+/* ================= e-reporting (flux 10.3 et 10.4) ================= */
+// Obligatoire au 01/09/2027 pour les PME et micro-entreprises. Source : spécifications externes DGFiP v3.2
+// (dossier général § 3.7, tableau 13 des périodes ; annexe 6 « format sémantique e-reporting » ; annexe 7 règles G1.24, G1.68).
+// - 10.3 : ventes aux particuliers (B2C), agrégées par jour, catégorie (TLB1 biens / TPS1 services) et taux de TVA.
+// - 10.4 : encaissements des prestations de services B2C, par jour et par taux (pas en cas d'option débits ni d'autoliquidation).
+// C'est la plateforme agréée qui transmet le flux 10 à l'administration : l'appli prépare les chiffres à lui donner.
+const ER = (()=>{
+  const MOIS=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  const pad=n=>String(n).padStart(2,"0"), isoOf=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`, last=(y,m)=>new Date(y,m+1,0).getDate();
+  const REG={franchise:"Franchise en base de TVA",simplifie:"Réel simplifié",normal_m:"Réel normal (déclaration mensuelle)",normal_t:"Réel normal (déclaration trimestrielle)"};
+  const regime = p => p.franchise ? "franchise" : (REG[p.tvaRegime] ? p.tvaRegime : "simplifie");
+  const fmt = iso => frDate(iso);
+  // périodes de transmission (tableau 13) ; deadline = date limite de transmission à la plateforme agréée
+  const D = dt => isoOf(dt.getFullYear(), dt.getMonth(), dt.getDate());   // new Date(y, m, 0) = dernier jour du mois m-1
+  function periods(reg, kind, n=14){
+    const out=[], now=new Date(); let y=now.getFullYear(), m=now.getMonth();
+    const back = k => { m-=k; while(m<0){ m+=12; y--; } };
+    if(reg==="franchise"){ m-=m%2;     // bimestres civils : janv-févr, mars-avr, …
+      for(let i=0;i<n;i++){ out.push({start:isoOf(y,m,1), end:isoOf(y,m+1,last(y,m+1)), label:`${MOIS[m]}-${MOIS[m+1]} ${y}`, deadline:D(new Date(y,m+3,0))}); back(2); }
+      return out; }
+    if(reg==="normal_m" && kind==="tx"){   // décades
+      for(let i=0;i<n;i++){ const L=last(y,m);
+        out.push({start:isoOf(y,m,21), end:isoOf(y,m,L), label:`21-${L} ${MOIS[m]} ${y}`, deadline:D(new Date(y,m+1,10))});
+        out.push({start:isoOf(y,m,11), end:isoOf(y,m,20), label:`11-20 ${MOIS[m]} ${y}`, deadline:isoOf(y,m,L)});
+        out.push({start:isoOf(y,m,1), end:isoOf(y,m,10), label:`1-10 ${MOIS[m]} ${y}`, deadline:isoOf(y,m,20)}); back(1); }
+      return out; }
+    for(let i=0;i<n;i++){   // mois : réel simplifié → fin du mois suivant ; réel normal → le 10 du mois suivant
+      out.push({start:isoOf(y,m,1), end:isoOf(y,m,last(y,m)), label:`${MOIS[m]} ${y}`, deadline: reg==="simplifie" ? D(new Date(y,m+2,0)) : D(new Date(y,m+1,10))}); back(1); }
+    return out;
+  }
+  const isB2C = d => ((d.client&&d.client.kind)||"particulier")!=="pro";
+  const issued = () => Object.values(S.invoices).filter(d=>d.number && docType(d)!=="devis");
+  const cat = d => (d.nature||"services")==="biens" ? "TLB1" : "TPS1";
+  const services = d => (d.nature||"services")!=="biens";
+  // base HT et TVA par taux, calculées comme sur la facture (TVA arrondie par taux)
+  function byRate(d){ const p=profFor(d), no=p.franchise||!!d.autoliq, g={};
+    (d.lines||[]).forEach(l=>{ const r=no?0:num(l.tva); g[r]=(g[r]||0)+r2(num(l.qty)*num(l.price)); });
+    return Object.entries(g).map(([r,b])=>({r:+r, base:r2(b), tva:r2(r2(b)*(+r)/100)})); }
+  function compute(p, txP, payP){
+    const reg=regime(p), docs=issued(), warn=[];
+    // 10.3 — ventes aux particuliers
+    const tx={};
+    docs.filter(d=>isB2C(d) && d.issueDate>=txP.start && d.issueDate<=txP.end).forEach(d=>{
+      const sg=docType(d)==="avoir"?-1:1, k=d.issueDate+"|"+cat(d), row=tx[k]=tx[k]||{date:d.issueDate, cat:cat(d), count:0, rates:{}};
+      row.count++; byRate(d).forEach(({r,base,tva})=>{ const x=row.rates[r]=row.rates[r]||{base:0,tva:0}; x.base=r2(x.base+sg*base); x.tva=r2(x.tva+sg*tva); });
+      if((d.nature||"services")==="mixte") warn.push(`${labelOf(d)} ${d.number} : biens et services mélangés, comptée en « prestations de services » (TPS1). Si la part de biens est importante, ajuste-la sur ta plateforme.`);
+    });
+    const txRows=Object.values(tx).sort((a,b)=>a.date.localeCompare(b.date)||a.cat.localeCompare(b.cat));
+    // 10.4 — encaissements des prestations de services aux particuliers
+    let pay=null, payNote="";
+    if(p.tvaDebits && !p.franchise) payNote="Tu as opté pour la TVA sur les débits : pas de données de paiement à transmettre.";
+    else if(!p.franchise) payNote="L'appli n'enregistre pas les paiements de tes clients particuliers (loi anti-fraude à la TVA : seuls les logiciels certifiés le peuvent). Déclare tes encaissements de prestations de services directement sur ta plateforme agréée, ou avec ton logiciel de caisse certifié.";
+    else { const pp={};
+      docs.filter(d=>isB2C(d) && services(d) && d.status==="payee" && d.paidAt && d.paidAt>=payP.start && d.paidAt<=payP.end).forEach(d=>{
+        const sg=docType(d)==="avoir"?-1:1, row=pp[d.paidAt]=pp[d.paidAt]||{date:d.paidAt, rates:{}};
+        byRate(d).forEach(({r,base,tva})=>{ row.rates[r]=r2((row.rates[r]||0)+sg*(base+tva)); });
+      });
+      pay=Object.values(pp).sort((a,b)=>a.date.localeCompare(b.date));
+      payNote="Seuls les paiements que tu as indiqués dans l'appli (« Payée ») sont comptés : vérifie qu'il n'en manque pas."; }
+    // rappel B2B : statut « Encaissée » à indiquer sur la plateforme pour les factures de services payées
+    const b2b=docs.filter(d=>!isB2C(d) && docType(d)==="facture" && services(d) && !d.autoliq && !(p.tvaDebits&&!p.franchise) && d.status==="payee" && d.paidAt && d.paidAt>=payP.start && d.paidAt<=payP.end)
+      .sort((a,b)=>a.paidAt.localeCompare(b.paidAt));
+    return {reg, txP, payP, txRows, pay, payNote, b2b, warn};
+  }
+  const rates = o => Object.keys(o).map(Number).sort((a,b)=>b-a);
+  const CAT={TLB1:"Ventes de biens (TLB1)",TPS1:"Prestations de services (TPS1)"};
+  function html(R){
+    const T=(head,rows)=>`<div class="tbl" style="margin:6px 0 14px"><div class="tbl-scroll"><table class="list"><thead><tr>${head.map(h=>`<th${/HT|TVA|Montant|Nb/.test(h)?' class="r"':""}>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div></div>`;
+    let s=`<p class="hint" style="margin:0 0 12px">Régime : <b>${REG[R.reg]}</b>. À transmettre à ta plateforme agréée au plus tard le <b>${fmt(R.txP.deadline)}</b>${R.payP.deadline!==R.txP.deadline?` (paiements : le <b>${fmt(R.payP.deadline)}</b>)`:""}.</p>`;
+    s+=`<h5 style="margin:6px 0">1. Ventes aux particuliers — ${esc(R.txP.label)}</h5>`;
+    if(!R.txRows.length) s+=`<p class="muted">Aucune vente à un particulier sur cette période : rien à transmettre (pas de déclaration « à blanc » obligatoire).</p>`;
+    else { const rows=[]; let tb=0, tt=0;
+      R.txRows.forEach(x=>rates(x.rates).forEach((r,i)=>{ const v=x.rates[r]; tb+=v.base; tt+=v.tva;
+        rows.push(`<tr><td>${i?"":fmt(x.date)}</td><td>${i?"":CAT[x.cat]}</td><td class="r">${i?"":x.count}</td><td>${pct(r)}</td><td class="r">${money(v.base)}</td><td class="r">${money(v.tva)}</td></tr>`); }));
+      rows.push(`<tr><td colspan="4"><b>Total de la période</b></td><td class="r"><b>${money(tb)}</b></td><td class="r"><b>${money(tt)}</b></td></tr>`);
+      s+=T(["Date","Catégorie","Nb","Taux","Montant HT","TVA"],rows); }
+    s+=`<h5 style="margin:6px 0">2. Encaissements de prestations de services (particuliers) — ${esc(R.payP.label)}</h5>`;
+    if(R.pay && R.pay.length){ const rows=[]; let t=0; R.pay.forEach(x=>rates(x.rates).forEach((r,i)=>{ t+=x.rates[r]; rows.push(`<tr><td>${i?"":fmt(x.date)}</td><td>${pct(r)}</td><td class="r">${money(x.rates[r])}</td></tr>`); }));
+      rows.push(`<tr><td colspan="2"><b>Total encaissé</b></td><td class="r"><b>${money(t)}</b></td></tr>`); s+=T(["Date d'encaissement","Taux","Montant encaissé TTC"],rows); }
+    else if(R.pay) s+=`<p class="muted">Aucun encaissement indiqué sur cette période.</p>`;
+    s+=`<p class="hint">${esc(R.payNote)}</p>`;
+    if(R.b2b.length){ s+=`<h5 style="margin:6px 0">3. Clients professionnels : factures payées sur la période</h5><p class="hint" style="margin:0 0 6px">Pas de e-reporting pour elles : indique le statut « Encaissée » sur ta plateforme agréée pour chacune.</p>`;
+      s+=T(["Facture","Client","Payée le","Montant TTC"], R.b2b.map(d=>`<tr><td class="inv-no">${esc(d.number)}</td><td>${esc(d.client.name)}</td><td>${fmt(d.paidAt)}</td><td class="r">${money(d.totals?d.totals.ttc:0)}</td></tr>`)); }
+    if(R.warn.length) s+=`<div class="hint" style="color:#8a5a00">${R.warn.map(w=>"⚠️ "+esc(w)).join("<br>")}</div>`;
+    return s;
+  }
+  function csv(R, p){
+    const L=[["Rubrique","Date","Catégorie","Nombre de ventes","Taux TVA (%)","Montant HT","TVA","Montant encaissé TTC"]];
+    R.txRows.forEach(x=>rates(x.rates).forEach(r=>L.push(["Ventes aux particuliers (flux 10.3)",fmt(x.date),x.cat,x.count,String(r).replace(".",","),csvNum(x.rates[r].base),csvNum(x.rates[r].tva),""])));
+    (R.pay||[]).forEach(x=>rates(x.rates).forEach(r=>L.push(["Encaissements services particuliers (flux 10.4)",fmt(x.date),"","",String(r).replace(".",","),"","",csvNum(x.rates[r])])));
+    R.b2b.forEach(d=>L.push([`Facture pro payée ${d.number} (statut « Encaissée » sur la plateforme)`,fmt(d.paidAt),"","","","","",csvNum(d.totals?d.totals.ttc:0)]));
+    const head=[`E-reporting - ${p.name||""} - SIREN ${String(p.siret||"").replace(/\D/g,"").slice(0,9)} - ${REG[R.reg]}`,`Ventes : ${R.txP.label} (du ${fmt(R.txP.start)} au ${fmt(R.txP.end)}), à transmettre avant le ${fmt(R.txP.deadline)}`,`Encaissements : ${R.payP.label} (du ${fmt(R.payP.start)} au ${fmt(R.payP.end)}), à transmettre avant le ${fmt(R.payP.deadline)}`];
+    return "﻿"+[...head.map(h=>[h]),[],...L].map(r=>r.map(csvCell).join(";")).join("\r\n");
+  }
+  return { regime, periods, compute, html, csv, REG };
+})();
+
+/* ---------- fenêtre « E-reporting » ---------- */
+let erList=[];
+function erRender(){
+  const p=S.profile, reg=ER.regime(p), tx=erList[+$("#erPeriod").value||0]; if(!tx) return;
+  const pays=ER.periods(reg,"pay"), payP=pays.find(x=>x.start<=tx.end && x.end>=tx.end)||tx;
+  const R=ER.compute(p,tx,payP); $("#erBody").innerHTML=ER.html(R); $("#erBody").dataset.ok="1"; erRender.R=R;
+}
+function openEReport(){
+  const p=S.profile, reg=ER.regime(p), today=todayISO();
+  erList=ER.periods(reg,"tx");
+  const def=Math.max(0, erList.findIndex(x=>x.end<today));   // dernière période terminée
+  $("#erPeriod").innerHTML=erList.map((x,i)=>`<option value="${i}">${esc(x.label)}${x.end>=today?" (en cours)":""}</option>`).join("");
+  $("#erPeriod").value=String(def); erRender(); $("#erModal").classList.add("on");
+}
+$("#erPeriod").addEventListener("change",erRender);
+$("#erClose").addEventListener("click",()=>$("#erModal").classList.remove("on"));
+$("#erCsv").addEventListener("click",()=>{ const R=erRender.R; if(!R) return;
+  downloadBlob(new Blob([ER.csv(R,S.profile)],{type:"text/csv;charset=utf-8"}), `E-reporting ${safeName(R.txP.label)} - ${safeName(S.profile.name||"entreprise")}.csv`); });
+$("#btnEReport").addEventListener("click",openEReport);
+
 
 /* ================= list (factures + avoirs) ================= */
 const EMPTY_SVG=`<svg viewBox="0 0 120 90" fill="none"><rect x="30" y="8" width="52" height="68" rx="6" fill="#fff" stroke="#d9d3c6" stroke-width="2"/><rect x="30" y="8" width="52" height="15" rx="6" fill="#1f5c45"/><rect x="38" y="32" width="28" height="4" rx="2" fill="#e3ded3"/><rect x="38" y="41" width="36" height="4" rx="2" fill="#e3ded3"/><rect x="38" y="50" width="20" height="4" rx="2" fill="#e3ded3"/><rect x="52" y="60" width="22" height="8" rx="3" fill="#a7e8c3"/><circle cx="88" cy="66" r="13" fill="#f2b33d"/><path d="M84 66h8M88 62v8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>`;
@@ -2926,7 +3059,7 @@ $("#btnClSave").addEventListener("click",async()=>{
 });
 
 /* ================= settings ================= */
-const SMAP={sName:"name",sForm:"legalForm",sSiret:"siret",sAddr:"address",sEmail:"email",sPhone:"phone",sRcs:"rcs",sTvaNum:"tvaNumber",sTvaDef:"defaultTva",sDays:"payDays",sMeans:"means",sIban:"iban",sBic:"bic",sPenal:"penalties",sInsur:"insurance",sMediator:"mediator",sPrefix:"prefix",sPrefixD:"prefixDevis",sPrefixA:"prefixAvoir",sQuoteDays:"quoteDays",sDigits:"numDigits",sFooter:"footer",sSigName:"signName"};
+const SMAP={sName:"name",sForm:"legalForm",sSiret:"siret",sAddr:"address",sEmail:"email",sPhone:"phone",sRcs:"rcs",sTvaNum:"tvaNumber",sTvaDef:"defaultTva",sDays:"payDays",sMeans:"means",sIban:"iban",sBic:"bic",sPenal:"penalties",sInsur:"insurance",sRegime:"tvaRegime",sMediator:"mediator",sPrefix:"prefix",sPrefixD:"prefixDevis",sPrefixA:"prefixAvoir",sQuoteDays:"quoteDays",sDigits:"numDigits",sFooter:"footer",sSigName:"signName"};
 const NUMF={facture:"sNext",devis:"sNextD",avoir:"sNextA"};
 let numOrig={};
 function fillSettings(){
