@@ -49,6 +49,7 @@ Tani n'est pas développeur : réponses en français, simples, tutoiement ; il v
 
 ## Décisions prises (ne pas revenir dessus sans demander)
 - **Pas de Google Drive** (refusé par Tani).
+- **Code propriétaire, tous droits réservés** (17/11/2026) : fichier `LICENSE` à la racine (aucune licence accordée ; composants tiers jsPDF / JSZip / pako en MIT et polices en OFL 1.1 listés à part), section « 3. Propriété intellectuelle » dans `mentions-legales.html`, ligne « © 2026 Tani LANNOY – Outils Malins. Tous droits réservés. » en bas de l'écran de connexion et de « Mon entreprise ». Ne jamais ajouter de licence libre au dépôt.
 - **Les règles Firestore actives sont dans la console Firebase.** `firestore.rules` dans le dépôt n'est qu'une **copie de référence** (version V5) ; toute modification doit être **collée dans Firebase → Firestore → Règles → Publier**. En général, publier **avant** de merger un `index.html` qui en dépend — **sauf V4** : l'ancien `index.html` ne peut plus émettre avec les règles V4 (testé), alors que le nouveau fonctionne avec V3. Pour V4 : merger d'abord, attendre la mise à jour du site, puis publier les règles. V5 (17/11/2026, ajoute seulement `rgPaidAt`) : ordre normal, publier les règles puis merger.
 - Format de numéro libre (préfixe / année / nombre de chiffres réglables), compteurs séparés facture / devis / avoir.
 - Ton : tutoiement dans l'appli, avertissements au ton professionnel.
