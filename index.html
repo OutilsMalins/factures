@@ -894,9 +894,10 @@ details.more[open] summary{margin-bottom:12px}
         <label class="f"><span>Nom / Raison sociale</span><input type="text" id="cName" placeholder="Ex. Dupont SARL" data-ex="client"></label>
         <label class="f"><span>Adresse de facturation</span><textarea id="cAddr" rows="2" placeholder="N°, rue&#10;Code postal Ville"></textarea></label>
         <div class="row" id="cProRow">
-          <label class="f"><span>SIREN du client</span><input type="text" id="cSiren" placeholder="9 chiffres"></label>
+          <label class="f"><span>SIREN ou SIRET du client</span><input type="text" id="cSiren" placeholder="9 ou 14 chiffres" inputmode="numeric"></label>
           <label class="f"><span>N° TVA intracom.</span><input type="text" id="cTva" placeholder="Si applicable"></label>
         </div>
+        <p class="hint" id="sirenHint" style="display:none;margin:-4px 0 12px;color:#8a5a00"></p>
         <label class="f"><span>Email du client (pour les relances, facultatif)</span><input type="email" id="cEmail" placeholder="client@exemple.fr"></label>
         <label class="chk"><input type="checkbox" id="hasDelivery"><span>Adresse de livraison / chantier différente</span></label>
         <label class="f" id="deliveryWrap" style="display:none"><span>Adresse de livraison / chantier</span><textarea id="deliveryAddr" rows="2"></textarea></label>
@@ -998,9 +999,10 @@ details.more[open] summary{margin-bottom:12px}
       <label class="f"><span>Nom / Raison sociale</span><input type="text" id="kName"></label>
       <label class="f"><span>Adresse</span><textarea id="kAddr" rows="2"></textarea></label>
       <div class="row">
-        <label class="f"><span>SIREN</span><input type="text" id="kSiren"></label>
+        <label class="f"><span>SIREN ou SIRET</span><input type="text" id="kSiren" placeholder="9 ou 14 chiffres" inputmode="numeric"></label>
         <label class="f"><span>N° TVA intracom.</span><input type="text" id="kTva"></label>
       </div>
+      <p class="hint" id="kSirenHint" style="display:none;margin:-4px 0 12px;color:#8a5a00"></p>
       <div class="row">
         <label class="f"><span>Email</span><input type="email" id="kEmail"></label>
         <label class="f"><span>Téléphone</span><input type="tel" id="kPhone"></label>
@@ -1933,12 +1935,24 @@ function loadEditor(inv){
   $("#btnEInv").style.display = locked && t!=="devis" ? "inline-flex" : "none"; $("#btnShare").style.display = SHARE_OK ? "inline-flex" : "none"; if(isLockedEd(inv)||(t==="devis"&&inv.number)) prefetchPdf(inv);
 }
 function autoliqHint(){ $("#autoliqHint").style.display = S.cur && S.cur.autoliq && !S.profile.franchise && !String(S.cur.client.tva||"").trim() ? "block" : "none"; }
+// SIREN (9 chiffres) / SIRET (14) : la clé de contrôle (Luhn) repère la plupart des fautes de frappe. Exception : La Poste.
+function luhnOk(d){ let t=0; for(let i=0;i<d.length;i++){ let n=+d[d.length-1-i]; if(i%2){ n*=2; if(n>9) n-=9; } t+=n; } return t%10===0; }
+function sirenState(v){ const d=String(v||"").replace(/\D/g,"");
+  if(!d) return "vide";
+  if(d.length===9) return luhnOk(d) ? "ok" : "faux";
+  if(d.length===14) return (luhnOk(d) || (d.startsWith("356000000") && [...d].reduce((a,c)=>a+ +c,0)%5===0)) ? "ok" : "faux";
+  return "faux"; }
+const SIREN_TXT = {
+  vide:"Le SIREN est obligatoire pour un client professionnel : c'est une mention obligatoire des factures, et la facture électronique en a besoin. Tu le trouves sur annuaire-entreprises.data.gouv.fr.",
+  faux:"Ce numéro semble incorrect (faute de frappe ?) : un SIREN a 9 chiffres, un SIRET 14. Vérifie-le sur annuaire-entreprises.data.gouv.fr." };
+function sirenHint(){ const h=$("#sirenHint"); if(!h||!S.cur) return; const st=sirenState(S.cur.client.siren);
+  const on=S.cur.client.kind==="pro" && st!=="ok" && !isLockedEd(S.cur); h.style.display=on?"block":"none"; if(on) h.textContent="⚠️ "+SIREN_TXT[st]; }
 // médiateur de la consommation : obligatoire dès qu'on travaille pour des particuliers (Code de la consommation)
 const medMissing = d => !!d && docType(d)!=="avoir" && ((d.client&&d.client.kind)||"particulier")!=="pro" && S.profile.mediatorOnDocs!==false && !String(S.profile.mediator||"").trim();
 function medHint(){ const h=$("#medHint"); if(!h) return; const on=medMissing(S.cur) && !isLockedEd(S.cur);
   h.style.display=on?"block":"none";
   if(on) h.textContent="⚠️ Client particulier : le médiateur de la consommation n'est pas renseigné. Il est obligatoire quand on travaille pour des particuliers. "+(can("company")?"Remplis-le dans « Mon entreprise » (cadre F), ou décoche la case si tu donnes ses coordonnées ailleurs (site internet, conditions de vente…).":"Demande au responsable du compte de le remplir dans « Mon entreprise »."); }
-function toggleProRow(){ medHint(); $("#cProRow").style.display = S.cur.client.kind==="pro" ? "grid" : "none"; }
+function toggleProRow(){ medHint(); sirenHint(); $("#cProRow").style.display = S.cur.client.kind==="pro" ? "grid" : "none"; }
 function newEditor(type="facture"){ loadEditor(newDoc(type)); showTab("edit"); }
 
 const m = {issueDate:"issueDate",serviceDate:"serviceDate",dueDate:"dueDate",validUntil:"validUntil",notes:"notes",deliveryAddr:"deliveryAddress"};
@@ -1964,7 +1978,7 @@ Object.entries(m).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{
 }));
 bindSeg("natureSeg",v=>{ S.cur.nature=v; renderPreview(); });
 bindSeg("kindSeg",v=>{ S.cur.client.kind=v; toggleProRow(); renderPreview(); });
-Object.entries({cName:"name",cAddr:"address",cSiren:"siren",cTva:"tva",cEmail:"email"}).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{ S.cur.client[k]=e.target.value; if(k==="tva") autoliqHint(); renderPreview(); }));
+Object.entries({cName:"name",cAddr:"address",cSiren:"siren",cTva:"tva",cEmail:"email"}).forEach(([id,k])=>$("#"+id).addEventListener("input",e=>{ S.cur.client[k]=e.target.value; if(k==="tva") autoliqHint(); if(k==="siren") sirenHint(); renderPreview(); }));
 $("#hasDelivery").addEventListener("change",e=>{ S.cur.hasDelivery=e.target.checked; $("#deliveryWrap").style.display=e.target.checked?"block":"none"; renderPreview(); });
 $("#clientPick").addEventListener("change",e=>{
   const c=S.clients[e.target.value]; S.cur.clientId=e.target.value;
@@ -1992,7 +2006,7 @@ $("#btnSave").addEventListener("click",()=>{
   const year=(inv.issueDate||todayISO()).slice(0,4);
   let n=inv.number?null:nextFor(S.profile,t,year); if(n) while(numberExists(fmtNumber(S.profile,n,inv.issueDate,t),inv.id)) n++;
   const nb=inv.number||fmtNumber(S.profile,n,inv.issueDate,t), av=t==="avoir";
-  confirmBox(`Émettre ${av?"l'avoir":"la facture"} ?`,`${av?"Il":"Elle"} recevra le numéro ${nb}, daté du ${frDate(inv.issueDate)}, et ne pourra plus être modifié${av?"":"e"} ni supprimé${av?"":"e"} : seul le paiement pourra être indiqué.${av?"":" Pour corriger ensuite, il faudra créer un avoir."}${medMissing(inv)?" ⚠️ Attention : le médiateur de la consommation n'est pas renseigné (obligatoire avec un client particulier).":""}`,()=>saveCurrent(true));
+  confirmBox(`Émettre ${av?"l'avoir":"la facture"} ?`,`${av?"Il":"Elle"} recevra le numéro ${nb}, daté du ${frDate(inv.issueDate)}, et ne pourra plus être modifié${av?"":"e"} ni supprimé${av?"":"e"} : seul le paiement pourra être indiqué.${av?"":" Pour corriger ensuite, il faudra créer un avoir."}${medMissing(inv)?" ⚠️ Attention : le médiateur de la consommation n'est pas renseigné (obligatoire avec un client particulier).":""}${!av&&inv.client.kind==="pro"&&sirenState(inv.client.siren)!=="ok"?" ⚠️ Attention : le SIREN du client "+(sirenState(inv.client.siren)==="vide"?"n'est pas renseigné":"semble incorrect")+". Il est obligatoire pour un client professionnel, et sans lui cette facture ne pourra pas être exportée en facture électronique (elle ne sera plus modifiable).":""}`,()=>saveCurrent(true));
 });
 $("#btnDraft").addEventListener("click",()=>saveCurrent(false));
 $("#btnAcompte").addEventListener("click",()=>openAcompte(S.cur));
@@ -2483,10 +2497,12 @@ const EI = (()=>{
   function model(inv){
     const p=profFor(inv), t=docType(inv), pb=[];
     if(t==="devis" || !inv.number) pb.push("Seules les factures et les avoirs émis peuvent être exportés en facture électronique.");
-    if(((inv.client&&inv.client.kind)||"particulier")!=="pro") pb.push("La facture électronique concerne les clients professionnels. Pour un particulier, le PDF habituel reste la règle.");
+    if(((inv.client&&inv.client.kind)||"particulier")!=="pro") return {pb:["La facture électronique concerne les clients professionnels. Pour un particulier, le PDF habituel reste la règle : rien à faire de plus."]};
     if(inv.number && !/^[A-Za-z0-9+\-_/]{1,35}$/.test(inv.number)) pb.push(`Le numéro « ${inv.number} » contient des caractères refusés (espaces, accents…) ou dépasse 35 caractères. Change le préfixe dans « Mon entreprise » pour les prochains documents.`);
     const siret=dig(p.siret); if(siret.length!==14) pb.push("Indique ton SIRET complet (14 chiffres) dans « Mon entreprise ».");
-    const cs=dig(inv.client&&inv.client.siren); if(cs.length!==9 && cs.length!==14) pb.push("Indique le SIREN du client (9 chiffres) dans le bloc Client.");
+    else if(sirenState(siret)!=="ok") pb.push("Ton SIRET semble incorrect (faute de frappe ?) : vérifie-le dans « Mon entreprise ».");
+    const cs=dig(inv.client&&inv.client.siren), cst=sirenState(cs);
+    if(cst!=="ok") pb.push(cst==="vide" ? "Le SIREN du client manque. Comme la facture est déjà émise, elle ne peut plus être modifiée : pour l'envoyer en facture électronique, annule-la par un avoir et refais-la avec le SIREN." : "Le SIREN du client semble incorrect. Comme la facture est déjà émise, elle ne peut plus être modifiée : annule-la par un avoir et refais-la avec le bon SIREN.");
     const fr=!!p.franchise, al=!fr && !!inv.autoliq;
     if(!fr && !String(p.tvaNumber||"").trim()) pb.push("Indique ton numéro de TVA intracommunautaire dans « Mon entreprise ».");
     if(al && !String(inv.client.tva||"").trim()) pb.push("Autoliquidation : indique le numéro de TVA intracommunautaire du client.");
@@ -2874,7 +2890,9 @@ $("#btnZip").addEventListener("click",async()=>{
 
 /* ================= clients ================= */
 let editingClient=null, kKind="particulier";
-bindSeg("kKindSeg",v=>{ kKind=v; });
+function kSirenHint(){ const st=sirenState($("#kSiren").value), on=kKind==="pro"&&st!=="ok"; $("#kSirenHint").style.display=on?"block":"none"; if(on) $("#kSirenHint").textContent="⚠️ "+SIREN_TXT[st]; }
+$("#kSiren").addEventListener("input",()=>kSirenHint());
+bindSeg("kKindSeg",v=>{ kKind=v; kSirenHint(); });
 function fillClientPick(){
   const sel=$("#clientPick"), v=sel.value;
   sel.innerHTML=`<option value="">— Saisir un nouveau client —</option>`+Object.values(S.clients).sort((a,b)=>a.name.localeCompare(b.name)).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
@@ -2888,13 +2906,13 @@ function renderClients(){
     return `<tr><td><div class="cli-cell"><div class="avatar" style="background:${avColor(c.name)}">${esc(initials(c.name))}</div><div><b>${esc(c.name)}</b><div class="muted" style="font-size:12px">${esc((c.address||"").split("\n").join(", "))}</div></div></div></td><td><span class="pill ${c.kind==="pro"?"envoyee":"brouillon"}">${c.kind==="pro"?"Pro":"Particulier"}</span></td><td class="r amount">${money(tot)}<div class="muted" style="font-size:11.5px;font-family:Manrope;font-weight:600">${inv.length} facture${inv.length>1?"s":""}</div></td>
     <td class="r" style="white-space:nowrap">${can("invoices")?`<button class="btn sm primary" data-inv="${c.id}">Facturer</button> `:""}${can("quotes")?`<button class="btn sm" data-quote="${c.id}">Devis</button> `:""}${can("clients")?`<button class="btn sm" data-ed="${c.id}">Modifier</button> <button class="btn sm ghost danger" data-del="${c.id}">✕</button>`:""}</td></tr>`; }).join("")}</tbody></table></div></div>`;
   $$("#clList [data-ed]").forEach(b=>b.addEventListener("click",()=>{ const c=S.clients[b.dataset.ed]; editingClient=c.id; $("#clFormTitle").textContent="Modifier le client";
-    $("#kName").value=c.name||""; kKind=c.kind||"particulier"; setSeg("kKindSeg",kKind); $("#kAddr").value=c.address||""; $("#kSiren").value=c.siren||""; $("#kTva").value=c.tva||""; $("#kEmail").value=c.email||""; $("#kPhone").value=c.phone||""; window.scrollTo({top:0,behavior:"smooth"}); }));
+    $("#kName").value=c.name||""; kKind=c.kind||"particulier"; setSeg("kKindSeg",kKind); $("#kAddr").value=c.address||""; $("#kSiren").value=c.siren||""; $("#kTva").value=c.tva||""; $("#kEmail").value=c.email||""; $("#kPhone").value=c.phone||""; kSirenHint(); window.scrollTo({top:0,behavior:"smooth"}); }));
   const startFor=(c,type)=>{ const d=newDoc(type); d.clientId=c.id; d.client={name:c.name,kind:c.kind,address:c.address,siren:c.siren||"",tva:c.tva||"",email:c.email||""}; fillClientPick(); loadEditor(d); showTab("edit"); };
   $$("#clList [data-inv]").forEach(b=>b.addEventListener("click",()=>startFor(S.clients[b.dataset.inv],"facture")));
   $$("#clList [data-quote]").forEach(b=>b.addEventListener("click",()=>startFor(S.clients[b.dataset.quote],"devis")));
   $$("#clList [data-del]").forEach(b=>b.addEventListener("click",()=>{ const c=S.clients[b.dataset.del]; confirmBox("Supprimer ce client ?",`${c.name} sera retiré de ta liste. Ses factures existantes ne changent pas.`,async()=>{ try{ await Store.deleteClient(c.id); }catch(e){fbErr(e);} }); }));
 }
-function resetClientForm(){ editingClient=null; $("#clFormTitle").textContent="Nouveau client"; ["kName","kAddr","kSiren","kTva","kEmail","kPhone"].forEach(i=>$("#"+i).value=""); kKind="particulier"; setSeg("kKindSeg",kKind); }
+function resetClientForm(){ editingClient=null; $("#clFormTitle").textContent="Nouveau client"; ["kName","kAddr","kSiren","kTva","kEmail","kPhone"].forEach(i=>$("#"+i).value=""); kKind="particulier"; setSeg("kKindSeg",kKind); kSirenHint(); }
 $("#btnClReset").addEventListener("click",resetClientForm);
 $("#btnClSave").addEventListener("click",async()=>{
   if(!can("clients")) return toast("Tu n'as pas le droit de modifier les clients.");
