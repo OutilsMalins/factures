@@ -1213,6 +1213,11 @@ details.more[open] summary{margin-bottom:12px}
   </details>
   <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="eiClose">Fermer</button></div>
 </div></div>
+<div class="modal-bg" id="rgModal"><div class="modal">
+  <h4 id="rgTitle">Retenue de garantie reçue</h4><p id="rgText"></p>
+  <label class="f"><span>Date de réception</span><input type="date" id="rgDate"></label>
+  <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="rgNo">Annuler</button><button class="btn primary" id="rgYes">Enregistrer</button></div>
+</div></div>
 <div class="modal-bg" id="payModal"><div class="modal">
   <h4 id="payTitle">Paiement reçu</h4><p>Ces infos t'aident à suivre ta trésorerie et apparaissent dans l'export comptable.</p>
   <label class="f"><span>Date du paiement</span><input type="date" id="payDate"></label>
@@ -1936,6 +1941,7 @@ function refreshLockUi(){
   else if(t!=="devis" && !inv.number){ lb.className="lock-banner info"; lb.style.display="flex"; lb.innerHTML=`<span>✏️</span><span><b>Brouillon</b> : modifiable à volonté, sans numéro. Quand tout est bon, clique sur « Émettre » : le numéro définitif est attribué et le document est verrouillé.</span>`; }
   else lb.style.display="none";
   if(locked && !isCancelled(inv) && noPayTrack(inv)){ const sp=lb.querySelector("span:last-child"); if(sp) sp.innerHTML=`<b>Document émis : il est verrouillé.</b> On ne peut plus le modifier ni le supprimer (la numérotation doit rester continue).${t==="facture"?" Pour le corriger ou l'annuler, crée un avoir.":""} ${PAY_LAW_TXT}`; }
+  if(locked && rgRate(inv)){ const ra=rgAmount(inv,computeTotals(inv,profFor(inv))); lb.querySelector("span:last-child").insertAdjacentHTML("beforeend",` <b>Retenue de garantie (${money(ra)}) : ${inv.rgPaidAt?"reçue le "+frDate(inv.rgPaidAt):"à recevoir, un an après la réception des travaux"}.</b>`); }
   if(locked && !isCancelled(inv)){ const cr=creditedOf(inv); if(cr>0) lb.querySelector("span:last-child").insertAdjacentHTML("beforeend",` <b>Avoir déjà émis : ${money(cr)}</b> — reste dû ${money(r2(inv.totals.ttc-cr))}.`); }
 }
 function loadEditor(inv){
@@ -2852,14 +2858,21 @@ const ER = (()=>{
       docs.filter(d=>isB2C(d) && services(d) && d.status==="payee" && d.paidAt && d.paidAt>=payP.start && d.paidAt<=payP.end).forEach(d=>{
         const sg=docType(d)==="avoir"?-1:1, row=pp[d.paidAt]=pp[d.paidAt]||{date:d.paidAt, rates:{}};
         const k=1-rgRate(d)/100;   // la retenue de garantie n'est encaissée que plus tard
-        if(rgRate(d)) warn.push(`${labelOf(d)} ${d.number} : la retenue de garantie (${money(rgAmount(d,computeTotals(d,profFor(d))))}) n'est pas comptée. Déclare-la à la date où ton client te la verse.`);
+        if(rgRate(d) && !d.rgPaidAt) warn.push(`${labelOf(d)} ${d.number} : la retenue de garantie (${money(rgAmount(d,computeTotals(d,profFor(d))))}) n'est pas encore reçue. Elle sera comptée à la date que tu indiqueras avec « ✓ Retenue reçue ».`);
         byRate(d).forEach(({r,base,tva})=>{ row.rates[r]=r2((row.rates[r]||0)+sg*r2((base+tva)*k)); });
+      });
+      docs.filter(d=>isB2C(d) && services(d) && rgRate(d) && d.rgPaidAt && d.rgPaidAt>=payP.start && d.rgPaidAt<=payP.end).forEach(d=>{
+        const row=pp[d.rgPaidAt]=pp[d.rgPaidAt]||{date:d.rgPaidAt, rates:{}};
+        byRate(d).forEach(({r,base,tva})=>{ row.rates[r]=r2((row.rates[r]||0)+r2((base+tva)*rgRate(d)/100)); });
       });
       pay=Object.values(pp).sort((a,b)=>a.date.localeCompare(b.date));
       payNote="Seuls les paiements que tu as indiqués dans l'appli (« Payée ») sont comptés : vérifie qu'il n'en manque pas."; }
     // rappel B2B : statut « Encaissée » à indiquer sur la plateforme pour les factures de services payées
     const b2b=docs.filter(d=>!isB2C(d) && docType(d)==="facture" && services(d) && !d.autoliq && !(p.tvaDebits&&!p.franchise) && d.status==="payee" && d.paidAt && d.paidAt>=payP.start && d.paidAt<=payP.end)
-      .sort((a,b)=>a.paidAt.localeCompare(b.paidAt));
+      .map(d=>({d, date:d.paidAt, what:"", amount:r2((d.totals?d.totals.ttc:0)-rgAmount(d,d.totals||computeTotals(d,profFor(d))))}));
+    docs.filter(d=>!isB2C(d) && docType(d)==="facture" && services(d) && !d.autoliq && !(p.tvaDebits&&!p.franchise) && rgRate(d) && d.rgPaidAt && d.rgPaidAt>=payP.start && d.rgPaidAt<=payP.end)
+      .forEach(d=>b2b.push({d, date:d.rgPaidAt, what:"retenue de garantie", amount:rgAmount(d,d.totals||computeTotals(d,profFor(d)))}));
+    b2b.sort((a,b)=>a.date.localeCompare(b.date));
     return {reg, txP, payP, txRows, pay, payNote, b2b, warn};
   }
   const rates = o => Object.keys(o).map(Number).sort((a,b)=>b-a);
@@ -2880,7 +2893,7 @@ const ER = (()=>{
     else if(R.pay) s+=`<p class="muted">Aucun encaissement indiqué sur cette période.</p>`;
     s+=`<p class="hint">${esc(R.payNote)}</p>`;
     if(R.b2b.length){ s+=`<h5 style="margin:6px 0">3. Clients professionnels : factures payées sur la période</h5><p class="hint" style="margin:0 0 6px">Pas de e-reporting pour elles : indique le statut « Encaissée » sur ta plateforme agréée pour chacune.</p>`;
-      s+=T(["Facture","Client","Payée le","Montant TTC"], R.b2b.map(d=>`<tr><td class="inv-no">${esc(d.number)}</td><td>${esc(d.client.name)}</td><td>${fmt(d.paidAt)}</td><td class="r">${money(d.totals?d.totals.ttc:0)}</td></tr>`)); }
+      s+=T(["Facture","Client","Payée le","Montant TTC"], R.b2b.map(x=>`<tr><td class="inv-no">${esc(x.d.number)}${x.what?` <span class="muted">(${x.what})</span>`:""}</td><td>${esc(x.d.client.name)}</td><td>${fmt(x.date)}</td><td class="r">${money(x.amount)}</td></tr>`)); }
     if(R.warn.length) s+=`<div class="hint" style="color:#8a5a00">${R.warn.map(w=>"⚠️ "+esc(w)).join("<br>")}</div>`;
     return s;
   }
@@ -2888,7 +2901,7 @@ const ER = (()=>{
     const L=[["Rubrique","Date","Catégorie","Nombre de ventes","Taux TVA (%)","Montant HT","TVA","Montant encaissé TTC"]];
     R.txRows.forEach(x=>rates(x.rates).forEach(r=>L.push(["Ventes aux particuliers (flux 10.3)",fmt(x.date),x.cat,x.count,String(r).replace(".",","),csvNum(x.rates[r].base),csvNum(x.rates[r].tva),""])));
     (R.pay||[]).forEach(x=>rates(x.rates).forEach(r=>L.push(["Encaissements services particuliers (flux 10.4)",fmt(x.date),"","",String(r).replace(".",","),"","",csvNum(x.rates[r])])));
-    R.b2b.forEach(d=>L.push([`Facture pro payée ${d.number} (statut « Encaissée » sur la plateforme)`,fmt(d.paidAt),"","","","","",csvNum(d.totals?d.totals.ttc:0)]));
+    R.b2b.forEach(x=>L.push([`Facture pro payée ${x.d.number}${x.what?" ("+x.what+")":""} (statut « Encaissée » sur la plateforme)`,fmt(x.date),"","","","","",csvNum(x.amount)]));
     const head=[`E-reporting - ${p.name||""} - SIREN ${String(p.siret||"").replace(/\D/g,"").slice(0,9)} - ${REG[R.reg]}`,`Ventes : ${R.txP.label} (du ${fmt(R.txP.start)} au ${fmt(R.txP.end)}), à transmettre avant le ${fmt(R.txP.deadline)}`,`Encaissements : ${R.payP.label} (du ${fmt(R.payP.start)} au ${fmt(R.payP.end)}), à transmettre avant le ${fmt(R.payP.deadline)}`];
     return "﻿"+[...head.map(h=>[h]),[],...L].map(r=>r.map(csvCell).join(";")).join("\r\n");
   }
@@ -2924,8 +2937,9 @@ function rowActions(i){
   const t=docType(i), b=[], st=stOf(i);
   if(can("payments") && !noPayTrack(i) && t==="facture" && st==="envoyee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ Payée</button>`);
   if(can("payments") && !noPayTrack(i) && t==="avoir" && i.number && i.status!=="payee") b.push(`<button class="btn sm" data-paid="${i.id}">✓ ${i.ref&&S.invoices[i.ref.id]&&S.invoices[i.ref.id].status!=="payee"?"Déduit":"Remboursé"}</button>`);
+  if(can("payments") && !noPayTrack(i) && t==="facture" && rgRate(i) && i.status==="payee" && !i.rgPaidAt) b.push(`<button class="btn sm" data-rg="${i.id}" title="Ton client t'a versé la retenue de garantie">✓ Retenue reçue</button>`);
   if(isLate(i)) b.push(`<button class="btn sm" data-remind="${i.id}">✉ Relancer</button>`);
-  if(can("invoices") && t==="devis" && i.number && !i.convertedTo && i.status!=="refuse"){ b.push(`<button class="btn sm" data-ac="${i.id}" title="Facture d'acompte">Acompte</button>`); b.push(`<button class="btn sm primary" data-conv="${i.id}">→ Facture</button>`); }
+  if(can("invoices") && t==="devis" && i.number && !i.convertedTo && i.status!=="refuse"){ b.push(`<button class="btn sm" data-ac="${i.id}" title="Facture d'acompte">Acompte</button>`); if(!situationsOf(i).length) b.push(`<button class="btn sm primary" data-conv="${i.id}">→ Facture</button>`); }
   b.push(`<button class="btn sm" data-pdf="${i.id}">PDF</button>`);
   if(canDoc(i) && !isIssued(i) && !(t==="devis" && (i.convertedTo || acomptesOf(i).length))) b.push(`<button class="btn sm ghost danger" data-del="${i.id}" title="Supprimer">✕</button>`);
   return b.join(" ");
@@ -2937,12 +2951,13 @@ function docRow(i){
   const sub = cr>0 ? `<div class="muted" style="font-size:11.5px">${isCancelled(i)?"par ":"avoir −"+money(cr)+" · "}${esc(avoirsOf(i).map(a=>a.number).join(", "))}</div>` : docType(i)==="avoir"&&i.ref ? `<div class="muted" style="font-size:11.5px">sur ${esc(i.ref.number)}</div>` : i.convertedTo ? `<div class="muted" style="font-size:11.5px">→ ${esc(i.convertedTo.number)}</div>` : i.paidAt ? `<div class="muted" style="font-size:11.5px">le ${frDate(i.paidAt)}${i.paidMethod?" · "+esc(PAY_SHORT[i.paidMethod]||i.paidMethod):""}</div>` : "";
   const due = docType(i)==="devis" ? frDate(i.validUntil) : frDate(i.dueDate);
   return `<tr class="click" data-id="${i.id}"><td class="inv-no">${typePill}${esc(i.number||"—")}</td><td><div class="cli-cell"><div class="avatar" style="background:${avColor(i.client?.name)}">${esc(initials(i.client?.name))}</div>${esc(i.client?.name)}</div></td><td>${frDate(i.issueDate)}</td><td>${due||"—"}</td><td class="r amount">${money(ttc(i))}</td>
-    <td><span class="pill ${st}">${esc(statusLabel(i))}</span>${sub}</td><td class="r" style="white-space:nowrap">${rowActions(i)}</td></tr>`;
+    <td><span class="pill ${st}">${esc(statusLabel(i))}</span>${sub}${rgRate(i)&&i.number?`<div class="muted" style="font-size:11.5px">retenue ${money(rgAmount(i,i.totals||computeTotals(i,profFor(i))))} ${i.rgPaidAt?"reçue le "+frDate(i.rgPaidAt):"à recevoir"}</div>`:""}</td><td class="r" style="white-space:nowrap">${rowActions(i)}</td></tr>`;
 }
 function bindRows(root){
   $$(root+" tr.click").forEach(tr=>tr.addEventListener("click",e=>{ if(e.target.closest("button")) return; loadEditor(clean(S.invoices[tr.dataset.id])); showTab("edit"); }));
   $$(root+" [data-pdf]").forEach(b=>b.addEventListener("click",()=>downloadPdf(S.invoices[b.dataset.pdf])));
   $$(root+" [data-paid]").forEach(b=>b.addEventListener("click",()=>openPaid(S.invoices[b.dataset.paid])));
+  $$(root+" [data-rg]").forEach(b=>b.addEventListener("click",()=>openRg(S.invoices[b.dataset.rg])));
   $$(root+" [data-remind]").forEach(b=>b.addEventListener("click",()=>remind(S.invoices[b.dataset.remind])));
   $$(root+" [data-conv]").forEach(b=>b.addEventListener("click",()=>devisToInvoice(S.invoices[b.dataset.conv])));
   $$(root+" [data-ac]").forEach(b=>b.addEventListener("click",()=>openAcompte(S.invoices[b.dataset.ac])));
@@ -2966,11 +2981,15 @@ function renderList(){
   const refunded=av.filter(i=>i.number&&i.status==="payee");
   const sum=a=>a.reduce((s,i)=>s+ttc(i),0), sumDue=a=>a.reduce((s,i)=>s+ttc(i)-creditedOf(i),0);
   const year=todayISO().slice(0,4);
-  const caYear=sum(paid.filter(i=>(i.paidAt||i.issueDate||"").startsWith(year)))+sum(refunded.filter(i=>(i.paidAt||i.issueDate||"").startsWith(year)));
+  const rgOf=i=>rgAmount(i,i.totals||computeTotals(i,profFor(i)));
+  const caYear=sum(paid.filter(i=>(i.paidAt||i.issueDate||"").startsWith(year)))+sum(refunded.filter(i=>(i.paidAt||i.issueDate||"").startsWith(year)))
+    - paid.filter(i=>rgRate(i)&&(i.paidAt||i.issueDate||"").startsWith(year)).reduce((s,i)=>s+rgOf(i),0)
+    + paid.filter(i=>rgRate(i)&&(i.rgPaidAt||"").startsWith(year)).reduce((s,i)=>s+rgOf(i),0);
+  const rgWait=paid.filter(i=>rgRate(i)&&!i.rgPaidAt&&!noPayTrack(i));
   $("#stats").innerHTML=`
     <div class="stat g"><div class="k">● Encaissé en ${year}</div><div class="v">${money(caYear)}</div><div class="s">${paid.length} facture${paid.length>1?"s":""} payée${paid.length>1?"s":""} au total</div></div>
     <div class="stat a"><div class="k">◷ En attente</div><div class="v">${money(sumDue(pend))}</div><div class="s">${pend.length} facture${pend.length>1?"s":""} émise${pend.length>1?"s":""} non payée${pend.length>1?"s":""}${drafts.length?` · ${drafts.length} brouillon${drafts.length>1?"s":""}`:""}</div></div>
-    <div class="stat r ${late.length?"hot":""}"><div class="k">⚠ En retard</div><div class="v">${money(sumDue(late))}</div><div class="s">${late.length?`${late.length} facture${late.length>1?"s":""} à relancer`:"Rien à relancer 👌"}</div></div>`+(untracked.length?`<p class="hint" style="grid-column:1/-1;margin:0">ℹ️ ${untracked.length} facture${untracked.length>1?"s":""} à des particuliers, non comptée${untracked.length>1?"s":""} ci-dessus. ${PAY_LAW_TXT}</p>`:"");
+    <div class="stat r ${late.length?"hot":""}"><div class="k">⚠ En retard</div><div class="v">${money(sumDue(late))}</div><div class="s">${late.length?`${late.length} facture${late.length>1?"s":""} à relancer`:"Rien à relancer 👌"}</div></div>`+(rgWait.length?`<p class="hint" style="grid-column:1/-1;margin:0">🔒 Retenues de garantie à recevoir : <b>${money(rgWait.reduce((s,i)=>s+rgOf(i),0))}</b> (${rgWait.map(i=>esc(i.number)).join(", ")}). Clique sur « ✓ Retenue reçue » quand ton client te la verse.</p>`:"")+(untracked.length?`<p class="hint" style="grid-column:1/-1;margin:0">ℹ️ ${untracked.length} facture${untracked.length>1?"s":""} à des particuliers, non comptée${untracked.length>1?"s":""} ci-dessus. ${PAY_LAW_TXT}</p>`:"");
   const qv=($("#search").value||"").toLowerCase(), fs=S.filter;
   const rows=all.filter(i=>(!qv||(i.number||"").toLowerCase().includes(qv)||(i.client?.name||"").toLowerCase().includes(qv)) && (!fs || (fs==="retard"?isLate(i): fs==="avoir"? docType(i)==="avoir" : fs==="brouillon" ? !i.number : (docType(i)==="facture" && stOf(i)===fs))));
   if(!all.length){ $("#invList").innerHTML=`<div class="empty">${EMPTY_SVG}<h4>Aucune facture pour l'instant</h4><p>Ta première facture, c'est par ici.</p><button class="btn primary" id="btnFirst">Créer ma première facture</button></div>`; $("#btnFirst").addEventListener("click",()=>newEditor("facture")); return; }
@@ -3013,6 +3032,22 @@ function openPaid(i){
   $("#payMethod").innerHTML=[...new Set([...means,"virement","cheque","especes","carte"])].map(k=>`<option value="${k}">${PAY_SHORT[k]}</option>`).join("")+`<option value="autre">Autre</option>`;
   $("#payModal").classList.add("on");
 }
+let rgTarget=null;
+function openRg(i){
+  if(!i || !rgRate(i)) return; if(!can("payments")) return toast("Tu n'as pas le droit d'indiquer les paiements."); if(noPayTrack(i)) return toast(PAY_LAW_TXT);
+  rgTarget=i; const T=i.totals||computeTotals(i,profFor(i));
+  $("#rgText").textContent=`${labelOf(i)} ${i.number} (${i.client.name||"client"}) : retenue de garantie de ${pct(rgRate(i))}, soit ${money(rgAmount(i,T))}.`;
+  $("#rgDate").value=todayISO(); $("#rgModal").classList.add("on");
+}
+$("#rgNo").addEventListener("click",()=>{ $("#rgModal").classList.remove("on"); rgTarget=null; });
+$("#rgYes").addEventListener("click",async()=>{
+  const i=rgTarget; if(!i) return; const d=$("#rgDate").value||todayISO();
+  if(i.paidAt && d<i.paidAt) return toast("La retenue ne peut pas être reçue avant le paiement de la facture.");
+  $("#rgModal").classList.remove("on");
+  const u={...clean(i), rgPaidAt:d, updatedAt:Date.now()};
+  try{ await Store.saveInvoice(u); S.invoices[u.id]=u; if(S.cur&&S.cur.id===u.id){ S.cur.rgPaidAt=d; loadEditor(S.cur); } toast(`${u.number} : retenue de garantie reçue le ${frDate(d)}.`); renderList(); }catch(e){ fbErr(e); }
+  rgTarget=null;
+});
 $("#payNo").addEventListener("click",()=>{ $("#payModal").classList.remove("on"); payTarget=null; });
 $("#payYes").addEventListener("click",async()=>{
   const i=payTarget; if(!i) return; $("#payModal").classList.remove("on");
@@ -3048,8 +3083,8 @@ $("#expYes").addEventListener("click",()=>{
   const y=$("#expYear").value;
   const docs=Object.values(S.invoices).filter(i=>i.number&&docType(i)!=="devis"&&(!y||(i.issueDate||"").startsWith(y))).sort((a,b)=>(a.issueDate||"").localeCompare(b.issueDate||"")||(a.number||"").localeCompare(b.number||""));
   if(!docs.length){ toast("Aucune facture pour cette période."); return; }
-  const head=["Date","Numéro","Type","Client","SIREN client","Nature","Total HT","TVA","Total TTC","Statut","Date de paiement","Mode de paiement","Facture d'origine","Devis","Autoliquidation","Retenue de garantie"];
-  const rows=docs.map(i=>{ const sg=sign(i), T=i.totals||computeTotals(i,profFor(i)); return [frDate(i.issueDate),i.number,labelOf(i),i.client?.name||"",i.client?.siren||"",NATURE[i.nature]||"",csvNum(sg*T.ht),csvNum(sg*T.tva),csvNum(sg*T.ttc),statusLabel(i),frDate(i.paidAt||""),i.paidMethod?(PAY_SHORT[i.paidMethod]||i.paidMethod):"",i.ref?i.ref.number:"",i.fromDevis?i.fromDevis.number:"",i.autoliq?"Oui":"",rgRate(i)?csvNum(rgAmount(i,T)):""]; });
+  const head=["Date","Numéro","Type","Client","SIREN client","Nature","Total HT","TVA","Total TTC","Statut","Date de paiement","Mode de paiement","Facture d'origine","Devis","Autoliquidation","Retenue de garantie","Retenue reçue le"];
+  const rows=docs.map(i=>{ const sg=sign(i), T=i.totals||computeTotals(i,profFor(i)); return [frDate(i.issueDate),i.number,labelOf(i),i.client?.name||"",i.client?.siren||"",NATURE[i.nature]||"",csvNum(sg*T.ht),csvNum(sg*T.tva),csvNum(sg*T.ttc),statusLabel(i),frDate(i.paidAt||""),i.paidMethod?(PAY_SHORT[i.paidMethod]||i.paidMethod):"",i.ref?i.ref.number:"",i.fromDevis?i.fromDevis.number:"",i.autoliq?"Oui":"",rgRate(i)?csvNum(rgAmount(i,T)):"",frDate(i.rgPaidAt||"")]; });
   const csv="﻿"+[head,...rows].map(r=>r.map(csvCell).join(";")).join("\r\n");
   downloadBlob(new Blob([csv],{type:"text/csv;charset=utf-8"}), `Recettes ${y||"toutes années"} - ${safeName(S.profile.name||"factures")}.csv`);
   $("#expModal").classList.remove("on"); toast("Export comptable téléchargé (s'ouvre avec Excel).");

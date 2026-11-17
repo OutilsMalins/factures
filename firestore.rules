@@ -1,8 +1,9 @@
-// COPIE DE RÉFÉRENCE (V4, 16/11/2026). La version active est dans la console Firebase :
+// COPIE DE RÉFÉRENCE (V5, 17/11/2026). La version active est dans la console Firebase :
 // Firestore Database > Règles. Toute modification doit y être collée puis publiée.
 // V4 : numérotation contrôlée par le serveur (numéro attribué dans la même opération que le compteur,
 //      jamais en arrière, ordre chronologique des dates), numéro de devis non modifiable,
 //      anciennes factures sans champ « franchise » : on reprend le réglage de l'entreprise.
+// V5 : date de versement de la retenue de garantie (rgPaidAt) enregistrable sur une facture émise.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -124,6 +125,9 @@ service cloud.firestore {
                    : request.resource.data.get('number', null) == resource.data.number))
              // paiement (sauf particuliers d'une entreprise assujettie à la TVA)
           || (onlyKeys(['status', 'paidAt', 'paidMethod', 'updatedAt']) && perm(userId, 'payments') && !b2cTaxed(userId, resource.data))
+             // retenue de garantie versée par le client (un an après la réception des travaux)
+          || (onlyKeys(['rgPaidAt', 'updatedAt']) && perm(userId, 'payments') && !b2cTaxed(userId, resource.data)
+              && resource.data.get('rg', 0) > 0)
              // devis accepté / transformé en facture
           || (resource.data.get('type', 'facture') == 'devis' && onlyKeys(['status', 'convertedTo', 'updatedAt']) && perm(userId, 'invoices'))
              // PDF archivé après coup (une seule fois)

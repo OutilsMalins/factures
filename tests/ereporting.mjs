@@ -114,7 +114,13 @@ fs.mkdirSync(path.join(HERE, "einvoice-out"), { recursive: true }); fs.writeFile
 await invoice({ date: "2026-11-06", client: "M. Bernard", lines: [{ desc: "Rénovation salle de bain", price: 2000 }], rg: 5 });
 await payFirst("F-2026-008", "2026-11-07");
 er = await openER("novembre-décembre 2026");
-ok(has(er, "07/11/2026", "1 900,00 €", "retenue de garantie (100,00 €) n'est pas comptée"), "encaissement avec retenue de garantie : 1 900,00 € comptés, retenue signalée");
+ok(has(er, "07/11/2026", "1 900,00 €", "retenue de garantie (100,00 €) n'est pas encore reçue"), "encaissement avec retenue de garantie : 1 900,00 € comptés, retenue signalée");
+await page.click("#erClose");
+await page.click('[data-tab="list"]'); await page.waitForTimeout(300);
+await page.locator("#invList tr").filter({ hasText: "F-2026-008" }).first().locator("[data-rg]").click();
+await page.fill("#rgDate", "2026-12-15"); await clearToast(); await page.click("#rgYes"); await waitToast(/retenue/);
+er = await openER("novembre-décembre 2026");
+ok(has(er, "15/12/2026", "100,00 €") && !er.includes("pas encore reçue"), "retenue reçue le 15/12 : 100,00 € encaissés à cette date");
 await page.click("#erClose");
 
 console.log("Réel simplifié (mois d'octobre 2026)");
