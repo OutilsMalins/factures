@@ -44,7 +44,7 @@ async function settings({ franchise, regime, debits = false }) {
   if (franchise) await page.check("#sFranchise"); else { await page.uncheck("#sFranchise"); await page.fill("#sTvaNum", "FR44732829320"); await page.selectOption("#sRegime", regime); if (debits) await page.check("#sDebits"); }
   await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i); await closeBackup();
 }
-async function invoice({ kind = "particulier", client = "Mme Petit", nature = "services", date, lines }) {
+async function invoice({ kind = "particulier", client = "Mme Petit", nature = "services", date, lines, rg }) {
   await page.click('[data-tab="edit"]'); await page.click("#btnNewSide");
   await page.click(`#kindSeg button[data-v="${kind}"]`); await page.fill("#cName", client);
   if (kind === "pro") await page.fill("#cSiren", "552100554");
@@ -55,6 +55,7 @@ async function invoice({ kind = "particulier", client = "Mme Petit", nature = "s
     await row("desc").fill(l.desc); await row("qty").fill(String(l.qty || 1)); await row("price").fill(String(l.price));
     if (l.tva != null && await row("tva").count()) await row("tva").selectOption(String(l.tva));
   }
+  if (rg) { await page.check("#rgOn"); await page.fill("#rgRate", String(rg)); await page.locator("#rgRate").dispatchEvent("change"); }
   await page.fill("#issueDate", date); await page.locator("#issueDate").dispatchEvent("change");
   await clearToast(); await page.click("#btnSave"); await page.waitForSelector("#modal.on"); await page.click("#mYes");
   return waitToast(/émis|Échec|refus|Accès|date/);
@@ -108,6 +109,13 @@ const [dl] = await Promise.all([page.waitForEvent("download"), page.click('#eiOp
 const xml = fs.readFileSync(await dl.path(), "utf8");
 ok(xml.includes("<ram:CategoryCode>Z</ram:CategoryCode>") && !xml.includes("VATEX-FR-FRANCHISE") && xml.includes('schemeID="FC"'), "facture électronique en franchise sans n° de TVA : catégorie Z (règle G1.47)");
 fs.mkdirSync(path.join(HERE, "einvoice-out"), { recursive: true }); fs.writeFileSync(path.join(HERE, "einvoice-out", "7-franchise-Z-cii.xml"), xml);
+
+// retenue de garantie : seul le montant réellement encaissé est compté
+await invoice({ date: "2026-11-06", client: "M. Bernard", lines: [{ desc: "Rénovation salle de bain", price: 2000 }], rg: 5 });
+await payFirst("F-2026-008", "2026-11-07");
+er = await openER("novembre-décembre 2026");
+ok(has(er, "07/11/2026", "1 900,00 €", "retenue de garantie (100,00 €) n'est pas comptée"), "encaissement avec retenue de garantie : 1 900,00 € comptés, retenue signalée");
+await page.click("#erClose");
 
 console.log("Réel simplifié (mois d'octobre 2026)");
 await page.click("#btnLogout"); await page.waitForTimeout(500); if (await page.locator("#modal.on").count()) await page.click("#mYes");

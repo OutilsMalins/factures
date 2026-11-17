@@ -855,6 +855,7 @@ details.more[open] summary{margin-bottom:12px}
     <div class="actions">
       <button class="btn sm primary" id="btnToInvoice" style="display:none">→ Transformer en facture</button>
       <button class="btn sm" id="btnAcompte" style="display:none">💶 Facture d'acompte</button>
+      <button class="btn sm" id="btnSituation" style="display:none">🏗 Situation de travaux</button>
       <button class="btn sm" id="btnMakeAvoir" style="display:none">↩ Créer un avoir</button>
       <button class="btn sm" id="btnNewF">+ Facture</button>
       <button class="btn sm" id="btnNewD">+ Devis</button>
@@ -882,6 +883,10 @@ details.more[open] summary{margin-bottom:12px}
         <div class="seg" id="natureSeg"><button data-v="services">Services</button><button data-v="biens">Biens</button><button data-v="mixte">Mixte</button></div>
         <label class="chk" id="autoliqWrap" style="margin:12px 0 0"><input type="checkbox" id="autoliq"><span><b>Autoliquidation</b> (sous-traitance dans le BTP) : facture en HT, la TVA est due par ton client</span></label>
         <p class="hint" id="autoliqHint" style="display:none;margin:6px 0 0">Pense à indiquer le n° de TVA intracommunautaire du client (bloc Client → Professionnel).</p>
+        <div id="rgWrap" style="display:none;margin:12px 0 0">
+          <label class="chk" style="margin:0"><input type="checkbox" id="rgOn"><span><b>Retenue de garantie</b> (travaux) : ton client garde une partie du montant jusqu'à un an après la réception des travaux</span></label>
+          <label class="f" id="rgRateWrap" style="display:none;margin:8px 0 0 27px;max-width:220px"><span>Taux (5 % maximum)</span><input type="text" inputmode="decimal" id="rgRate" value="5"></label>
+        </div>
       </div>
 
       <div class="card">
@@ -1236,6 +1241,20 @@ details.more[open] summary{margin-bottom:12px}
   <input type="text" id="catSearch" placeholder="Rechercher une prestation…" style="margin-bottom:10px">
   <div id="catList" class="cat-list"></div>
 </div></div>
+<div class="modal-bg" id="sitModal"><div class="modal" style="max-width:720px;max-height:92vh;overflow:auto">
+  <h4>🏗 Situation de travaux</h4><p id="sitInfo"></p>
+  <label class="f"><span>Avancement de tout le chantier (raccourci, en %)</span><input type="text" inputmode="decimal" id="sitAll" placeholder="ex. 60"></label>
+  <div id="sitLines"></div>
+  <div class="ac-res" id="sitRes"></div>
+  <label class="chk" style="margin:10px 0 4px"><input type="checkbox" id="sitRgOn"><span><b>Retenue de garantie</b> si elle est prévue au contrat (5 % maximum)</span></label>
+  <label class="f" id="sitRgWrap" style="display:none;margin:0 0 8px 27px;max-width:220px"><span>Taux</span><input type="text" inputmode="decimal" id="sitRg" value="5"></label>
+  <details class="med-info" style="margin-left:0"><summary>ⓘ Comment ça marche ?</summary>
+    <p>Pour chaque poste du devis, indique l'<b>avancement total</b> atteint à ce jour (et pas seulement depuis la dernière fois). L'appli facture la différence avec ce qui a déjà été facturé dans les situations précédentes.</p>
+    <p>Chaque situation est une vraie facture, numérotée normalement. Quand tout est à 100 %, les acomptes éventuels sont déduits et le devis est clos.</p>
+    <p>La <b>retenue de garantie</b> (loi n° 71-584 du 16 juillet 1971) est d'au plus 5 %. Le client la garde jusqu'à un an après la réception des travaux, sauf si tu lui remets une caution bancaire. Elle ne change ni le prix ni la TVA, seulement ce qui est payé tout de suite.</p>
+  </details>
+  <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="sitNo">Annuler</button><button class="btn primary" id="sitYes">Préparer la situation</button></div>
+</div></div>
 <div class="modal-bg" id="acModal"><div class="modal">
   <h4>💶 Facture d'acompte</h4><p id="acInfo"></p>
   <div class="seg" id="acSeg"><button data-v="pct" class="on">En pourcentage</button><button data-v="amt">Montant TTC</button></div>
@@ -1468,8 +1487,11 @@ const isCancelled = d => docType(d)==="facture" && !!d.number && !!d.totals && d
 const noPayTrack = d => docType(d)!=="devis" && !profFor(d).franchise && ((d.client&&d.client.kind)||"particulier")!=="pro";
 const PAY_LAW_TXT = "Paiements des clients particuliers non suivis dans l'appli (loi anti-fraude à la TVA : seuls les logiciels certifiés peuvent les enregistrer).";
 const isLockedEd = d => isIssued(d) && !!S.invoices[d.id] && isIssued(S.invoices[d.id]);
-const titleOf = d => d.kind==="acompte" ? "FACTURE D'ACOMPTE" : TYPE[docType(d)].title;
-const labelOf = d => d.kind==="acompte" ? "Facture d'acompte" : TYPE[docType(d)].label;
+const titleOf = d => d.kind==="acompte" ? "FACTURE D'ACOMPTE" : d.kind==="situation" ? `FACTURE - SITUATION N° ${d.sitNo||1}` : TYPE[docType(d)].title;
+const labelOf = d => d.kind==="acompte" ? "Facture d'acompte" : d.kind==="situation" ? "Facture de situation" : TYPE[docType(d)].label;
+// retenue de garantie (loi n° 71-584 du 16/07/1971) : au plus 5 % du TTC, gardée par le client ; ne change ni le prix ni la TVA
+const rgRate = d => (d && docType(d)==="facture" && d.kind!=="acompte") ? Math.min(5, Math.max(0, num(d.rg))) : 0;
+const rgAmount = (d,T) => rgRate(d) ? r2(T.ttc*rgRate(d)/100) : 0;
 // un document émis garde le régime de TVA qu'il avait à l'émission
 const profFor = d => (isIssued(d) && d.franchise!=null) ? {...S.profile, franchise:!!d.franchise} : S.profile;
 const AUTOLIQ_TXT = "Autoliquidation : TVA due par le preneur (article 283-2 nonies du CGI)";
@@ -1884,6 +1906,10 @@ function setLocked(on){
   const box=$("#edCards"); box.classList.toggle("locked",on);
   box.querySelectorAll("input,textarea,select,button").forEach(el=>{ if(el.id!=="status" && !el.closest(".paybar")) el.disabled=on; });
 }
+function situationsOf(q){
+  return Object.values(S.invoices).filter(i=>docType(i)==="facture" && i.kind==="situation" && i.fromDevis && i.fromDevis.id===q.id && i.number)
+    .sort((a,b)=>(a.sitNo||0)-(b.sitNo||0)||(a.issueDate||"").localeCompare(b.issueDate||""));
+}
 function acomptesOf(q){
   return Object.values(S.invoices).filter(i=>docType(i)==="facture" && i.kind==="acompte" && i.fromDevis && i.fromDevis.id===q.id && i.number)
     .sort((a,b)=>(a.issueDate||"").localeCompare(b.issueDate||"")||(a.number||"").localeCompare(b.number||""));
@@ -1892,8 +1918,10 @@ function refInfoText(inv){
   const t=docType(inv);
   if(t==="avoir"&&inv.ref) return `↩ Avoir sur la facture n° ${inv.ref.number} du ${frDate(inv.ref.date)}`;
   if(inv.kind==="acompte"&&inv.fromDevis) return `💶 Facture d'acompte sur le devis n° ${inv.fromDevis.number}`;
+  if(inv.kind==="situation"&&inv.fromDevis) return `🏗 Situation n° ${inv.sitNo} sur le devis n° ${inv.fromDevis.number}${inv.sitFinal?" (dernière situation, chantier à 100 %)":""}`;
   if(inv.fromDevis) return `📝 Facture créée à partir du devis n° ${inv.fromDevis.number}${inv.acomptes&&inv.acomptes.length?` — acompte${inv.acomptes.length>1?"s":""} déduit${inv.acomptes.length>1?"s":""} : ${inv.acomptes.map(a=>a.number).join(", ")}`:""}`;
-  if(t==="devis"&&inv.number){ const ac=acomptesOf(inv); if(ac.length) return `💶 Acompte${ac.length>1?"s":""} déjà facturé${ac.length>1?"s":""} : ${ac.map(a=>`${a.number} (${money(ttc(a))})`).join(", ")}`; }
+  if(t==="devis"&&inv.number){ const si=situationsOf(inv); if(si.length) return `🏗 Situation${si.length>1?"s":""} déjà facturée${si.length>1?"s":""} : ${si.map(a=>`n° ${a.sitNo} (${a.number})`).join(", ")}`;
+    const ac=acomptesOf(inv); if(ac.length) return `💶 Acompte${ac.length>1?"s":""} déjà facturé${ac.length>1?"s":""} : ${ac.map(a=>`${a.number} (${money(ttc(a))})`).join(", ")}`; }
   return "";
 }
 function refreshLockUi(){
@@ -1930,6 +1958,8 @@ function loadEditor(inv){
   const ri=refInfoText(inv); $("#refInfo").style.display = ri ? "block" : "none"; $("#refInfo").textContent = ri;
   $("#autoliqWrap").style.display = S.profile.franchise ? "none" : "flex";
   $("#autoliq").checked=!!inv.autoliq; autoliqHint();
+  $("#rgWrap").style.display = t==="facture" && inv.kind!=="acompte" ? "block" : "none";
+  $("#rgOn").checked = rgRate(inv)>0; $("#rgRateWrap").style.display = rgRate(inv)>0 ? "block" : "none"; $("#rgRate").value = String(rgRate(inv)||5).replace(".",",");
   $("#clientPick").value = inv.clientId && S.clients[inv.clientId] ? inv.clientId : "";
   $("#cName").value=inv.client.name||""; setSeg("kindSeg",inv.client.kind||"particulier"); $("#cAddr").value=inv.client.address||"";
   $("#cSiren").value=inv.client.siren||""; $("#cTva").value=inv.client.tva||""; $("#cEmail").value=inv.client.email||"";
@@ -1937,7 +1967,9 @@ function loadEditor(inv){
   $("#notes").value=inv.notes||"";
   // boutons contextuels
   const quoteOpen = t==="devis" && inv.number && !inv.convertedTo && can("invoices");
-  $("#btnToInvoice").style.display = quoteOpen ? "inline-flex" : "none";
+  const hasSit = t==="devis" && situationsOf(inv).length>0;
+  $("#btnToInvoice").style.display = quoteOpen && !hasSit ? "inline-flex" : "none";
+  $("#btnSituation").style.display = (quoteOpen && inv.status!=="refuse") ? "inline-flex" : "none";
   $("#btnAcompte").style.display = (quoteOpen && inv.status!=="refuse") ? "inline-flex" : "none";
   $("#btnMakeAvoir").style.display = (t==="facture" && locked && !cancelled && can("invoices")) ? "inline-flex" : "none";
   $("#btnDraft").style.display = draft && !ro ? "inline-flex" : "none";
@@ -1949,6 +1981,10 @@ function loadEditor(inv){
   if(ro) setLocked(true);
   $("#btnEInv").style.display = locked && t!=="devis" ? "inline-flex" : "none"; $("#btnShare").style.display = SHARE_OK ? "inline-flex" : "none"; if(isLockedEd(inv)||(t==="devis"&&inv.number)) prefetchPdf(inv);
 }
+function rgSet(){ const on=$("#rgOn").checked; let v=num($("#rgRate").value); if(v>5){ v=5; toast("La retenue de garantie est limitée à 5 % par la loi."); } if(!(v>0)) v=5;
+  S.cur.rg = on ? v : 0; $("#rgRateWrap").style.display=on?"block":"none"; renderPreview(); }
+$("#rgOn").addEventListener("change",rgSet);
+$("#rgRate").addEventListener("change",()=>{ if($("#rgOn").checked) rgSet(); });
 function autoliqHint(){ $("#autoliqHint").style.display = S.cur && S.cur.autoliq && !S.profile.franchise && !String(S.cur.client.tva||"").trim() ? "block" : "none"; }
 // SIREN (9 chiffres) / SIRET (14) : la clé de contrôle (Luhn) repère la plupart des fautes de frappe. Exception : La Poste.
 function luhnOk(d){ let t=0; for(let i=0;i<d.length;i++){ let n=+d[d.length-1-i]; if(i%2){ n*=2; if(n>9) n-=9; } t+=n; } return t%10===0; }
@@ -2008,7 +2044,7 @@ $("#btnNewQ").addEventListener("click",()=>newEditor("devis"));
 $("#btnNewSide").addEventListener("click",()=>newEditor("facture"));
 $("#btnNewSideD").addEventListener("click",()=>newEditor("devis"));
 $("#btnDup").addEventListener("click",()=>{
-  const c=clean(S.cur); ["pdf","totals","ref","fromDevis","convertedTo","paidAt","paidMethod","kind","acomptes","issuedBy","issuedAt","franchise","seq","seqKey","updatedAt"].forEach(k=>delete c[k]);
+  const c=clean(S.cur); ["pdf","totals","ref","fromDevis","convertedTo","paidAt","paidMethod","kind","acomptes","issuedBy","issuedAt","franchise","seq","seqKey","updatedAt","sitNo","sitFinal"].forEach(k=>delete c[k]);
   c.lines=(c.lines||[]).filter(l=>!l.ded).map(l=>{ const o={...l}; delete o.ded; return o; }); if(!c.lines.length) c.lines=[newLine()];
   c.id=uid(); c.number=null; c.status="brouillon"; const t=todayISO(); c.issueDate=t; c.serviceDate=t;
   if(c.type==="facture") c.dueDate=addDays(t,S.profile.payDays); if(c.type==="devis") c.validUntil=addDays(t,S.profile.quoteDays||30);
@@ -2025,12 +2061,14 @@ $("#btnSave").addEventListener("click",()=>{
 });
 $("#btnDraft").addEventListener("click",()=>saveCurrent(false));
 $("#btnAcompte").addEventListener("click",()=>openAcompte(S.cur));
+$("#btnSituation").addEventListener("click",()=>openSituation(S.cur));
 $("#btnPdf").addEventListener("click",()=>downloadPdf(S.cur));
 $("#btnToInvoice").addEventListener("click",()=>devisToInvoice(S.cur));
 $("#btnMakeAvoir").addEventListener("click",()=>makeAvoir(S.cur));
 
 function devisToInvoice(q){
   if(!q || !q.number) return;
+  if(situationsOf(q).length) return toast("Ce devis est facturé par situations : utilise « Situation de travaux » pour la suite.");
   if(q.convertedTo){ const f=S.invoices[q.convertedTo.id]; if(f){ loadEditor(clean(f)); showTab("edit"); return toast("Ce devis a déjà été transformé en facture."); } }
   const f=newDoc("facture");
   Object.assign(f,{ clientId:q.clientId, client:clean(q.client), hasDelivery:q.hasDelivery, deliveryAddress:q.deliveryAddress, nature:q.nature, lines:clean(q.lines), notes:q.notes||"", autoliq:!!q.autoliq, fromDevis:{id:q.id,number:q.number,date:q.issueDate} });
@@ -2178,7 +2216,7 @@ async function saveCurrent(issue){
     // liens devis → facture (acompte : le devis est accepté ; facture finale : il est « transformé »)
     if(type==="facture" && inv.fromDevis && assigned){
       const q=S.invoices[inv.fromDevis.id];
-      if(q){ const q2={...clean(q),status:"accepte"}; if(inv.kind!=="acompte") q2.convertedTo={id:inv.id,number:inv.number};
+      if(q){ const q2={...clean(q),status:"accepte"}; if(inv.kind!=="acompte" && (inv.kind!=="situation" || inv.sitFinal)) q2.convertedTo={id:inv.id,number:inv.number};
         if(JSON.stringify(q2)!==JSON.stringify(q)){ await Store.saveInvoice(q2); S.invoices[q2.id]=q2; } }
     }
     loadEditor(S.cur);
@@ -2216,6 +2254,63 @@ function openAcompte(q){
   $("#acInfo").textContent=`Devis ${acTarget.number} — ${acTarget.client.name} : ${money(T.ttc)}${S.profile.franchise||acTarget.autoliq?"":" TTC"}.${done?` Déjà facturé en acompte : ${money(done)}.`:""} La facture d'acompte est numérotée comme une facture ; la facture finale déduira automatiquement cet acompte.`;
   acRender(); $("#acModal").classList.add("on"); setTimeout(()=>$("#acVal").select(),50);
 }
+/* ---------- situations de travaux ---------- */
+// Chaque situation est une facture : pour chaque poste du devis, on facture l'avancement cumulé moins ce qui a déjà été facturé.
+// Ligne de situation = quantité en % (unité « % ») × 1 % du montant HT du poste.
+let sitTarget=null;
+const r4 = n => Math.round((Number(n)||0)*10000)/10000;
+const pctTxt = n => String(r2(n)).replace(".",",")+" %";
+function sitPosts(q){ return (q.lines||[]).map((l,i)=>({i, desc:String(l.desc||"").trim()||"Poste "+(i+1), ht:r2(num(l.qty)*num(l.price)), tva:num(l.tva)})).filter(x=>x.ht!==0); }
+function sitPrev(q){ const prev={}; situationsOf(q).forEach(si=>(si.lines||[]).forEach(l=>{ if(l.src!=null) prev[l.src]=Math.max(prev[l.src]||0, num(l.cum)); })); return prev; }
+function openSituation(q){
+  if(!q||!q.number||docType(q)!=="devis") return;
+  if(!can("invoices")) return toast("Tu n'as pas le droit de créer des factures.");
+  if(!S.invoices[q.id]) return toast("Enregistre d'abord le devis.");
+  const draft=Object.values(S.invoices).find(i=>i.kind==="situation" && !i.number && i.fromDevis && i.fromDevis.id===q.id);
+  if(draft){ loadEditor(clean(draft)); showTab("edit"); return toast("Une situation de ce devis est déjà en brouillon : termine-la et émets-la d'abord."); }
+  sitTarget=clean(S.invoices[q.id]);
+  const posts=sitPosts(sitTarget), prev=sitPrev(sitTarget), n=situationsOf(sitTarget).length+1;
+  if(!posts.length) return toast("Le devis n'a pas de montant.");
+  if(posts.every(x=>(prev[x.i]||0)>=100)) return toast("Ce chantier est déjà facturé à 100 %.");
+  $("#sitInfo").textContent=`Situation n° ${n} — devis ${sitTarget.number} (${sitTarget.client.name||"client"}) : ${money(computeTotals(sitTarget,S.profile).ht)} HT.`;
+  $("#sitLines").innerHTML=`<div class="tbl" style="margin:4px 0 10px"><div class="tbl-scroll"><table class="list"><thead><tr><th>Poste</th><th class="r">Montant HT</th><th class="r">Déjà facturé</th><th class="r">Avancement total</th></tr></thead><tbody>${
+    posts.map(x=>`<tr><td>${esc(x.desc)}</td><td class="r">${money(x.ht)}</td><td class="r">${pctTxt(prev[x.i]||0)}</td><td class="r"><input type="text" inputmode="decimal" data-sit="${x.i}" value="${String(prev[x.i]||0).replace(".",",")}" style="width:78px;text-align:right;padding:6px 8px"> %</td></tr>`).join("")}</tbody></table></div></div>`;
+  $$("#sitLines [data-sit]").forEach(el=>el.addEventListener("input",sitRender));
+  $("#sitAll").value=""; $("#sitRgOn").checked=false; $("#sitRgWrap").style.display="none"; $("#sitRg").value="5";
+  const last=situationsOf(sitTarget).pop(); if(last && rgRate(last)){ $("#sitRgOn").checked=true; $("#sitRgWrap").style.display="block"; $("#sitRg").value=String(rgRate(last)).replace(".",","); }
+  sitRender(); $("#sitModal").classList.add("on");
+}
+function sitCalc(){
+  const q=sitTarget; if(!q) return null; const prev=sitPrev(q), rows=[]; let err="";
+  sitPosts(q).forEach(x=>{ const el=$(`#sitLines [data-sit="${x.i}"]`); const cum=r2(num(el?el.value:0)), pv=prev[x.i]||0;
+    if(cum<pv-0.001) err=`« ${x.desc} » : l'avancement ne peut pas baisser (déjà ${pctTxt(pv)} facturés ; pour corriger, fais un avoir).`;
+    if(cum>100) err=`« ${x.desc} » : l'avancement ne peut pas dépasser 100 %.`;
+    rows.push({...x, cum:Math.min(100,cum), prev:pv, delta:r2(Math.min(100,cum)-pv)}); });
+  const amount=r2(rows.reduce((s,r)=>s+r2(r.delta*r4(r.ht/100)),0)), total=r2(rows.reduce((s,r)=>s+r.ht,0)), cumHT=r2(rows.reduce((s,r)=>s+r.ht*r.cum/100,0));
+  return {rows, amount, total, cumHT, final:rows.every(r=>r.cum>=100), err};
+}
+function sitRender(){ const c=sitCalc(); if(!c) return;
+  $("#sitRes").textContent = c.err || (c.amount>0 ? `Cette situation : ${money(c.amount)} HT · avancement total du chantier : ${pctTxt(c.total?c.cumHT/c.total*100:0)}${c.final?" (dernière situation)":""}` : "Indique l'avancement atteint pour au moins un poste."); }
+$("#sitAll").addEventListener("input",()=>{ const v=$("#sitAll").value; if(String(v).trim()==="") return; const prev=sitPrev(sitTarget||{});
+  $$("#sitLines [data-sit]").forEach(el=>{ el.value=String(Math.max(num(v), prev[+el.dataset.sit]||0)).replace(".",","); }); sitRender(); });
+$("#sitRgOn").addEventListener("change",e=>{ $("#sitRgWrap").style.display=e.target.checked?"block":"none"; });
+$("#sitNo").addEventListener("click",()=>{ $("#sitModal").classList.remove("on"); sitTarget=null; });
+$("#sitYes").addEventListener("click",()=>{
+  const q=sitTarget, c=sitCalc(); if(!q||!c) return;
+  if(c.err) return toast(c.err);
+  if(!(c.amount>0)) return toast("Indique l'avancement atteint pour au moins un poste.");
+  let rg=0; if($("#sitRgOn").checked){ rg=num($("#sitRg").value); if(!(rg>0)||rg>5) return toast("La retenue de garantie doit être comprise entre 0 et 5 %."); }
+  const f=newDoc("facture"), n=situationsOf(q).length+1;
+  Object.assign(f,{ kind:"situation", sitNo:n, sitFinal:c.final, rg, clientId:q.clientId, client:clean(q.client), hasDelivery:q.hasDelivery, deliveryAddress:q.deliveryAddress, nature:q.nature, autoliq:!!q.autoliq,
+    fromDevis:{id:q.id,number:q.number,date:q.issueDate}, notes:"",
+    lines: c.rows.filter(r=>r.delta!==0).map(r=>({ desc:`${r.desc} — avancement ${pctTxt(r.delta)} (total ${pctTxt(r.cum)} du poste de ${money(r.ht)} HT)`, qty:r.delta, unit:"%", price:r4(r.ht/100), tva:r.tva, src:r.i, cum:r.cum })) });
+  if(c.final){ const acs=acomptesOf(q);
+    if(acs.length){ acs.forEach(a=>(a.lines||[]).forEach(l=>{ const ht=r2(num(l.qty)*num(l.price)); if(!ht) return;
+        f.lines.push({desc:`Acompte déjà facturé : facture n° ${a.number} du ${frDate(a.issueDate)}`, qty:1, unit:"forfait", price:-ht, tva:num(l.tva), ded:true}); }));
+      f.acomptes=acs.map(a=>({id:a.id,number:a.number,date:a.issueDate,ttc:r2(ttc(a))})); } }
+  $("#sitModal").classList.remove("on"); sitTarget=null;
+  loadEditor(f); showTab("edit"); toast(`Situation n° ${n} préparée${c.final?" (dernière, acomptes déduits)":""} — vérifie puis émets.`);
+});
 bindSeg("acSeg",v=>{ acMode=v; const c=acCalc(); $("#acVal").value = v==="amt" ? String(c?c.amount:"").replace(".",",") : "30"; acRender(); });
 $("#acVal").addEventListener("input",acRender);
 $("#acNo").addEventListener("click",()=>{ $("#acModal").classList.remove("on"); acTarget=null; });
@@ -2252,6 +2347,8 @@ function refText(inv){
   const t=docType(inv);
   if(t==="avoir" && inv.ref) return `Avoir se rapportant à la facture n° ${inv.ref.number} du ${frDate(inv.ref.date)}.`;
   if(inv.kind==="acompte" && inv.fromDevis) return `Acompte sur le devis n° ${inv.fromDevis.number}${inv.fromDevis.date?" du "+frDate(inv.fromDevis.date):""}.`;
+  if(inv.kind==="situation" && inv.fromDevis){ const prevS=Object.values(S.invoices).filter(i=>i.kind==="situation" && i.number && i.id!==inv.id && i.fromDevis && i.fromDevis.id===inv.fromDevis.id && (i.sitNo||0)<(inv.sitNo||0)).sort((a,b)=>a.sitNo-b.sitNo);
+    return `Situation de travaux n° ${inv.sitNo} selon le devis n° ${inv.fromDevis.number}${inv.fromDevis.date?" du "+frDate(inv.fromDevis.date):""}.${prevS.length?` Situations précédentes : ${prevS.map(a=>`n° ${a.sitNo} (facture ${a.number})`).join(", ")}.`:""}`+(inv.acomptes&&inv.acomptes.length?` Acompte${inv.acomptes.length>1?"s":""} déduit${inv.acomptes.length>1?"s":""} : ${inv.acomptes.map(a=>`facture n° ${a.number} du ${frDate(a.date)}`).join(", ")}.`:""); }
   if(inv.fromDevis) return `Selon devis n° ${inv.fromDevis.number}.`+(inv.acomptes&&inv.acomptes.length?` Acompte${inv.acomptes.length>1?"s":""} déduit${inv.acomptes.length>1?"s":""} : ${inv.acomptes.map(a=>`facture n° ${a.number} du ${frDate(a.date)}`).join(", ")}.`:"");
   return "";
 }
@@ -2272,6 +2369,8 @@ function conditionsText(inv,p){
   } else {
     a.push("Ce montant sera remboursé ou déduit de votre prochaine facture.");
   }
+  if(t==="facture" && rgRate(inv)){ const T=computeTotals(inv,p), rg=rgAmount(inv,T);
+    a.push(`Retenue de garantie de ${pct(rgRate(inv))} (loi n° 71-584 du 16 juillet 1971) : ${money(rg)} retenus par le client sur le montant TTC, à restituer un an après la réception des travaux, ou dès la remise d'une caution bancaire. Net à payer : ${money(r2(T.ttc-rg))}.`); }
   if(p.insurance) a.push("Assurance professionnelle : "+p.insurance);
   if(p.mediator && p.mediatorOnDocs!==false && inv.client.kind!=="pro" && t!=="avoir") a.push("En cas de litige, médiateur de la consommation : "+p.mediator);
   return a;
@@ -2282,7 +2381,7 @@ function metaBoxes(inv,T){
   if(t==="devis") return [["Émis le",frDate(inv.issueDate)||"—"],["Valable jusqu'au",frDate(inv.validUntil)||"—"],["Nature",inv.nature==="biens"?"Biens":inv.nature==="mixte"?"Mixte":"Services"],["Total",money(T.ttc),1]];
   if(t==="avoir") return [["Émis le",frDate(inv.issueDate)||"—"],["Facture d'origine",inv.ref?inv.ref.number:"—"],["Date facture",inv.ref?frDate(inv.ref.date):"—"],["Montant de l'avoir",money(sg*T.ttc),1]];
   if(inv.kind==="acompte") return [["Émise le",frDate(inv.issueDate)||"—"],["Devis",inv.fromDevis?inv.fromDevis.number:"—"],["Échéance",frDate(inv.dueDate)||"À réception"],["Acompte dû",money(T.ttc),1]];
-  return [["Émise le",frDate(inv.issueDate)||"—"],[inv.nature==="biens"?"Vente le":"Prestation le",frDate(inv.serviceDate)||"—"],["Échéance",frDate(inv.dueDate)||"À réception"],[inv.acomptes&&inv.acomptes.length?"Reste à payer":"Montant dû",money(T.ttc),1]];
+  return [["Émise le",frDate(inv.issueDate)||"—"],[inv.nature==="biens"?"Vente le":"Prestation le",frDate(inv.serviceDate)||"—"],["Échéance",frDate(inv.dueDate)||"À réception"],[inv.acomptes&&inv.acomptes.length?"Reste à payer":"Montant dû",money(r2(T.ttc-rgAmount(inv,T))),1]];
 }
 function renderPreview(){
   if(!S.cur) return;
@@ -2295,7 +2394,7 @@ function renderPreview(){
   $("#sheet").innerHTML=`${t!=="devis"&&!inv.number?`<div class="sh-wm"><span>BROUILLON</span></div>`:""}
     <div class="sh-band">
       <div class="l">${p.logo?`<div class="sh-logo${logoFull(p)?" full":""}"><img src="${logoSrc(p)}" alt=""></div>`:""}<div class="nm">${esc(p.name)||'<span class="sh-empty">Ton entreprise</span>'}</div></div>
-      <div class="r"><div class="big${inv.kind==="acompte"?" sm":""}">${esc(titleOf(inv))}</div><div class="no">N° ${esc(inv.number||"attribué à l'enregistrement")}</div></div>
+      <div class="r"><div class="big${inv.kind==="acompte"||inv.kind==="situation"?" sm":""}">${esc(titleOf(inv))}</div><div class="no">N° ${esc(inv.number||"attribué à l'enregistrement")}</div></div>
     </div>
     <div class="sh-body">
       <div class="sh-parties">
@@ -2321,6 +2420,7 @@ function renderPreview(){
             ${fr?"":T.vat.map(v=>`<tr><td>TVA ${pct(v.rate)}</td><td>${money(sg*v.amount)}</td></tr>`).join("")}
             ${fr?"":`<tr><td>Total TVA</td><td>${money(sg*T.tva)}</td></tr>`}
             <tr class="g"><td>${totLabel}</td><td>${money(sg*T.ttc)}</td></tr>
+            ${rgRate(inv)?`<tr><td>Retenue de garantie ${pct(rgRate(inv))}</td><td>− ${money(rgAmount(inv,T))}</td></tr><tr><td><b>Net à payer</b></td><td><b>${money(r2(T.ttc-rgAmount(inv,T)))}</b></td></tr>`:""}
           </table>
           ${p.franchise?`<div class="sh-mention">TVA non applicable, art. 293 B du CGI</div>`:inv.autoliq?`<div class="sh-mention">${AUTOLIQ_TXT}</div>`:""}
           ${p.signature&&p.showSignature?`<div class="sh-sign"><small>Signature</small><img src="${p.signature}" alt="">${p.signName?`<div class="who">${esc(p.signName)}</div>`:""}</div>`:""}
@@ -2331,7 +2431,7 @@ function renderPreview(){
     </div>`;
   $("#pbLbl").textContent = totLabel;
   $("#pbAmt").textContent = money(sg*T.ttc);
-  $("#pbSub").textContent = fr ? `${lines.length} ligne${lines.length>1?"s":""} · TVA non applicable` : `HT ${money(sg*T.ht)} · TVA ${money(sg*T.tva)}`;
+  $("#pbSub").textContent = (fr ? `${lines.length} ligne${lines.length>1?"s":""} · TVA non applicable` : `HT ${money(sg*T.ht)} · TVA ${money(sg*T.tva)}`) + (rgRate(inv) ? ` · net à payer après retenue de garantie : ${money(r2(T.ttc-rgAmount(inv,T)))}` : "");
 }
 
 /* ================= PDF ================= */
@@ -2366,7 +2466,7 @@ function buildPdf(inv,p,opts={}){
   doc.setTextColor(255); doc.setFont(PF,"bold"); doc.setFontSize(16);
   const nm=doc.splitTextToSize(pdfSafe(p.name||""),W-M-nx-62).slice(0,3);
   doc.text(nm,nx,BH/2+2.5-(nm.length-1)*3.2);
-  doc.setFontSize(inv.kind==="acompte"?16:27); t(titleOf(inv),W-M,BH/2+1.5,{align:"right"});
+  doc.setFontSize(inv.kind==="acompte"||inv.kind==="situation"?16:27); t(titleOf(inv),W-M,BH/2+1.5,{align:"right"});
   doc.setFont(PF,"normal"); doc.setFontSize(10); t("N° "+(inv.number||"BROUILLON"),W-M,BH/2+8.5,{align:"right"});
   let y=BH+11;
   const colW=(W-2*M-8)/2, cx=M+colW+8;
@@ -2422,13 +2522,16 @@ function buildPdf(inv,p,opts={}){
   const rows=[["Total HT",money(sg*T.ht)]]; if(!fr){ T.vat.forEach(v=>rows.push(["TVA "+pct(v.rate),money(sg*v.amount)])); rows.push(["Total TVA",money(sg*T.tva)]); }
   const tw=76, tx=W-M-tw;
   const notesL = inv.notes ? doc.splitTextToSize(pdfSafe(inv.notes),W-2*M-tw-10) : [];
-  const blockH=Math.max(rows.length*6+11+(fr?7:0), notesL.length*4.3+4+(tp==="devis"?30:0));
+  const rgA=rgAmount(inv,T), blockH=Math.max(rows.length*6+11+(fr?7:0)+(rgA?13:0), notesL.length*4.3+4+(tp==="devis"?30:0));
   ensure(blockH+6); y+=6; const y0=y;
   doc.setFontSize(9.5); doc.setTextColor(51);
   rows.forEach(([k,v])=>{ t(k,tx+3.5,y+4.2); t(v,W-M-3.5,y+4.2,{align:"right"}); y+=6; });
   y+=1; doc.setFillColor(...ACC); doc.roundedRect(tx,y,tw,10,1.8,1.8,"F"); doc.setTextColor(255); doc.setFont(PF,"bold"); doc.setFontSize(tp==="avoir"?10.5:11.5);
   const totLabel = tp==="devis" ? (fr?"Total":"Total TTC") : tp==="avoir" ? (fr?"Total de l'avoir":"Total TTC avoir") : (inv.acomptes&&inv.acomptes.length) ? (fr?"Reste à payer":"Reste à payer TTC") : (fr?"Net à payer":"Total TTC");
   t(totLabel,tx+4,y+6.7); t(money(sg*T.ttc),W-M-4,y+6.7,{align:"right"}); y+=10;
+  if(rgA){ doc.setTextColor(51); doc.setFont(PF,"normal"); doc.setFontSize(9.5); y+=1;
+    t(`Retenue de garantie ${pct(rgRate(inv))}`,tx+3.5,y+4.2); t("- "+money(rgA),W-M-3.5,y+4.2,{align:"right"}); y+=6;
+    doc.setFont(PF,"bold"); t("Net à payer",tx+3.5,y+4.2); t(money(r2(T.ttc-rgA)),W-M-3.5,y+4.2,{align:"right"}); y+=6; }
   doc.setFont(PF,"normal");
   if(fr){ doc.setFont(PF,"italic"); doc.setFontSize(8.3); doc.setTextColor(102); y+=5;
     if(p.franchise) t("TVA non applicable, art. 293 B du CGI",W-M,y,{align:"right"});
@@ -2497,7 +2600,7 @@ const EI = (()=>{
   const ymd = iso => String(iso||"").replace(/-/g,"");
   const RATES = [0,0.9,1.05,1.75,2.1,5.5,7,8.5,9.2,9.6,10,13,19.6,20,20.6];
   const UNITS = {u:"C62","unité":"C62",unite:"C62","pièce":"H87",piece:"H87",pce:"H87",h:"HUR",heure:"HUR",heures:"HUR",j:"DAY",jour:"DAY",jours:"DAY",
-    forfait:"LS",m:"MTR",ml:"MTR","m²":"MTK",m2:"MTK","m³":"MTQ",m3:"MTQ",kg:"KGM",g:"GRM",t:"TNE",l:"LTR",km:"KMT",mois:"MON",semaine:"WEE",lot:"LO"};
+    forfait:"LS","%":"P1",m:"MTR",ml:"MTR","m²":"MTK",m2:"MTK","m³":"MTQ",m3:"MTQ",kg:"KGM",g:"GRM",t:"TNE",l:"LTR",km:"KMT",mois:"MON",semaine:"WEE",lot:"LO"};
   const unit = u => UNITS[String(u||"").trim().toLowerCase()] || "C62";
   const PAYCODE = {virement:"30",cheque:"20",especes:"10",carte:"48"};
   // adresse libre « 1 rue X\n75000 Paris » → champs structurés
@@ -2544,6 +2647,8 @@ const EI = (()=>{
     const rt=refText(inv); if(rt) notes.push(["",rt]);
     if(String(inv.notes||"").trim()) notes.push(["",String(inv.notes).trim()]);
     if(p.insurance) notes.push(["","Assurance professionnelle : "+p.insurance]);
+    // retenue de garantie : pratiquée par le client sur le montant dû (cas « clause de réserve contractuelle », code sujet ABU)
+    if(rgRate(inv)){ const rg=rgAmount(inv,computeTotals(inv,p)); notes.push(["ABU",`Retenue de garantie de ${String(rgRate(inv)).replace(".",",")} % (loi n° 71-584 du 16 juillet 1971) : ${money(rg)} retenus sur le montant dû, à restituer un an après la réception des travaux.`]); }
     const means=(p.payMeans||[]).length?p.payMeans:["virement"], iban=String(p.iban||"").replace(/\s/g,"");
     const pay = t==="avoir" ? null : (means.includes("virement") ? {code:iban?"58":"30", iban, bic:String(p.bic||"").replace(/\s/g,"")} : {code:PAYCODE[means[0]]||"1"});
     return { inv, p, t, typeCode, cadre, notes, L, vat, ht, tva, ttc, pay,
@@ -2746,7 +2851,9 @@ const ER = (()=>{
     else { const pp={};
       docs.filter(d=>isB2C(d) && services(d) && d.status==="payee" && d.paidAt && d.paidAt>=payP.start && d.paidAt<=payP.end).forEach(d=>{
         const sg=docType(d)==="avoir"?-1:1, row=pp[d.paidAt]=pp[d.paidAt]||{date:d.paidAt, rates:{}};
-        byRate(d).forEach(({r,base,tva})=>{ row.rates[r]=r2((row.rates[r]||0)+sg*(base+tva)); });
+        const k=1-rgRate(d)/100;   // la retenue de garantie n'est encaissée que plus tard
+        if(rgRate(d)) warn.push(`${labelOf(d)} ${d.number} : la retenue de garantie (${money(rgAmount(d,computeTotals(d,profFor(d))))}) n'est pas comptée. Déclare-la à la date où ton client te la verse.`);
+        byRate(d).forEach(({r,base,tva})=>{ row.rates[r]=r2((row.rates[r]||0)+sg*r2((base+tva)*k)); });
       });
       pay=Object.values(pp).sort((a,b)=>a.date.localeCompare(b.date));
       payNote="Seuls les paiements que tu as indiqués dans l'appli (« Payée ») sont comptés : vérifie qu'il n'en manque pas."; }
@@ -2941,8 +3048,8 @@ $("#expYes").addEventListener("click",()=>{
   const y=$("#expYear").value;
   const docs=Object.values(S.invoices).filter(i=>i.number&&docType(i)!=="devis"&&(!y||(i.issueDate||"").startsWith(y))).sort((a,b)=>(a.issueDate||"").localeCompare(b.issueDate||"")||(a.number||"").localeCompare(b.number||""));
   if(!docs.length){ toast("Aucune facture pour cette période."); return; }
-  const head=["Date","Numéro","Type","Client","SIREN client","Nature","Total HT","TVA","Total TTC","Statut","Date de paiement","Mode de paiement","Facture d'origine","Devis","Autoliquidation"];
-  const rows=docs.map(i=>{ const sg=sign(i), T=i.totals||computeTotals(i,profFor(i)); return [frDate(i.issueDate),i.number,labelOf(i),i.client?.name||"",i.client?.siren||"",NATURE[i.nature]||"",csvNum(sg*T.ht),csvNum(sg*T.tva),csvNum(sg*T.ttc),statusLabel(i),frDate(i.paidAt||""),i.paidMethod?(PAY_SHORT[i.paidMethod]||i.paidMethod):"",i.ref?i.ref.number:"",i.fromDevis?i.fromDevis.number:"",i.autoliq?"Oui":""]; });
+  const head=["Date","Numéro","Type","Client","SIREN client","Nature","Total HT","TVA","Total TTC","Statut","Date de paiement","Mode de paiement","Facture d'origine","Devis","Autoliquidation","Retenue de garantie"];
+  const rows=docs.map(i=>{ const sg=sign(i), T=i.totals||computeTotals(i,profFor(i)); return [frDate(i.issueDate),i.number,labelOf(i),i.client?.name||"",i.client?.siren||"",NATURE[i.nature]||"",csvNum(sg*T.ht),csvNum(sg*T.tva),csvNum(sg*T.ttc),statusLabel(i),frDate(i.paidAt||""),i.paidMethod?(PAY_SHORT[i.paidMethod]||i.paidMethod):"",i.ref?i.ref.number:"",i.fromDevis?i.fromDevis.number:"",i.autoliq?"Oui":"",rgRate(i)?csvNum(rgAmount(i,T)):""]; });
   const csv="﻿"+[head,...rows].map(r=>r.map(csvCell).join(";")).join("\r\n");
   downloadBlob(new Blob([csv],{type:"text/csv;charset=utf-8"}), `Recettes ${y||"toutes années"} - ${safeName(S.profile.name||"factures")}.csv`);
   $("#expModal").classList.remove("on"); toast("Export comptable téléchargé (s'ouvre avec Excel).");
