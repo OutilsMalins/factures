@@ -8,7 +8,8 @@
     "test:einvoice": "firebase emulators:exec --only firestore,auth --project demo-factures \"node einvoice.mjs\"",
     "test:ereporting": "firebase emulators:exec --only firestore,auth --project demo-factures \"node ereporting.mjs\"",
     "test:sauvegarde": "firebase emulators:exec --only firestore,auth --project demo-factures \"node sauvegarde.mjs\"",
-    "test:periode": "firebase emulators:exec --only firestore,auth --project demo-factures \"node periode.mjs\""
+    "test:periode": "firebase emulators:exec --only firestore,auth --project demo-factures \"node periode.mjs\"",
+    "test:envoi": "firebase emulators:exec --only firestore,auth --project demo-factures \"node envoi.mjs\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "3.0.4",

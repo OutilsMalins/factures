@@ -51,3 +51,10 @@ UTF-8, il ne sait pas créer un dossier au nom accentué sous Linux (sur un vrai
 à l'émission, refus de l'export électronique sans IBAN (paiement par virement), puis période de facturation
 dans le CII (`BillingSpecifiedPeriod`) et l'UBL (`InvoicePeriod`). Avec `PYTHON` (et `VERAPDF_CP`), les trois fichiers
 sont aussi passés aux validateurs officiels. `SHOT=chemin` enregistre des captures du champ et de la confirmation.
+
+## Envoi au client
+
+`npm run test:envoi` vérifie le bouton « 📧 Envoyer au client » : fenêtre ouverte après l'émission (réglage coché par
+défaut), adresse / objet / message pré-remplis, « Ouvrir ma messagerie » (PDF téléchargé + lien `mailto:` capturé par
+le crochet `window.__openUrl`), « Partager le PDF » (partage du navigateur simulé), adresse corrigée enregistrée dans la
+fiche client, et plus de fenêtre automatique quand le réglage est décoché.
