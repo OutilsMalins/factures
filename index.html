@@ -496,7 +496,7 @@ main{padding:28px 32px 60px;min-width:0}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:520px){.row{grid-template-columns:1fr}}
 label.f{display:block;margin-bottom:12px}
-label.f>span{display:block;font-size:12px;font-weight:700;color:#4b5551;margin-bottom:5px}
+label.f>span,div.f>span{display:block;font-size:12px;font-weight:700;color:#4b5551;margin-bottom:5px}
 input[type=text],input[type=email],input[type=password],input[type=tel],input[type=number],input[type=date],select,textarea{width:100%;border:1.5px solid var(--line);background:#faf9f6;border-radius:10px;padding:9px 11px;outline:none;transition:border-color .15s, box-shadow .15s, background .15s}
 input:hover,select:hover,textarea:hover{border-color:#d3cdbf}
 input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 4px rgba(31,92,69,.12);background:#fff}
@@ -870,7 +870,9 @@ details.more[open] summary{margin-bottom:12px}
         <div class="card-h"><div class="ico g">1</div><div><h3 id="infoTitle">Infos de la facture</h3><p>Dates, statut et type d'opération</p></div></div>
         <div class="row">
           <label class="f"><span>Date d'émission</span><input type="date" id="issueDate"></label>
-          <label class="f" id="serviceWrap"><span>Date de la prestation / vente</span><input type="date" id="serviceDate"></label>
+          <div class="f" id="serviceWrap"><span id="serviceLbl">Date de la prestation / vente</span><input type="date" id="serviceDate" aria-label="Date de la prestation ou de la vente">
+            <div id="serviceEndWrap" style="display:none;margin-top:6px"><span class="muted" style="display:block;font-size:12px;margin-bottom:3px">jusqu'au (inclus)</span><input type="date" id="serviceEnd" aria-label="Fin de la période"></div>
+            <label class="chk" style="margin:6px 0 0"><input type="checkbox" id="hasPeriod"><span>Sur une période (du … au …)</span></label></div>
           <label class="f" id="validWrap" style="display:none"><span>Valable jusqu'au</span><input type="date" id="validUntil"></label>
         </div>
         <div class="row">
@@ -1196,7 +1198,7 @@ details.more[open] summary{margin-bottom:12px}
 </div>
 
 <div class="modal-bg" id="modal"><div class="modal">
-  <h4 id="mTitle"></h4><p id="mText"></p>
+  <h4 id="mTitle"></h4><p id="mWarn" style="display:none;background:#fdecea;color:#a1261b;border:1px solid #f3b8b2;border-radius:10px;padding:10px 12px;font-weight:700;margin:0 0 10px"></p><p id="mText"></p>
   <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="mNo">Annuler</button><button class="btn primary" id="mYes">Confirmer</button></div>
 </div></div>
 <div class="modal-bg" id="eiModal"><div class="modal">
@@ -1457,6 +1459,7 @@ const R = {
 };
 const lsGet = k => { try{ return localStorage.getItem(k); }catch(_){ return null; } };
 const lsSet = (k,v) => { try{ localStorage.setItem(k,v); }catch(_){} };
+const lsDel = k => { try{ localStorage.removeItem(k); }catch(_){} };
 const FS_OK = typeof window.showDirectoryPicker==="function";
 const SHARE_OK = (()=>{ try{ return !FS_OK && typeof navigator.share==="function" && typeof navigator.canShare==="function" && navigator.canShare({files:[new File([new Uint8Array(1)],"t.pdf",{type:"application/pdf"})]}); }catch(_){ return false; } })();
 const pdfCache = {};
@@ -1958,7 +1961,7 @@ function loadEditor(inv){
   $("#edSub").textContent = locked ? `Émis${t==="facture"?"e":""} le ${frDate(inv.issueDate)}${inv.issuedBy?" par "+inv.issuedBy:""}.` : draft ? "Remplis à gauche, l'aperçu se met à jour à droite." : inv.number ? `Créé le ${frDate(inv.issueDate)} — modifie puis enregistre.` : "Le numéro est attribué à l'enregistrement.";
   $("#infoTitle").textContent = `Infos ${t==="facture"?"de la facture":t==="devis"?"du devis":"de l'avoir"}`;
   fillStatusOptions(t,draft); if(cancelled) $("#status").innerHTML=`<option value="annulee">Annulée par avoir</option>`;
-  $("#issueDate").value=inv.issueDate||""; $("#serviceDate").value=inv.serviceDate||""; $("#dueDate").value=inv.dueDate||""; $("#validUntil").value=inv.validUntil||"";
+  $("#issueDate").value=inv.issueDate||""; $("#serviceDate").value=inv.serviceDate||""; periodUi(inv); $("#dueDate").value=inv.dueDate||""; $("#validUntil").value=inv.validUntil||"";
   $("#status").value=stOf(inv); $("#status").disabled=draft || cancelled || (locked && (!can("payments") || noPayTrack(inv))); setSeg("natureSeg",inv.nature||"services");
   $("#serviceWrap").style.display = t==="devis" ? "none" : "block";
   $("#dueWrap").style.display = t==="facture" ? "block" : "none";
@@ -2014,6 +2017,17 @@ function medHint(){ const h=$("#medHint"); if(!h) return; const on=medMissing(S.
 function toggleProRow(){ medHint(); sirenHint(); $("#proTip").style.display = S.cur.client.kind!=="pro" && !isLockedEd(S.cur) ? "block" : "none"; $("#cProRow").style.display = S.cur.client.kind==="pro" ? "grid" : "none"; }
 function newEditor(type="facture"){ loadEditor(newDoc(type)); showTab("edit"); }
 
+// période de prestation : « du » = serviceDate, « au » = serviceEnd (facultatif)
+function periodUi(inv){ const on=!!inv.serviceEnd; $("#hasPeriod").checked=on; $("#serviceEnd").value=inv.serviceEnd||"";
+  $("#serviceEndWrap").style.display=on?"block":"none";
+  $("#serviceLbl").textContent = on ? `Période : du` : "Date de la prestation / vente"; }
+$("#hasPeriod").addEventListener("change",e=>{
+  if(e.target.checked){ const st=S.cur.serviceDate||S.cur.issueDate||todayISO(); if(!S.cur.serviceDate){ S.cur.serviceDate=st; $("#serviceDate").value=st; }
+    S.cur.serviceEnd = st>=(S.cur.issueDate||"") ? st : (S.cur.issueDate||st); }
+  else delete S.cur.serviceEnd;
+  periodUi(S.cur); renderPreview(); if(e.target.checked) $("#serviceEnd").focus();
+});
+$("#serviceEnd").addEventListener("input",e=>{ if(e.target.value) S.cur.serviceEnd=e.target.value; else delete S.cur.serviceEnd; renderPreview(); });
 const m = {issueDate:"issueDate",serviceDate:"serviceDate",dueDate:"dueDate",validUntil:"validUntil",notes:"notes",deliveryAddr:"deliveryAddress"};
 $("#status").addEventListener("change",async e=>{
   const v=e.target.value;
@@ -2054,7 +2068,7 @@ $("#btnNewSideD").addEventListener("click",()=>newEditor("devis"));
 $("#btnDup").addEventListener("click",()=>{
   const c=clean(S.cur); ["pdf","totals","ref","fromDevis","convertedTo","paidAt","paidMethod","kind","acomptes","issuedBy","issuedAt","franchise","seq","seqKey","updatedAt","sitNo","sitFinal"].forEach(k=>delete c[k]);
   c.lines=(c.lines||[]).filter(l=>!l.ded).map(l=>{ const o={...l}; delete o.ded; return o; }); if(!c.lines.length) c.lines=[newLine()];
-  c.id=uid(); c.number=null; c.status="brouillon"; const t=todayISO(); c.issueDate=t; c.serviceDate=t;
+  c.id=uid(); c.number=null; c.status="brouillon"; const t=todayISO(); c.issueDate=t; c.serviceDate=t; delete c.serviceEnd;
   if(c.type==="facture") c.dueDate=addDays(t,S.profile.payDays); if(c.type==="devis") c.validUntil=addDays(t,S.profile.quoteDays||30);
   c.createdAt=Date.now(); loadEditor(c); toast("Copie créée — pense à l'enregistrer.");
 });
@@ -2066,6 +2080,8 @@ $("#btnSave").addEventListener("click",()=>{
   let n=inv.number?null:nextFor(S.profile,t,year); if(n) while(numberExists(fmtNumber(S.profile,n,inv.issueDate,t),inv.id)) n++;
   const nb=inv.number||fmtNumber(S.profile,n,inv.issueDate,t), av=t==="avoir";
   confirmBox(`Émettre ${av?"l'avoir":"la facture"} ?`,`${av?"Il":"Elle"} recevra le numéro ${nb}, daté du ${frDate(inv.issueDate)}, et ne pourra plus être modifié${av?"":"e"} ni supprimé${av?"":"e"} : seul le paiement pourra être indiqué.${av?"":" Pour corriger ensuite, il faudra créer un avoir."}${medMissing(inv)?" ⚠️ Attention : le médiateur de la consommation n'est pas renseigné (obligatoire avec un client particulier).":""}${!av&&inv.client.kind==="pro"&&sirenState(inv.client.siren)!=="ok"?" ⚠️ Attention : le SIREN du client "+(sirenState(inv.client.siren)==="vide"?"n'est pas renseigné":"semble incorrect")+". Il est obligatoire pour un client professionnel, et sans lui cette facture ne pourra pas être exportée en facture électronique (elle ne sera plus modifiable).":""}`,()=>saveCurrent(true));
+  $("#mWarn").textContent=`⚠️ Action irréversible : une fois émis${av?"":"e"}, ${av?"l'avoir":"la facture"} ne pourra plus être modifié${av?"":"e"}, supprimé${av?"":"e"} ni renuméroté${av?"":"e"}.`; $("#mWarn").style.display="block";
+  $("#mYes").textContent="Oui, émettre définitivement";
 });
 $("#btnDraft").addEventListener("click",()=>saveCurrent(false));
 $("#btnAcompte").addEventListener("click",()=>openAcompte(S.cur));
@@ -2139,6 +2155,10 @@ function issueProblem(inv){
   if(!inv.client.name.trim()) return `Indique le nom du client avant d'émettre ${T.the}.`;
   if(!inv.lines.some(l=>String(l.desc).trim())) return "Ajoute au moins une ligne avec une désignation.";
   if(!inv.issueDate) return "Indique la date d'émission.";
+  if(type!=="devis" && inv.serviceEnd){
+    if(!inv.serviceDate) return "Indique le début de la période de prestation.";
+    if(inv.serviceEnd<inv.serviceDate) return "La fin de la période de prestation doit être après son début.";
+  }
   if(type==="avoir" && inv.ref){
     const f=S.invoices[inv.ref.id];
     if(f && f.totals){ const T=computeTotals(inv,S.profile); const left=r2(f.totals.ttc-creditedOf(f));
@@ -2384,12 +2404,21 @@ function conditionsText(inv,p){
   return a;
 }
 const footerText = p => p.footer || [p.name,p.siret?("SIRET "+p.siret):""].filter(Boolean).join(" — ");
+// date de la prestation, ou période « du … au … » (format court pour tenir dans la case du PDF)
+function periodText(inv){ const a=inv.serviceDate, b=inv.serviceEnd; if(!a||!b) return "";
+  if(a===b) return frDate(a);
+  return a.slice(0,4)===b.slice(0,4) ? `${frDate(a).slice(0,5)} au ${frDate(b)}` : `${frDate(a).slice(0,6)}${a.slice(2,4)} au ${frDate(b).slice(0,6)}${b.slice(2,4)}`; }
+function serviceBox(inv){
+  const per=periodText(inv);
+  if(per) return [inv.nature==="biens"?"Ventes du":"Prestation du",per];
+  return [inv.nature==="biens"?"Vente le":"Prestation le",frDate(inv.serviceDate)||"—"];
+}
 function metaBoxes(inv,T){
   const t=docType(inv), sg=sign(inv);
   if(t==="devis") return [["Émis le",frDate(inv.issueDate)||"—"],["Valable jusqu'au",frDate(inv.validUntil)||"—"],["Nature",inv.nature==="biens"?"Biens":inv.nature==="mixte"?"Mixte":"Services"],["Total",money(T.ttc),1]];
   if(t==="avoir") return [["Émis le",frDate(inv.issueDate)||"—"],["Facture d'origine",inv.ref?inv.ref.number:"—"],["Date facture",inv.ref?frDate(inv.ref.date):"—"],["Montant de l'avoir",money(sg*T.ttc),1]];
   if(inv.kind==="acompte") return [["Émise le",frDate(inv.issueDate)||"—"],["Devis",inv.fromDevis?inv.fromDevis.number:"—"],["Échéance",frDate(inv.dueDate)||"À réception"],["Acompte dû",money(T.ttc),1]];
-  return [["Émise le",frDate(inv.issueDate)||"—"],[inv.nature==="biens"?"Vente le":"Prestation le",frDate(inv.serviceDate)||"—"],["Échéance",frDate(inv.dueDate)||"À réception"],[inv.acomptes&&inv.acomptes.length?"Reste à payer":"Montant dû",money(r2(T.ttc-rgAmount(inv,T))),1]];
+  return [["Émise le",frDate(inv.issueDate)||"—"],serviceBox(inv),["Échéance",frDate(inv.dueDate)||"À réception"],[inv.acomptes&&inv.acomptes.length?"Reste à payer":"Montant dû",money(r2(T.ttc-rgAmount(inv,T))),1]];
 }
 function renderPreview(){
   if(!S.cur) return;
@@ -2634,6 +2663,8 @@ const EI = (()=>{
     if(al && !String(inv.client.tva||"").trim()) pb.push("Autoliquidation : indique le numéro de TVA intracommunautaire du client.");
     const lines=(inv.lines||[]).filter(l=>String(l.desc||"").trim() || num(l.price));
     lines.forEach(l=>{ if(!fr && !al && !RATES.includes(num(l.tva))) pb.push(`Taux de TVA ${pct(num(l.tva))} non reconnu par la réglementation française.`); });
+    { const ms=(p.payMeans||[]).length?p.payMeans:["virement"];
+      if(t!=="avoir" && ms.every(x=>x==="virement") && !String(p.iban||"").trim()) pb.push("Paiement par virement : indique ton IBAN dans « Mon entreprise » (obligatoire dans une facture électronique)."); }
     if(pb.length) return {pb:[...new Set(pb)]};
     // franchise : « E » + VATEX-FR-FRANCHISE si l'entreprise a un n° de TVA, sinon « Z » (règle G1.47 des spécifications DGFiP)
     const frVat = fr ? String(p.tvaNumber||"").replace(/\s/g,"") : "";
@@ -2658,7 +2689,9 @@ const EI = (()=>{
     // retenue de garantie : pratiquée par le client sur le montant dû (cas « clause de réserve contractuelle », code sujet ABU)
     if(rgRate(inv)){ const rg=rgAmount(inv,computeTotals(inv,p)); notes.push(["ABU",`Clause de réserve : retenue de garantie de ${String(rgRate(inv)).replace(".",",")} % (loi n° 71-584 du 16 juillet 1971), soit ${money(rg)} retenus par l'acheteur sur le montant dû, à régler à la levée de la réserve (un an après la réception des travaux).`]); }
     const means=(p.payMeans||[]).length?p.payMeans:["virement"], iban=String(p.iban||"").replace(/\s/g,"");
-    const pay = t==="avoir" ? null : (means.includes("virement") ? {code:iban?"58":"30", iban, bic:String(p.bic||"").replace(/\s/g,"")} : {code:PAYCODE[means[0]]||"1"});
+    // virement sans IBAN : refusé par les règles EN 16931 (BR-61 / CII-SR-470) → autre moyen de paiement choisi, sinon IBAN demandé
+    const other=means.filter(x=>x!=="virement");
+    const pay = t==="avoir" ? null : (means.includes("virement") && iban ? {code:"58", iban, bic:String(p.bic||"").replace(/\s/g,"")} : {code:PAYCODE[(other.length?other:means)[0]]||"1"});
     return { inv, p, t, typeCode, cadre, notes, L, vat, ht, tva, ttc, pay,
       seller:{ name:p.name||"", siret, siren:siret.slice(0,9), vat:fr?frVat:String(p.tvaNumber||"").replace(/\s/g,""), fc:fr&&!frVat?siret.slice(0,9):"", legal:[p.legalForm,p.rcs].filter(Boolean).join(" - "), email:p.email||"", phone:p.phone||"", a:addr(p.address) },
       buyer:{ name:inv.client.name||"", siren:cs.slice(0,9), siret:cs.length===14?cs:"", vat:String(inv.client.tva||"").replace(/\s/g,""), email:inv.client.email||"", a:addr(inv.client.address) },
@@ -2690,8 +2723,9 @@ const EI = (()=>{
       + `<rsm:ExchangedDocument><ram:ID>${x(m.inv.number)}</ram:ID><ram:TypeCode>${m.typeCode}</ram:TypeCode><ram:IssueDateTime>${D(m.inv.issueDate)}</ram:IssueDateTime>`
       + m.notes.map(([c,txt])=>`<ram:IncludedNote><ram:Content>${x(txt)}</ram:Content>${c?`<ram:SubjectCode>${c}</ram:SubjectCode>`:""}</ram:IncludedNote>`).join("") + `</rsm:ExchangedDocument>`
       + `<rsm:SupplyChainTradeTransaction>${lines}<ram:ApplicableHeaderTradeAgreement>${party("SellerTradeParty",m.seller,true)}${party("BuyerTradeParty",m.buyer,false)}</ram:ApplicableHeaderTradeAgreement>`
-      + `<ram:ApplicableHeaderTradeDelivery>${m.ship?`<ram:ShipToTradeParty>${adr(m.ship)}</ram:ShipToTradeParty>`:""}${m.inv.serviceDate?`<ram:ActualDeliverySupplyChainEvent><ram:OccurrenceDateTime>${D(m.inv.serviceDate)}</ram:OccurrenceDateTime></ram:ActualDeliverySupplyChainEvent>`:""}</ram:ApplicableHeaderTradeDelivery>`
-      + `<ram:ApplicableHeaderTradeSettlement><ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>${pay}${taxes}${terms}`
+      + `<ram:ApplicableHeaderTradeDelivery>${m.ship?`<ram:ShipToTradeParty>${adr(m.ship)}</ram:ShipToTradeParty>`:""}${m.inv.serviceDate&&!m.inv.serviceEnd?`<ram:ActualDeliverySupplyChainEvent><ram:OccurrenceDateTime>${D(m.inv.serviceDate)}</ram:OccurrenceDateTime></ram:ActualDeliverySupplyChainEvent>`:""}</ram:ApplicableHeaderTradeDelivery>`
+      + `<ram:ApplicableHeaderTradeSettlement><ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>${pay}${taxes}`
+      + (m.inv.serviceEnd&&m.inv.serviceDate?`<ram:BillingSpecifiedPeriod><ram:StartDateTime>${D(m.inv.serviceDate)}</ram:StartDateTime><ram:EndDateTime>${D(m.inv.serviceEnd)}</ram:EndDateTime></ram:BillingSpecifiedPeriod>`:"") + terms
       + `<ram:SpecifiedTradeSettlementHeaderMonetarySummation><ram:LineTotalAmount>${a2(m.ht)}</ram:LineTotalAmount><ram:TaxBasisTotalAmount>${a2(m.ht)}</ram:TaxBasisTotalAmount><ram:TaxTotalAmount currencyID="EUR">${a2(m.tva)}</ram:TaxTotalAmount><ram:GrandTotalAmount>${a2(m.ttc)}</ram:GrandTotalAmount><ram:DuePayableAmount>${a2(m.ttc)}</ram:DuePayableAmount></ram:SpecifiedTradeSettlementHeaderMonetarySummation>`
       + (m.ref?`<ram:InvoiceReferencedDocument><ram:IssuerAssignedID>${x(m.ref.number)}</ram:IssuerAssignedID>${m.ref.date?`<ram:FormattedIssueDateTime><qdt:DateTimeString format="102">${ymd(m.ref.date)}</qdt:DateTimeString></ram:FormattedIssueDateTime>`:""}</ram:InvoiceReferencedDocument>`:"")
       + `</ram:ApplicableHeaderTradeSettlement></rsm:SupplyChainTradeTransaction></rsm:CrossIndustryInvoice>\n`;
@@ -2712,9 +2746,10 @@ const EI = (()=>{
       + `<cbc:CustomizationID>urn:cen.eu:en16931:2017</cbc:CustomizationID><cbc:ProfileID>${m.cadre}</cbc:ProfileID><cbc:ID>${x(m.inv.number)}</cbc:ID><cbc:IssueDate>${m.inv.issueDate}</cbc:IssueDate>`
       + (!cn&&m.due?`<cbc:DueDate>${m.due}</cbc:DueDate>`:"") + `<cbc:${R}TypeCode>${m.typeCode}</cbc:${R}TypeCode>`
       + m.notes.map(([c,txt])=>`<cbc:Note>${c?`#${c}#`:""}${x(txt)}</cbc:Note>`).join("") + `<cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>`
+      + (m.inv.serviceEnd&&m.inv.serviceDate?`<cac:InvoicePeriod><cbc:StartDate>${m.inv.serviceDate}</cbc:StartDate><cbc:EndDate>${m.inv.serviceEnd}</cbc:EndDate></cac:InvoicePeriod>`:"")
       + (m.ref?`<cac:BillingReference><cac:InvoiceDocumentReference><cbc:ID>${x(m.ref.number)}</cbc:ID>${m.ref.date?`<cbc:IssueDate>${m.ref.date}</cbc:IssueDate>`:""}</cac:InvoiceDocumentReference></cac:BillingReference>`:"")
       + party("AccountingSupplierParty",m.seller,true) + party("AccountingCustomerParty",m.buyer,false)
-      + ((m.inv.serviceDate||m.ship)?`<cac:Delivery>${m.inv.serviceDate?`<cbc:ActualDeliveryDate>${m.inv.serviceDate}</cbc:ActualDeliveryDate>`:""}${m.ship?`<cac:DeliveryLocation>${adr("Address",m.ship)}</cac:DeliveryLocation>`:""}</cac:Delivery>`:"")
+      + (((m.inv.serviceDate&&!m.inv.serviceEnd)||m.ship)?`<cac:Delivery>${m.inv.serviceDate&&!m.inv.serviceEnd?`<cbc:ActualDeliveryDate>${m.inv.serviceDate}</cbc:ActualDeliveryDate>`:""}${m.ship?`<cac:DeliveryLocation>${adr("Address",m.ship)}</cac:DeliveryLocation>`:""}</cac:Delivery>`:"")
       + (m.pay?`<cac:PaymentMeans><cbc:PaymentMeansCode>${m.pay.code}</cbc:PaymentMeansCode>${m.pay.iban?`<cac:PayeeFinancialAccount><cbc:ID>${x(m.pay.iban)}</cbc:ID>${m.pay.bic?`<cac:FinancialInstitutionBranch><cbc:ID>${x(m.pay.bic)}</cbc:ID></cac:FinancialInstitutionBranch>`:""}</cac:PayeeFinancialAccount>`:""}</cac:PaymentMeans>`:"")
       + (m.terms?`<cac:PaymentTerms><cbc:Note>${x(m.terms)}</cbc:Note></cac:PaymentTerms>`:"")
       + `<cac:TaxTotal><cbc:TaxAmount ${E(a2(m.tva))}</cbc:TaxAmount>` + m.vat.map(g=>`<cac:TaxSubtotal><cbc:TaxableAmount ${E(a2(g.base))}</cbc:TaxableAmount><cbc:TaxAmount ${E(a2(g.amount))}</cbc:TaxAmount>${taxcat("TaxCategory",g.c,g.r,g.exo)}</cac:TaxSubtotal>`).join("") + `</cac:TaxTotal>`
@@ -3339,21 +3374,39 @@ const kv = {
   async del(k){ const d=await idb(); return new Promise((res,rej)=>{ const tx=d.transaction("kv","readwrite"); tx.objectStore("kv").delete(k); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
 };
 const Backup = {
-  cfg:null, perm:false, asked:{}, tTouch:null, busy:false,
+  cfg:null, perm:false, asked:{}, tTouch:null, busy:false, refused:false, armed:false,
   key(){ return `bk:${S.uid}:${S.ws}`; },
   async init(){
     if(!S.uid) return; const key=this.key(); let c=null;
     try{ c=await kv.get(key); }catch(e){ console.error(e); }
     if(key!==this.key()) return;
-    this.cfg=c||null; this.perm=false;
+    // choix déjà fait sur cet appareil mais mémoire du navigateur illisible : on garde le choix (copie dans localStorage)
+    const mem=lsGet(key+":mode");
+    if(!c && (mem==="download"||mem==="none")) c={mode:mem};
+    this.cfg=c||null; this.perm=false; this.refused=false; this.lost = !c && mem==="folder";
     if(c && c.mode==="folder" && c.handle){ try{ this.perm = (await c.handle.queryPermission({mode:"readwrite"}))==="granted"; }catch(e){ this.perm=false; } }
     this.ui();
-    if(!c && !this.asked[key] && S.profile.name){ this.asked[key]=true; setTimeout(()=>{ if(this.key()===key && !this.cfg) openBackupModal(); },700); }
+    // fenêtre de choix : seulement si rien n'a jamais été choisi sur cet appareil (et pas reportée il y a moins de 30 jours)
+    const later=Number(lsGet(key+":later")||0);
+    if(!c && !mem && !this.asked[key] && S.profile.name && Date.now()-later>30*864e5){ this.asked[key]=true; setTimeout(()=>{ if(this.key()===key && !this.cfg) openBackupModal(); },700); }
     if(this.perm) setTimeout(()=>this.flush(),1500);
+    else if(c && c.mode==="folder") this.armReconnect();
   },
   pending(){ try{ return JSON.parse(lsGet(this.key()+":pending")||"[]"); }catch(_){ return []; } },
   setPending(a){ lsSet(this.key()+":pending",JSON.stringify([...new Set(a)])); },
-  async save(cfg){ this.cfg=cfg; try{ await kv.set(this.key(),cfg); }catch(e){ console.error(e); if(cfg.mode==="folder") toast("Ce navigateur ne peut pas mémoriser le dossier : il faudra le rechoisir à chaque visite."); } this.ui(); },
+  // dossier choisi mais autorisation à redonner (Chrome l'oublie au redémarrage si l'appli n'est pas installée) :
+  // on la redemande au premier clic dans l'appli, sans bandeau. Chrome propose alors « Autoriser à chaque visite ».
+  armReconnect(){
+    if(this.armed) return; this.armed=true; const key=this.key();
+    const go=async ev=>{
+      document.removeEventListener("pointerdown",go,true); document.removeEventListener("keydown",go,true); this.armed=false;
+      if(this.key()!==key || this.perm || !this.cfg || this.cfg.mode!=="folder") return;
+      if(ev && ev.target && ev.target.closest && ev.target.closest("#bkReconnect,#bkChange,#bkModal")) return;
+      if(await this.ensurePerm(true)){ await this.flush(); this.touch(); } else { this.refused=true; this.ui(); }
+    };
+    document.addEventListener("pointerdown",go,true); document.addEventListener("keydown",go,true);
+  },
+  async save(cfg){ this.cfg=cfg; this.lost=false; lsSet(this.key()+":mode",cfg.mode); lsDel(this.key()+":later"); try{ await kv.set(this.key(),cfg); }catch(e){ console.error(e); if(cfg.mode==="folder") toast("Ce navigateur ne peut pas mémoriser le dossier : il faudra le rechoisir à chaque visite."); } this.ui(); },
   async ensurePerm(ask){
     const c=this.cfg; if(!c||c.mode!=="folder"||!c.handle) return false;
     try{ let st=await c.handle.queryPermission({mode:"readwrite"}); if(st!=="granted"&&ask) st=await c.handle.requestPermission({mode:"readwrite"}); this.perm = st==="granted"; }catch(e){ console.error(e); this.perm=false; }
@@ -3430,19 +3483,21 @@ const Backup = {
     const c=this.cfg, st=$("#bkState"), bar=$("#bkBar"); if(!st) return; const pend=S.uid?this.pending().length:0;
     if(!c||c.mode==="none") st.innerHTML=`<b>☁️ Seulement dans l'appli</b><small>Aucune copie automatique sur cet appareil.</small><div class="bk-warn">⚠️ Sans copie externe, tes documents ne sont conservés que dans l'application. En cas d'incident (suppression ou piratage du compte, interruption du service, erreur de manipulation), ils pourraient être définitivement perdus. Les factures doivent être conservées 10 ans : une sauvegarde externe est fortement recommandée.</div>`;
     else if(c.mode==="download") st.innerHTML=`<b>⬇ Téléchargement automatique</b><small>Chaque document émis est téléchargé (dossier Téléchargements).</small>`;
-    else st.innerHTML=`<b>📁 Dossier « ${esc(c.name)} »</b><small>${this.perm?`✓ Actif${c.last?` · dernière copie le ${new Date(c.last).toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"})}`:""}`:"⏸ En pause : le dossier doit être reconnecté"}${pend?` · ${pend} document${pend>1?"s":""} en attente`:""}</small>`;
+    else st.innerHTML=`<b>📁 Dossier « ${esc(c.name)} »</b><small>${this.perm?`✓ Actif${c.last?` · dernière copie le ${new Date(c.last).toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"})}`:""}`:this.refused?"⏸ En pause : le dossier doit être reconnecté":"⏳ Se reconnecte au premier clic dans l'appli (ton navigateur peut te demander l'autorisation : choisis « Autoriser à chaque visite »)"}${pend?` · ${pend} document${pend>1?"s":""} en attente`:""}</small>`;
     $("#bkSync").textContent = c&&c.mode==="download" ? "Tout télécharger (ZIP)" : "Tout sauvegarder maintenant";
-    const need = !!(c && c.mode==="folder" && !this.perm);
-    bar.style.display = need ? "flex" : "none";
-    if(need) $("#bkBarTxt").textContent=`Sauvegarde automatique en pause : reconnecte le dossier « ${c.name} »${pend?` (${pend} document${pend>1?"s":""} à copier)`:""}.`;
+    const need = !!(c && c.mode==="folder" && !this.perm && this.refused);
+    bar.style.display = need||this.lost ? "flex" : "none";
+    $("#bkReconnect").textContent = this.lost ? "Choisir le dossier" : "Reconnecter";
+    if(this.lost) $("#bkBarTxt").textContent="Sauvegarde automatique en pause : ce navigateur a oublié ton dossier de sauvegarde. Choisis-le de nouveau.";
+    else if(need) $("#bkBarTxt").textContent=`Sauvegarde automatique en pause : reconnecte le dossier « ${c.name} »${pend?` (${pend} document${pend>1?"s":""} à copier)`:""}. Astuce : choisis « Autoriser à chaque visite » pour ne plus avoir à le refaire.`;
   }
 };
 function openBackupModal(){
   $("#bkFolder").disabled=!FS_OK; $("#bkNoFs").style.display=FS_OK?"none":"block";
   $("#bkModal").classList.add("on");
 }
-$("#bkLater").addEventListener("click",()=>$("#bkModal").classList.remove("on"));
-$("#bkModal").addEventListener("click",e=>{ if(e.target.id==="bkModal") $("#bkModal").classList.remove("on"); });
+$("#bkLater").addEventListener("click",()=>{ $("#bkModal").classList.remove("on"); if(S.uid && !Backup.cfg) lsSet(Backup.key()+":later",String(Date.now())); });
+$("#bkModal").addEventListener("click",e=>{ if(e.target.id==="bkModal") $("#bkLater").click(); });
 $("#bkFolder").addEventListener("click",async()=>{
   let h;
   try{ h=await window.showDirectoryPicker({id:"mes-factures",mode:"readwrite",startIn:"documents"}); }
@@ -3459,7 +3514,7 @@ $("#bkNone").addEventListener("click",()=>{ $("#bkModal").classList.remove("on")
   $("#mYes").textContent="Continuer sans sauvegarde"; });
 $("#bkChange").addEventListener("click",openBackupModal);
 $("#bkSync").addEventListener("click",()=>Backup.syncAll());
-$("#bkReconnect").addEventListener("click",async()=>{ if(await Backup.ensurePerm(true)){ toast("Dossier reconnecté ✓"); await Backup.flush(); Backup.touch(); } else toast("Accès refusé : la sauvegarde reste en pause."); });
+$("#bkReconnect").addEventListener("click",async()=>{ if(Backup.lost){ openBackupModal(); return; } if(await Backup.ensurePerm(true)){ Backup.refused=false; toast("Dossier reconnecté ✓"); await Backup.flush(); Backup.touch(); } else toast("Accès refusé : la sauvegarde reste en pause."); });
 
 
 /* ================= « Enregistrer dans Fichiers » (iPhone, iPad… via le menu Partager) ================= */
@@ -3485,7 +3540,7 @@ function renderProfileDependent(){ if(S.cur) medHint();
 }
 let tt; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("on"),3200); }
 let mCb=null, mNoCb=null;
-function confirmBox(title,text,cb,noCb){ mNoCb=noCb||null; $("#mYes").textContent="Confirmer"; $("#mTitle").textContent=title; $("#mText").textContent=text; mCb=cb; $("#modal").classList.add("on"); }
+function confirmBox(title,text,cb,noCb){ mNoCb=noCb||null; $("#mYes").textContent="Confirmer"; $("#mWarn").style.display="none"; $("#mTitle").textContent=title; $("#mText").textContent=text; mCb=cb; $("#modal").classList.add("on"); }
 $("#mNo").addEventListener("click",()=>{ $("#modal").classList.remove("on"); mCb=null; const n=mNoCb; mNoCb=null; n&&n(); });
 $("#mYes").addEventListener("click",()=>{ $("#modal").classList.remove("on"); const c=mCb; mCb=null; mNoCb=null; c&&c(); });
 $("#modal").addEventListener("click",e=>{ if(e.target.id==="modal"){ $("#modal").classList.remove("on"); mCb=null; } });

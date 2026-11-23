@@ -40,10 +40,15 @@ await page.goto("http://127.0.0.1:5059/");
 await page.click('#authSeg button[data-v="signup"]');
 await page.fill("#aEmail", "bk@ex.fr"); await page.fill("#aPass", "motdepasse1"); await page.fill("#aPass2", "motdepasse1"); await page.check("#aTerms"); await page.click("#aSubmit");
 await page.waitForSelector("#sName", { state: "visible", timeout: 15000 });
-await page.fill("#sName", "Atelier Martin"); await page.fill("#sSiret", "732 829 320 00074"); await page.fill("#sAddr", "12 rue de la Paix\n75002 Paris");
+await page.fill("#sName", "Atelier Martin"); await page.fill("#sSiret", "732 829 320 00074"); await page.fill("#sAddr", "12 rue de la Paix\n75002 Paris"); await page.fill("#sIban", "FR76 3000 6000 0112 3456 7890 189");
 await page.uncheck("#sFranchise"); await page.fill("#sTvaNum", "FR44732829320");
 await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
-await page.waitForTimeout(800); if (await page.locator("#bkModal.on").count()) await page.click("#bkLater");
+await page.waitForTimeout(1200);
+ok(await page.locator("#bkModal.on").count() === 1, "première visite : la fenêtre « Où sauvegarder ? » s'ouvre");
+await page.click("#bkLater");
+// « Plus tard » : la fenêtre ne revient pas au redémarrage suivant
+await page.reload(); await page.waitForSelector("#btnNewSide", { state: "visible", timeout: 15000 }); await page.waitForTimeout(2000);
+ok(await page.locator("#bkModal.on").count() === 0, "après « Plus tard », la fenêtre ne se rouvre pas au redémarrage");
 
 async function invoice(client, price) {
   await page.click('[data-tab="edit"]'); await page.click("#btnNewSide");
@@ -81,6 +86,28 @@ ok(t.includes("Boulangerie Moreau/Facture électronique/F-2026-003 - Factur-X.pd
 // 5. « Tout sauvegarder maintenant » ne recrée pas de copie à l'ancien endroit
 await page.click('[data-tab="settings"]'); await page.evaluate(() => window.__bk.syncAll()); await page.waitForTimeout(800); t = await tree();
 ok(!t.some(f => /^[^/]+\/F-2026/.test(f)), "plus aucun PDF à la racine d'un dossier client");
+// 6. le choix est retenu même si la mémoire du navigateur (IndexedDB) a été vidée
+const r6 = await page.evaluate(async () => { const bk = window.__bk, k = bk.key();
+  localStorage.setItem(k + ":mode", "download"); indexedDB.deleteDatabase("mes-factures"); await new Promise(r => setTimeout(r, 300));
+  await bk.init(); const m1 = bk.cfg && bk.cfg.mode;
+  localStorage.setItem(k + ":mode", "folder"); await bk.init();
+  return { m1, lost: bk.lost, bar: getComputedStyle(document.querySelector("#bkBar")).display, btn: document.querySelector("#bkReconnect").textContent, modal: document.querySelector("#bkModal").classList.contains("on") };
+});
+ok(r6.m1 === "download", "mode « téléchargement » retrouvé sans IndexedDB");
+ok(r6.lost && r6.bar === "flex" && r6.btn === "Choisir le dossier" && !r6.modal, "dossier oublié par le navigateur : bandeau « Choisir le dossier », pas de fenêtre au démarrage");
+// 7. dossier mémorisé mais autorisation à redonner : pas de bandeau, autorisation redemandée au premier clic
+const r7a = await page.evaluate(async () => { const bk = window.__bk; window.__rq = 0;
+  const root = await navigator.storage.getDirectory();
+  root.queryPermission = async () => "prompt"; root.requestPermission = async () => { window.__rq++; return "granted"; };
+  bk.lost = false; bk.refused = false; bk.cfg = { mode: "folder", handle: root, name: "Test" }; bk.perm = false; bk.ui(); bk.armReconnect();
+  return getComputedStyle(document.querySelector("#bkBar")).display; });
+ok(r7a === "none", "au démarrage, pas de bandeau « Reconnecter »");
+await page.mouse.click(5, 300); await page.waitForTimeout(800);
+const r7b = await page.evaluate(() => ({ rq: window.__rq, perm: window.__bk.perm, bar: getComputedStyle(document.querySelector("#bkBar")).display }));
+ok(r7b.rq === 1 && r7b.perm && r7b.bar === "none", "premier clic : autorisation redemandée une fois, sauvegarde réactivée");
+const r7c = await page.evaluate(async () => { const bk = window.__bk; const root = bk.cfg.handle; root.requestPermission = async () => "denied"; bk.perm = false; bk.refused = false; bk.armReconnect(); return 1; });
+await page.mouse.click(5, 300); await page.waitForTimeout(800);
+ok(await page.evaluate(() => getComputedStyle(document.querySelector("#bkBar")).display) === "flex", "autorisation refusée : le bandeau « Reconnecter » apparaît");
 console.log("       Dossier de test :\n" + t.map(f => "         " + f).join("\n"));
 ok(errs.length === 0, "aucune erreur JavaScript" + (errs.length ? " : " + errs.slice(0, 3).join(" | ") : ""));
 console.log(`\n${pass} ok, ${fail} échec(s)`);
