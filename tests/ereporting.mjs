@@ -40,7 +40,7 @@ async function signup(email) {
 }
 async function settings({ franchise, regime, debits = false }) {
   await page.click('[data-tab="settings"]');
-  await page.fill("#sName", "Atelier Martin"); await page.fill("#sSiret", "732 829 320 00074"); await page.fill("#sAddr", "12 rue de la Paix\n75002 Paris");
+  await page.fill("#sName", "Atelier Martin"); await page.fill("#sSiret", "732 829 320 00074"); await page.fill("#sAddr", "12 rue de la Paix\n75002 Paris"); await page.fill("#sIban", "FR76 3000 6000 0112 3456 7890 189");
   if (franchise) await page.check("#sFranchise"); else { await page.uncheck("#sFranchise"); await page.fill("#sTvaNum", "FR44732829320"); await page.selectOption("#sRegime", regime); if (debits) await page.check("#sDebits"); }
   await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i); await closeBackup();
 }

@@ -43,3 +43,11 @@ payées, périodes et dates limites), ainsi que le fichier CSV.
 de l'ancien rangement (directement dans `<client>/`) vers `PDF/`. Le dossier choisi par l'utilisateur est remplacé par
 le stockage privé du navigateur (OPFS), qui a la même interface. Chromium est lancé avec `LANG=C.UTF-8` : sans locale
 UTF-8, il ne sait pas créer un dossier au nom accentué sous Linux (sur un vrai ordinateur, la locale est toujours UTF-8).
+
+## Période de prestation et confirmation d'émission
+
+`npm run test:periode` crée une facture « sur une période » (du 01/10 au 31/10/2026) : contrôle fin ≥ début, case
+« Prestation du … au … » dans l'aperçu, encadré « Action irréversible » et bouton « Oui, émettre définitivement »
+à l'émission, refus de l'export électronique sans IBAN (paiement par virement), puis période de facturation
+dans le CII (`BillingSpecifiedPeriod`) et l'UBL (`InvoicePeriod`). Avec `PYTHON` (et `VERAPDF_CP`), les trois fichiers
+sont aussi passés aux validateurs officiels. `SHOT=chemin` enregistre des captures du champ et de la confirmation.
