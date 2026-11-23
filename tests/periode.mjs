@@ -43,7 +43,7 @@ await page.fill("#aEmail", "per@ex.fr"); await page.fill("#aPass", "motdepasse1"
 await page.waitForSelector("#sName", { state: "visible", timeout: 15000 });
 await page.fill("#sName", "Atelier Martin"); await page.fill("#sSiret", "732 829 320 00074"); await page.fill("#sAddr", "12 rue de la Paix\n75002 Paris");
 await page.uncheck("#sFranchise"); await page.fill("#sTvaNum", "FR44732829320");
-await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
+await page.uncheck("#sSendPrompt"); await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
 await page.waitForTimeout(1200); if (await page.locator("#bkModal.on").count()) await page.click("#bkLater");
 
 await page.click('[data-tab="edit"]'); await page.click("#btnNewSide");

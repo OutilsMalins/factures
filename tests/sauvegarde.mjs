@@ -42,7 +42,7 @@ await page.fill("#aEmail", "bk@ex.fr"); await page.fill("#aPass", "motdepasse1")
 await page.waitForSelector("#sName", { state: "visible", timeout: 15000 });
 await page.fill("#sName", "Atelier Martin"); await page.fill("#sSiret", "732 829 320 00074"); await page.fill("#sAddr", "12 rue de la Paix\n75002 Paris"); await page.fill("#sIban", "FR76 3000 6000 0112 3456 7890 189");
 await page.uncheck("#sFranchise"); await page.fill("#sTvaNum", "FR44732829320");
-await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
+await page.uncheck("#sSendPrompt"); await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i);
 await page.waitForTimeout(1200);
 ok(await page.locator("#bkModal.on").count() === 1, "première visite : la fenêtre « Où sauvegarder ? » s'ouvre");
 await page.click("#bkLater");

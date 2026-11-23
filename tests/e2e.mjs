@@ -53,7 +53,7 @@ ok(!!uid, "compte créé et connecté");
 // réglages
 await page.fill("#sName", "Atelier Test"); await page.fill("#sSiret", "12345678900012"); await page.fill("#sAddr", "1 rue de la Paix\n75000 Paris");
 if (await page.locator("#sMediator").count()) await page.fill("#sMediator", "Médiateur Test – www.mediateur.example");
-await page.click("#btnSettingsSave"); ok(/enregistr/i.test(await waitToast(/enregistr/i)), "réglages enregistrés (avec médiateur)");
+await page.uncheck("#sSendPrompt"); await page.click("#btnSettingsSave"); ok(/enregistr/i.test(await waitToast(/enregistr/i)), "réglages enregistrés (avec médiateur)");
 const prof0 = await docGet(`users/${uid}`); await page.waitForTimeout(800); if (await page.locator("#bkModal.on").count()) await page.click("#bkLater");
 ok(prof0 && val(prof0.mediator) === "Médiateur Test – www.mediateur.example", "médiateur enregistré dans la fiche");
 

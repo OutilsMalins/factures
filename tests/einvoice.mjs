@@ -51,7 +51,7 @@ async function settings({ franchise }) {
   if (franchise) await page.check("#sFranchise"); else { await page.uncheck("#sFranchise"); await page.fill("#sTvaNum", "FR44732829320"); }
   await page.fill("#sIban", "FR76 3000 6000 0112 3456 7890 189"); await page.fill("#sBic", "AGRIFRPP");
   if (process.env.PREFIX) { const px = process.env.PREFIX + (franchise ? "Z" : ""); await page.evaluate(px => { for (const [id, v] of [["sPrefix", px], ["sPrefixA", px + "A"], ["sPrefixD", px + "D"]]) { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); } }, px); }   // numéros uniques (essais sur une plateforme)
-  await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i); await closeBackup();
+  await page.uncheck("#sSendPrompt"); await clearToast(); await page.click("#btnSettingsSave"); await waitToast(/enregistr/i); await closeBackup();
 }
 async function newDoc({ kind = "pro", client = "Dupont SARL", siren = "552 100 554", tva = "", addr = "5 avenue Victor Hugo\n69002 Lyon", lines, nature = "services", autoliq = false, type = "facture" }) {
   await page.click('[data-tab="edit"]');

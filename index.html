@@ -930,6 +930,7 @@ details.more[open] summary{margin-bottom:12px}
         <div><div class="lbl" id="pbLbl">Total TTC</div><div class="amt" id="pbAmt">0,00 €</div><div class="sub" id="pbSub"></div></div>
         <div class="actions">
           <button class="btn" id="btnEInv" style="display:none" title="Factur-X, CII ou UBL, à déposer sur ta plateforme agréée">⚡ Facture électronique</button>
+          <button class="btn" id="btnSend" style="display:none" title="Préparer un email au client avec le PDF">📧 Envoyer au client</button>
           <button class="btn" id="btnShare" style="display:none">📲 Enregistrer dans Fichiers</button>
           <button class="btn" id="btnPdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>PDF</button>
           <button class="btn" id="btnDraft" style="display:none">Enregistrer le brouillon</button>
@@ -1142,7 +1143,7 @@ details.more[open] summary{margin-bottom:12px}
       </div>
 
       <div class="card">
-        <div class="card-h"><div class="ico p">F</div><div><h3>Médiateur, assurance &amp; pied de page</h3><p>Médiateur : obligatoire si tu as des clients particuliers. Le reste est facultatif.</p></div></div>
+        <div class="card-h"><div class="ico p">F</div><div><h3>Médiateur, assurance, pied de page &amp; envoi</h3><p>Médiateur : obligatoire si tu as des clients particuliers. Le reste est facultatif.</p></div></div>
         <label class="f"><span>Assurance professionnelle (ex. décennale pour les travaux)</span><textarea id="sInsur" rows="2" placeholder="Assureur, n° de contrat, zone géographique couverte"></textarea></label>
         <label class="chk" style="margin-bottom:4px"><input type="checkbox" id="sMedOn"><span><b>Indiquer mon médiateur de la consommation</b> sur mes factures et devis pour les clients particuliers</span></label>
         <details class="med-info"><summary>ⓘ Est-ce obligatoire ?</summary>
@@ -1153,6 +1154,7 @@ details.more[open] summary{margin-bottom:12px}
         </details>
         <label class="f" id="medField"><span>Médiateur de la consommation</span><input type="text" id="sMediator" placeholder="Nom du médiateur et site internet"></label>
         <label class="f"><span>Pied de page (facultatif)</span><input type="text" id="sFooter"></label>
+        <label class="chk" style="margin:14px 0 4px"><input type="checkbox" id="sSendPrompt"><span><b>📧 Proposer d'envoyer le document au client</b> juste après l'émission d'une facture, d'un avoir ou d'un devis (un email tout prêt s'ouvre : rien ne part sans toi)</span></label>
       </div>
       <div class="actions" style="justify-content:flex-end;margin-bottom:20px"><button class="btn primary" id="btnSettingsSave">Enregistrer mes informations</button></div>
     </div>
@@ -1200,6 +1202,14 @@ details.more[open] summary{margin-bottom:12px}
 <div class="modal-bg" id="modal"><div class="modal">
   <h4 id="mTitle"></h4><p id="mWarn" style="display:none;background:#fdecea;color:#a1261b;border:1px solid #f3b8b2;border-radius:10px;padding:10px 12px;font-weight:700;margin:0 0 10px"></p><p id="mText"></p>
   <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="mNo">Annuler</button><button class="btn primary" id="mYes">Confirmer</button></div>
+</div></div>
+<div class="modal-bg" id="sendModal"><div class="modal" style="max-width:560px">
+  <h4 id="sendTitle">Envoyer au client</h4>
+  <label class="f"><span>Adresse email du client</span><input type="email" id="sendTo" placeholder="client@exemple.fr" autocomplete="off"></label>
+  <label class="f"><span>Objet</span><input type="text" id="sendSubj"></label>
+  <label class="f"><span>Message</span><textarea id="sendBody" rows="8"></textarea></label>
+  <div class="hint" id="sendHint" style="margin-bottom:10px"></div>
+  <div class="actions" style="justify-content:flex-end;flex-wrap:wrap;gap:8px"><button class="btn ghost" id="sendNo">Plus tard</button><button class="btn" id="sendShare" style="display:none">📲 Partager le PDF</button><button class="btn primary" id="sendMail">✉️ Ouvrir ma messagerie</button></div>
 </div></div>
 <div class="modal-bg" id="eiModal"><div class="modal">
   <h4>Facture électronique</h4>
@@ -1442,7 +1452,7 @@ const DEFAULT_PROFILE = {
   franchise:true, tvaNumber:"", defaultTva:20, tvaDebits:false, tvaRegime:"simplifie",
   payDays:30, means:"", iban:"", bic:"", quoteDays:30,
   penalties:"Taux d'intérêt appliqué par la BCE à son opération de refinancement la plus récente, majoré de 10 points",
-  insurance:"", mediator:"", mediatorOnDocs:true, prefix:"F", prefixDevis:"D", prefixAvoir:"A", nextNumber:1, counters:{}, numDigits:3, numYear:true, numReset:false,
+  insurance:"", mediator:"", mediatorOnDocs:true, sendPrompt:true, prefix:"F", prefixDevis:"D", prefixAvoir:"A", nextNumber:1, counters:{}, numDigits:3, numYear:true, numReset:false,
   payMeans:["virement"], footer:"", logo:null, accent:"#1f5c45", signature:null, showSignature:true, signName:""
 };
 // S.uid = la personne connectée ; S.ws = l'entreprise (espace) dont on affiche les données
@@ -1530,7 +1540,7 @@ function normProfile(p){
   if(/^virement bancaire\.?$/i.test(String(o.means||"").trim())) o.means="";
   o.numDigits=Math.min(5,Math.max(1,Number(o.numDigits)||3)); if(o.numDigits===2) o.numDigits=1;
   o.numYear = o.numYear!==false;
-  o.mediatorOnDocs = o.mediatorOnDocs!==false;
+  o.mediatorOnDocs = o.mediatorOnDocs!==false; o.sendPrompt = o.sendPrompt!==false;
   o.numReset = !!o.numReset; if(o.numReset) o.numYear=true;
   o.counters = (o.counters && typeof o.counters==="object") ? o.counters : {};
   if(o.prefixDevis==null) o.prefixDevis="D"; if(o.prefixAvoir==null) o.prefixAvoir="A";
@@ -1990,7 +2000,7 @@ function loadEditor(inv){
   refreshLockUi();
   toggleProRow(); renderLines(); renderPreview();
   if(ro) setLocked(true);
-  $("#btnEInv").style.display = locked && t!=="devis" ? "inline-flex" : "none"; $("#btnShare").style.display = SHARE_OK ? "inline-flex" : "none"; if(isLockedEd(inv)||(t==="devis"&&inv.number)) prefetchPdf(inv);
+  $("#btnEInv").style.display = locked && t!=="devis" ? "inline-flex" : "none"; $("#btnSend").style.display = inv.number ? "inline-flex" : "none"; $("#btnShare").style.display = SHARE_OK ? "inline-flex" : "none"; if(isLockedEd(inv)||(t==="devis"&&inv.number)) prefetchPdf(inv);
 }
 function rgSet(){ const on=$("#rgOn").checked; let v=num($("#rgRate").value); if(v>5){ v=5; toast("La retenue de garantie est limitée à 5 % par la loi."); } if(!(v>0)) v=5;
   S.cur.rg = on ? v : 0; $("#rgRateWrap").style.display=on?"block":"none"; renderPreview(); }
@@ -2251,6 +2261,7 @@ async function saveCurrent(issue){
     if(!inv.number) toast("Brouillon enregistré.");
     else toast((assigned?`${L} ${inv.number} ${type==="devis"?"enregistré":"émis"+(type==="avoir"?"":"e")}`:`${L} mis à jour`)+(archived?" et PDF archivé.":" (PDF non archivé)."));
     if(inv.number && bytes) Backup.onDoc(clean(inv),bytes);
+    if(assigned && S.profile.sendPrompt!==false) setTimeout(()=>{ if(S.cur && S.cur.id===inv.id) openSend(clean(inv),bytes); },700);
   }catch(e){
     if(e && e.chrono) toast(`La date d'émission doit être le ${frDate(e.chrono)} ou après (dernier document émis), pour garder l'ordre chronologique.`);
     else fbErr(e);
@@ -3096,6 +3107,66 @@ $("#payYes").addEventListener("click",async()=>{
   payTarget=null;
 });
 
+/* ================= envoi au client (email préparé dans la messagerie de l'utilisateur : aucun serveur, rien ne part tout seul) ================= */
+const SHARE_FILES = (()=>{ try{ return typeof navigator.share==="function" && typeof navigator.canShare==="function" && navigator.canShare({files:[new File([new Uint8Array(1)],"t.pdf",{type:"application/pdf"})]}); }catch(_){ return false; } })();
+const openUrl = u => { if(window.__openUrl) return window.__openUrl(u); window.location.href=u; };   // crochet pour les tests
+let sendInv=null, sendPdf=null;
+function sendText(inv){
+  const p=profFor(inv), t=docType(inv), L=labelOf(inv), T=inv.totals||computeTotals(inv,p);
+  const subject=`${L} n° ${inv.number} — ${p.name||""}`.replace(/ — $/,"");
+  let main;
+  if(t==="devis") main=`Veuillez trouver ci-joint notre devis n° ${inv.number} du ${frDate(inv.issueDate)}, d'un montant total de ${money(T.ttc)}${inv.validUntil?`, valable jusqu'au ${frDate(inv.validUntil)}`:""}.`;
+  else if(t==="avoir") main=`Veuillez trouver ci-joint notre avoir n° ${inv.number} du ${frDate(inv.issueDate)}, d'un montant de ${money(Math.abs(T.ttc))}${inv.ref?`, relatif à la facture n° ${inv.ref.number}`:""}.`;
+  else { const due=r2(T.ttc-rgAmount(inv,T));
+    main=`Veuillez trouver ci-joint notre ${L.toLowerCase()} n° ${inv.number} du ${frDate(inv.issueDate)}, d'un montant ${inv.acomptes&&inv.acomptes.length?"restant à payer ":""}de ${money(due)}${inv.dueDate?`, à régler au plus tard le ${frDate(inv.dueDate)}`:""}.`; }
+  const sig=[p.name, p.phone, p.email].filter(x=>String(x||"").trim()).join("\n");
+  return {subject, body:`Bonjour,\n\n${main}\n\nRestant à votre disposition pour toute question.\n\nCordialement,\n${sig}`};
+}
+function openSend(inv,bytes){
+  if(!inv || !inv.number) return;
+  sendInv=inv; sendPdf = bytes ? Promise.resolve(bytes) : pdfBytes(inv);
+  const c=S.clients[inv.clientId]||{}, txt=sendText(inv), t=docType(inv);
+  $("#sendTitle").textContent=`Envoyer ${t==="devis"?"le devis":t==="avoir"?"l'avoir":"la facture"} ${inv.number} au client`;
+  $("#sendTo").value=(c.email||inv.client.email||"").trim(); $("#sendSubj").value=txt.subject; $("#sendBody").value=txt.body;
+  $("#sendShare").style.display = SHARE_FILES ? "inline-flex" : "none";
+  const pro = t!=="devis" && (inv.client&&inv.client.kind)==="pro";
+  $("#sendHint").innerHTML = (SHARE_FILES
+    ? "<b>📲 Partager le PDF</b> : le PDF est joint tout seul ; choisis ta messagerie (Gmail, Mail…) et colle l'adresse du client (elle est copiée). <b>✉️ Ouvrir ma messagerie</b> : adresse, objet et message sont remplis, le PDF est téléchargé et il faut le joindre toi-même."
+    : "Le PDF est téléchargé et ta messagerie s'ouvre avec l'adresse, l'objet et le message déjà remplis. Il reste à <b>joindre le PDF</b> (glisse-le depuis tes Téléchargements) puis à cliquer sur Envoyer.")
+    + " Rien ne part sans toi."
+    + (pro ? "<br><br>ℹ️ Client professionnel : à partir du 1er septembre 2027, la facture devra passer par ta plateforme agréée (bouton « ⚡ Facture électronique ») ; un PDF par email ne suffira plus." : "");
+  $("#sendModal").classList.add("on");
+}
+async function keepEmail(){   // adresse saisie ou corrigée : enregistrée dans la fiche du client
+  const inv=sendInv, em=$("#sendTo").value.trim(); if(!inv || !em || !can("clients")) return;
+  const c=S.clients[inv.clientId]; if(!c || (c.email||"").trim()===em || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return;
+  const rec={...c,email:em}; try{ await Store.saveClient(rec); S.clients[rec.id]=rec; }catch(e){ console.error(e); }
+}
+$("#btnSend").addEventListener("click",()=>{
+  const inv=S.cur; if(!inv||!inv.number) return;
+  const saved=S.invoices[inv.id]; if(!saved) return;
+  if(docType(saved)==="devis" && JSON.stringify(clean(inv))!==JSON.stringify(saved)) return toast("Enregistre d'abord tes modifications du devis.");
+  openSend(clean(saved));
+});
+$("#sendNo").addEventListener("click",()=>$("#sendModal").classList.remove("on"));
+$("#sendModal").addEventListener("click",e=>{ if(e.target.id==="sendModal") $("#sendModal").classList.remove("on"); });
+$("#sendMail").addEventListener("click",async()=>{
+  const inv=sendInv; if(!inv) return; const to=$("#sendTo").value.trim();
+  try{ downloadBlob(new Blob([await sendPdf],{type:"application/pdf"}), pdfName(inv)); }catch(e){ console.error(e); toast("PDF impossible à préparer : utilise le bouton PDF."); }
+  $("#sendModal").classList.remove("on"); keepEmail();
+  setTimeout(()=>openUrl(`mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent($("#sendSubj").value)}&body=${encodeURIComponent($("#sendBody").value)}`),400);
+  toast("PDF téléchargé et email préparé dans ta messagerie : joins le PDF, puis envoie.");
+});
+$("#sendShare").addEventListener("click",async()=>{
+  const inv=sendInv; if(!inv) return; const to=$("#sendTo").value.trim();
+  if(to && navigator.clipboard) navigator.clipboard.writeText(to).catch(()=>{});
+  try{
+    const file=new File([await sendPdf],pdfName(inv),{type:"application/pdf"});
+    await navigator.share({files:[file], title:$("#sendSubj").value, text:$("#sendBody").value});
+    $("#sendModal").classList.remove("on"); keepEmail();
+  }catch(e){ if(e&&e.name==="AbortError") return; console.error(e); toast("Partage impossible ici : utilise « Ouvrir ma messagerie »."); }
+});
+
 /* ================= relance par email ================= */
 function remind(i){
   if(!i) return;
@@ -3247,7 +3318,7 @@ let numOrig={};
 function fillSettings(){
   draftProfile=clean(S.profile);
   Object.entries(SMAP).forEach(([id,k])=>{ $("#"+id).value = draftProfile[k] ?? ""; });
-  $("#sFranchise").checked=!!draftProfile.franchise; $("#sDebits").checked=!!draftProfile.tvaDebits; $("#sShowSig").checked=draftProfile.showSignature!==false; $("#sMedOn").checked=draftProfile.mediatorOnDocs!==false; medField();
+  $("#sFranchise").checked=!!draftProfile.franchise; $("#sDebits").checked=!!draftProfile.tvaDebits; $("#sShowSig").checked=draftProfile.showSignature!==false; $("#sMedOn").checked=draftProfile.mediatorOnDocs!==false; medField(); $("#sSendPrompt").checked=draftProfile.sendPrompt!==false;
   $("#sYear").value=draftProfile.numYear===false?"0":"1"; $("#sDigits").value=String(draftProfile.numDigits||3);
   $("#sReset").checked=!!draftProfile.numReset; $("#sYear").disabled=!!draftProfile.numReset;
   const y=todayISO().slice(0,4);
@@ -3357,6 +3428,7 @@ $("#sigDel").addEventListener("click",()=>{ draftProfile.signature=null; showSig
 $("#sShowSig").addEventListener("change",e=>{ draftProfile.showSignature=e.target.checked; });
 function medField(){ $("#medField").style.display=$("#sMedOn").checked?"":"none"; }
 $("#sMedOn").addEventListener("change",e=>{ draftProfile.mediatorOnDocs=e.target.checked; medField(); });
+$("#sSendPrompt").addEventListener("change",e=>{ draftProfile.sendPrompt=e.target.checked; });
 $("#sigFile").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
   rd.onload=()=>{ const img=new Image(); img.onload=()=>{ const c=document.createElement("canvas"); c.width=img.width; c.height=img.height; const x=c.getContext("2d"); x.drawImage(img,0,0);
