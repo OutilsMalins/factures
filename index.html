@@ -480,6 +480,8 @@ main{padding:28px 32px 60px;min-width:0}
   .brand{padding:0 6px 0 0}.brand small{display:none}.brand b{font-size:16px}.brand-mark{width:32px;height:32px;font-size:16px}
   nav.tabs{flex-direction:row}
   nav.tabs button{padding:8px 10px;font-size:13px}nav.tabs button span{display:none}
+  .help-btn{padding:8px 10px;margin:0}.help-btn span{display:none}
+  .brand b{white-space:nowrap}
   .side-cta,.save-state{display:none}
   main{padding:18px 14px 50px}
   .page-head h1{font-size:26px}
@@ -655,6 +657,52 @@ table.list .r{text-align:right}
 /* ---------- modal / toast ---------- */
 .modal-bg{position:fixed;inset:0;background:rgba(16,32,26,.45);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
 .modal-bg.on{display:flex}
+/* ---------- aide : bouton, visite guidée, guide ---------- */
+.help-btn{border:0;background:transparent;color:#b9cbc1;padding:11px 12px;border-radius:11px;cursor:pointer;font-weight:600;font-family:inherit;font-size:inherit;display:flex;align-items:center;gap:11px;text-align:left;margin-top:4px;position:relative;z-index:1}
+.help-btn svg{width:19px;height:19px;flex:none;opacity:.85}
+.help-btn:hover{background:rgba(255,255,255,.06);color:#fff}
+#tour{position:fixed;inset:0;z-index:300;display:none}
+#tour.on{display:block}
+#tour .t-catch{position:fixed;inset:0}
+#tour .t-hole{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(8,18,14,.64),0 0 0 3px var(--mint),0 0 26px 6px rgba(167,232,195,.45);transition:top .32s ease,left .32s ease,width .32s ease,height .32s ease;pointer-events:none}
+#tour .t-hole.none{left:50%;top:42%;width:0;height:0;box-shadow:0 0 0 9999px rgba(8,18,14,.64)}
+#tour .t-card{position:fixed;width:min(390px,calc(100vw - 32px));background:#fff;color:var(--ink);border-radius:18px;box-shadow:0 26px 70px rgba(0,0,0,.32);padding:20px 20px 16px;transition:top .32s ease,left .32s ease;animation:fade .25s}
+#tour .t-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#tour .t-step{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--brand)}
+#tour .t-x{border:0;background:transparent;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:8px}
+#tour .t-x:hover{background:var(--line2)}
+#tour .t-bar{height:4px;background:#eef1ee;border-radius:9px;margin:8px 0 14px;overflow:hidden}
+#tour .t-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),#3f9a72);border-radius:9px;transition:width .32s ease}
+#tour h4{font-family:var(--display);font-size:20px;letter-spacing:-.01em;margin:0 0 8px;line-height:1.2}
+#tour .t-text{margin:0 0 16px;color:#4b5551;line-height:1.6;font-size:14.5px}
+#tour .t-text b{color:var(--ink)}
+#tour .t-nav{display:flex;align-items:center;gap:8px}
+#tour .t-nav .sp{flex:1}
+#tour .t-keys{font-size:11.5px;color:var(--muted)}
+@media (max-width:520px){.brand b,.brand small{display:none}.brand{padding:0}}
+@media (max-width:640px){#tour .t-card{left:12px!important;right:12px;top:auto!important;bottom:12px;width:auto}#tour .t-keys{display:none}}
+#guideModal .modal{max-width:780px;max-height:88vh;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.g-head{padding:22px 24px 14px;border-bottom:1px solid var(--line2);background:linear-gradient(180deg,var(--brand-soft),#fff)}
+.g-head h4{font-family:var(--display);font-size:24px;margin:0 0 4px;letter-spacing:-.01em}
+.g-head p{margin:0 0 14px;color:var(--muted)}
+.g-tools{display:flex;gap:10px;flex-wrap:wrap}
+.g-tools input{flex:1;min-width:200px;border:1px solid var(--line);border-radius:12px;padding:11px 14px;font:inherit;background:#fff}
+.g-body-wrap{overflow:auto;padding:16px 24px 8px}
+.g-group{margin:6px 0 16px}
+.g-group>h5{font-size:11.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+details.g-item{border:1px solid var(--line);border-radius:13px;margin-bottom:8px;background:#fff;transition:box-shadow .2s}
+details.g-item[open]{box-shadow:0 6px 20px rgba(16,32,26,.07);border-color:#cfe3d7}
+details.g-item>summary{cursor:pointer;padding:13px 16px;font-weight:700;list-style:none;display:flex;gap:12px;align-items:center}
+details.g-item>summary::-webkit-details-marker{display:none}
+details.g-item>summary .g-ic{width:30px;height:30px;border-radius:9px;background:var(--brand-soft);display:grid;place-items:center;flex:none;font-size:15px}
+details.g-item>summary::after{content:"+";margin-left:auto;color:var(--brand);font-size:20px;font-weight:600;transition:transform .2s}
+details.g-item[open]>summary::after{transform:rotate(45deg)}
+.g-txt{padding:0 18px 14px 58px;color:#3f4945;line-height:1.65}
+.g-txt ol,.g-txt ul{padding-left:20px;margin:6px 0 10px}.g-txt li{margin:4px 0}
+.g-txt .g-note{background:var(--amber-soft);border-radius:10px;padding:9px 12px;margin:8px 0;color:#6b4a06}
+.g-empty{display:none;text-align:center;color:var(--muted);padding:24px}
+.g-foot{padding:12px 24px;border-top:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+@media (max-width:640px){.g-txt{padding:0 14px 14px 16px}.g-head,.g-body-wrap,.g-foot{padding-left:16px;padding-right:16px}}
 .modal{background:#fff;border-radius:20px;max-width:440px;width:100%;padding:24px;box-shadow:0 30px 70px rgba(0,0,0,.3);animation:fade .2s}
 .modal h4{margin:0 0 8px;font-size:20px;font-family:var(--display)}
 .modal p{margin:0 0 20px;color:var(--muted)}
@@ -841,6 +889,7 @@ details.more[open] summary{margin-bottom:12px}
     <button data-tab="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.8.8 3 2.6 3.5 5.2"/></svg><span>Clients</span></button>
     <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg><span>Mon entreprise</span></button>
   </nav>
+  <button class="help-btn" id="btnHelp" title="Visite guidée et guide d'utilisation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.2-2.4 3.7"/><path d="M12 17.2h.01"/></svg><span>Aide &amp; tutoriel</span></button>
   <div class="side-ctas"><button class="side-cta" id="btnNewSide">+ Facture</button><button class="side-cta" id="btnNewSideD">+ Devis</button></div>
   <div class="save-state side-user"><div class="avatar" id="meAv" style="background:#2c5a47">?</div><div style="min-width:0;flex:1"><b id="meEmail" class="me-mail">…</b><small><span class="dot cloud" id="dot"></span> <span id="saveLabel">Synchronisé</span></small></div><button class="logout" id="btnLogout" title="Se déconnecter"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg></button></div>
 </aside>
@@ -1202,6 +1251,17 @@ details.more[open] summary{margin-bottom:12px}
 <div class="modal-bg" id="modal"><div class="modal">
   <h4 id="mTitle"></h4><p id="mWarn" style="display:none;background:#fdecea;color:#a1261b;border:1px solid #f3b8b2;border-radius:10px;padding:10px 12px;font-weight:700;margin:0 0 10px"></p><p id="mText"></p>
   <div class="actions" style="justify-content:flex-end"><button class="btn ghost" id="mNo">Annuler</button><button class="btn primary" id="mYes">Confirmer</button></div>
+</div></div>
+<div id="tour" role="dialog" aria-modal="true" aria-labelledby="tTitle"><div class="t-catch"></div><div class="t-hole"></div>
+  <div class="t-card"><div class="t-top"><span class="t-step" id="tStep"></span><button class="t-x" id="tClose" title="Quitter la visite" aria-label="Quitter la visite">×</button></div>
+  <div class="t-bar"><i id="tBar"></i></div><h4 id="tTitle"></h4><div class="t-text" id="tText"></div>
+  <div class="t-nav"><button class="btn ghost sm" id="tSkip">Passer</button><span class="sp"></span><span class="t-keys">← → pour naviguer</span><button class="btn sm" id="tPrev">←</button><button class="btn sm primary" id="tNext">Suivant →</button></div></div>
+</div>
+<div class="modal-bg" id="guideModal"><div class="modal">
+  <div class="g-head"><h4>📘 Guide de Mes factures</h4><p>Tout ce qu'il faut savoir, expliqué simplement. Clique sur un sujet pour l'ouvrir.</p>
+    <div class="g-tools"><input type="search" id="gSearch" placeholder="Rechercher : avoir, acompte, TVA, sauvegarde…" aria-label="Rechercher dans le guide"><button class="btn primary" id="gTour">▶ Lancer la visite guidée</button></div></div>
+  <div class="g-body-wrap"><div id="gList"></div><div class="g-empty" id="gEmpty">Aucun sujet ne correspond. Essaie un autre mot (ex. « facture », « paiement », « client »).</div></div>
+  <div class="g-foot"><span>Une question qui n'est pas ici ? Les mentions légales et la politique de confidentialité sont <a href="mentions-legales.html" target="_blank">ici</a>.</span><button class="btn" id="gClose">Fermer</button></div>
 </div></div>
 <div class="modal-bg" id="sendModal"><div class="modal" style="max-width:560px">
   <h4 id="sendTitle">Envoyer au client</h4>
@@ -1701,7 +1761,7 @@ function openWorkspace(ws){
     S.profile = s.exists() ? normProfile(s.data()) : normProfile(S.isOwner?{email:S.user.email||""}:{});
     applyAccent(); renderProfileDependent(); renderWsBar();
     if(first){ first=false; S.profileLoaded=true; setSync("Synchronisé");
-      if(S.isOwner && (!s.exists() || !S.profile.name)){ showTab("settings"); $("#welcome").style.display="block"; }
+      if(S.isOwner && (!s.exists() || !S.profile.name)){ showTab("settings"); $("#welcome").style.display="block"; Tour.auto(); }
       else Backup.init(); }
   }, e=>{ err(e); setSync("Hors ligne"); }));
   S.wsUnsubs.push(onSnapshot(R.col("invoices"), s=>{
@@ -3107,6 +3167,144 @@ $("#payYes").addEventListener("click",async()=>{
   payTarget=null;
 });
 
+/* ================= aide : visite guidée + guide ================= */
+const Tour = {
+  on:false, i:0, steps:[], back:"edit", raf:0,
+  list(){
+    const co=can("company");
+    return [
+      {title:"Bienvenue dans Mes factures 👋", text:"Une visite rapide (1 minute) pour découvrir l'essentiel. Tu peux la passer, et la relancer quand tu veux avec le bouton <b>« Aide &amp; tutoriel »</b>."},
+      co && {tab:"settings", el:["#v-settings .card"], title:"Ton entreprise", text:"Commence ici : nom, SIRET, adresse, TVA (ou franchise), moyens de paiement, IBAN et numérotation. Ces informations sont reprises <b>automatiquement</b> sur tous tes documents, avec les mentions obligatoires."},
+      {tab:"edit", el:["#btnNewSide","#btnNewF"], title:"Créer un document", text:"<b>« + Facture »</b> ou <b>« + Devis »</b> ouvre un nouveau document. Tout se remplit dans l'éditeur, à gauche."},
+      {tab:"edit", el:["#cName"], card:true, title:"Le client", text:"Choisis <b>Particulier</b> ou <b>Professionnel</b>. Pour un professionnel, le SIREN est obligatoire. Indique son email pour pouvoir lui envoyer le document. Les clients sont enregistrés tout seuls."},
+      {tab:"edit", el:["#lines"], card:true, title:"Les prestations", text:"Une ligne par prestation : désignation, quantité, unité, prix HT et TVA. L'étoile ☆ ajoute la ligne à ton <b>catalogue</b> pour la réutiliser."},
+      {tab:"edit", el:["#sheetBox"], title:"L'aperçu en direct", text:"Le document se met à jour à chaque frappe : c'est exactement le PDF que recevra ton client."},
+      {tab:"edit", el:["#btnSave","#btnDraft"], title:"Brouillon, puis émission", text:"Tant que c'est un <b>brouillon</b>, tout reste modifiable. <b>« Émettre »</b> attribue le numéro définitif et verrouille la facture : c'est <b>irréversible</b> (une erreur se corrige par un avoir). Tu peux ensuite l'envoyer au client 📧."},
+      {tab:"list", el:['nav.tabs [data-tab="list"]'], title:"Le suivi des factures", text:"Paiements (« ✓ Payée »), relances des retards, avoirs, export comptable et récapitulatif <b>e-reporting</b> : tout se passe ici."},
+      {tab:"quotes", el:['nav.tabs [data-tab="quotes"]'], title:"Les devis", text:"Un devis accepté se <b>transforme en facture</b> en un clic. Tu peux aussi facturer un <b>acompte</b> ou des <b>situations de travaux</b>."},
+      {tab:"archive", el:['nav.tabs [data-tab="archive"]'], title:"Les archives", text:"Tous tes PDF, rangés par client ou par mois. Une facture se conserve <b>10 ans</b> : télécharge-les toutes en un clic (.zip)."},
+      {tab:"clients", el:['nav.tabs [data-tab="clients"]'], title:"Clients et catalogue", text:"Tes fiches clients (adresse, SIREN, email) et tes prestations habituelles, prêtes à être réutilisées."},
+      co && {tab:"settings", el:["#bkState"], card:true, title:"La sauvegarde", text:"Choisis où garder une copie de tes documents : un dossier sur ton ordinateur (un dossier par client), le téléchargement automatique, ou l'app Fichiers sur iPhone."},
+      {el:["#btnHelp"], title:"À toi de jouer ! 🎉", text:"Le <b>guide complet</b> (avec une recherche et les questions fréquentes) et cette visite sont toujours disponibles ici."}
+    ].filter(Boolean);
+  },
+  auto(){   // première connexion d'un nouveau compte : une seule fois par appareil
+    if(window.__noTour || !S.uid || lsGet("tour:"+S.uid)) return;
+    lsSet("tour:"+S.uid,"1");
+    setTimeout(()=>{ if(!this.on && !$$(".modal-bg.on").length) this.start(); },900);
+  },
+  start(){
+    if(!S.uid) return; $$(".modal-bg.on").forEach(m=>m.classList.remove("on"));
+    lsSet("tour:"+S.uid,"1");
+    const v=$$(".view.on")[0]; this.back = v ? v.id.replace("v-","") : "edit";
+    this.steps=this.list(); this.on=true; $("#tour").classList.add("on");
+    window.addEventListener("resize",this.onMove); window.addEventListener("scroll",this.onMove,true); document.addEventListener("keydown",this.onKey,true);
+    this.go(0);
+  },
+  end(){
+    if(!this.on) return; this.on=false; $("#tour").classList.remove("on");
+    window.removeEventListener("resize",this.onMove); window.removeEventListener("scroll",this.onMove,true); document.removeEventListener("keydown",this.onKey,true);
+    if(S.isOwner && !S.profile.name){ showTab("settings"); $("#welcome").style.display="block"; } else showTab(this.back||"edit");
+  },
+  target(st){
+    for(const sel of (st.el||[])){
+      let e=document.querySelector(sel); if(e && st.card) e=e.closest(".card")||e;
+      if(e && e.getClientRects().length){ const r=e.getBoundingClientRect(); if(r.width>0 && r.height>0) return e; }
+    }
+    return null;
+  },
+  go(i){
+    this.i=Math.max(0,Math.min(i,this.steps.length-1)); const st=this.steps[this.i], n=this.steps.length;
+    if(st.tab && !$("#v-"+st.tab).classList.contains("on")) showTab(st.tab);
+    $("#tStep").textContent=`Étape ${this.i+1} sur ${n}`; $("#tBar").style.width=`${Math.round((this.i+1)/n*100)}%`;
+    $("#tTitle").textContent=st.title; $("#tText").innerHTML=st.text;
+    $("#tPrev").style.visibility=this.i?"visible":"hidden";
+    $("#tNext").textContent = this.i===n-1 ? "Terminer ✓" : "Suivant →"; $("#tSkip").style.visibility = this.i===n-1 ? "hidden" : "visible";
+    const e=this.target(st); this.cur=e;
+    if(e){ const r=e.getBoundingClientRect(); if(r.top<70 || r.bottom>innerHeight-20) e.scrollIntoView({block:r.height>innerHeight*.7?"start":"center"}); }
+    requestAnimationFrame(()=>this.place()); $("#tNext").focus({preventScroll:true});
+  },
+  place(){
+    if(!this.on) return; const e=this.cur, hole=$("#tour .t-hole"), card=$("#tour .t-card"), M=12, pad=8;
+    const cw=card.offsetWidth, ch=card.offsetHeight, W=innerWidth, H=innerHeight;
+    if(!e || !e.getClientRects().length){ hole.classList.add("none"); hole.removeAttribute("style"); card.style.left=Math.max(M,(W-cw)/2)+"px"; card.style.top=Math.max(M,(H-ch)/2)+"px"; return; }
+    const r=e.getBoundingClientRect(); hole.classList.remove("none");
+    const x=Math.max(4,r.left-pad), y=Math.max(4,r.top-pad), w=Math.min(W-8,r.right+pad)-x, h=Math.min(H-8,r.bottom+pad)-y;
+    Object.assign(hole.style,{left:x+"px",top:y+"px",width:Math.max(0,w)+"px",height:Math.max(0,h)+"px"});
+    const fits=(L,T)=>L>=M && T>=M && L+cw<=W-M && T+ch<=H-M;
+    const cx=Math.min(Math.max(M,r.left+r.width/2-cw/2),W-cw-M), cy=Math.min(Math.max(M,r.top+r.height/2-ch/2),H-ch-M);
+    const opts=[[cx,y+h+14],[cx,y-ch-14],[x+w+14,cy],[x-cw-14,cy]];
+    const [L,T]=opts.find(([a,b])=>fits(a,b)) || [W-cw-M,H-ch-M];
+    card.style.left=L+"px"; card.style.top=T+"px";
+  },
+  onMove(){ cancelAnimationFrame(Tour.raf); Tour.raf=requestAnimationFrame(()=>Tour.place()); },
+  onKey(ev){ if(!Tour.on) return;
+    if(ev.key==="Escape"){ ev.preventDefault(); Tour.end(); }
+    else if(ev.key==="ArrowRight"){ ev.preventDefault(); Tour.next(); }
+    else if(ev.key==="ArrowLeft"){ ev.preventDefault(); Tour.go(Tour.i-1); } },
+  next(){ if(this.i>=this.steps.length-1) this.end(); else this.go(this.i+1); }
+};
+$("#tNext").addEventListener("click",()=>Tour.next());
+$("#tPrev").addEventListener("click",()=>Tour.go(Tour.i-1));
+$("#tSkip").addEventListener("click",()=>Tour.end());
+$("#tClose").addEventListener("click",()=>Tour.end());
+
+const GUIDE = [
+ {g:"Démarrer", items:[
+  {i:"🚀", t:"Bien démarrer en 4 étapes", h:`<ol><li><b>Remplis « Mon entreprise »</b> : nom, forme juridique, SIRET, adresse, TVA (ou franchise en base), moyens de paiement et IBAN, numérotation. Tu faisais déjà des factures ailleurs ? Indique ton prochain numéro dans « Numérotation ».</li><li><b>Choisis ta sauvegarde</b> (« Mon entreprise » → Sauvegarde automatique) : un dossier sur ton ordinateur, le téléchargement automatique, ou l'app Fichiers sur iPhone.</li><li><b>Crée ton premier devis ou ta première facture</b> avec « + Devis » ou « + Facture ».</li><li><b>Émets-la, puis envoie-la</b> à ton client avec le bouton 📧.</li></ol>`},
+  {i:"📲", t:"Installer l'appli sur l'ordinateur ou le téléphone", h:`<ul><li><b>Ordinateur (Chrome ou Edge)</b> : clique sur l'icône d'installation dans la barre d'adresse, ou menu ⋮ → « Installer Mes factures ».</li><li><b>Android (Chrome)</b> : menu ⋮ → « Installer l'application » ou « Ajouter à l'écran d'accueil ».</li><li><b>iPhone / iPad (Safari)</b> : bouton Partager → « Sur l'écran d'accueil ».</li></ul>L'appli s'ouvre alors comme une vraie application. Les <b>mises à jour sont automatiques</b> : rien à faire.`}
+ ]},
+ {g:"Au quotidien", items:[
+  {i:"🧾", t:"Créer et émettre une facture", h:`<ol><li>Clique sur <b>« + Facture »</b>.</li><li><b>Client</b> : choisis Particulier ou Professionnel (pour un pro, le SIREN est obligatoire). Ajoute son email pour pouvoir lui envoyer la facture.</li><li><b>Dates</b> : date d'émission, date de la prestation (ou une période), échéance de paiement.</li><li><b>Lignes</b> : désignation, quantité, unité, prix HT, TVA.</li><li>Vérifie l'<b>aperçu</b> à droite.</li><li><b>« Enregistrer le brouillon »</b> si tu veux finir plus tard, ou <b>« ✓ Émettre la facture »</b>.</li></ol><div class="g-note">⚠️ L'émission est <b>irréversible</b> : la facture reçoit son numéro définitif et ne peut plus être modifiée ni supprimée. Une erreur se corrige par un avoir.</div>`},
+  {i:"📝", t:"Faire un devis et le transformer en facture", h:`<ol><li>Clique sur <b>« + Devis »</b>, remplis-le comme une facture, puis <b>« Enregistrer le devis »</b> : il reçoit un numéro (D-…) et reste modifiable.</li><li>Envoie-le au client (📧). Sa durée de validité se règle dans « Mon entreprise ».</li><li>Une fois accepté, ouvre-le (onglet Devis) et clique sur <b>« → Transformer en facture »</b> : tout est repris, il ne reste qu'à vérifier et émettre.</li></ol>`},
+  {i:"💶", t:"Facture d'acompte", h:`Sur un devis enregistré, clique sur <b>« 💶 Facture d'acompte »</b> et indique un pourcentage ou un montant. La facture finale <b>déduit automatiquement</b> les acomptes déjà facturés et affiche le « Reste à payer ».`},
+  {i:"🏗", t:"Situations de travaux et retenue de garantie", h:`<ul><li>Sur un devis, <b>« 🏗 Situation de travaux »</b> : indique l'avancement <b>cumulé</b> de chaque poste (ou « tout le chantier à X % »). L'appli facture seulement la différence avec les situations précédentes. À 100 %, les acomptes sont déduits et le devis est clos.</li><li><b>Retenue de garantie</b> (5 % maximum) : coche la case dans la facture ou la situation. Le PDF affiche le « Net à payer » et la mention légale. Quand ton client te verse la retenue (en général un an après la réception), clique sur <b>« ✓ Retenue reçue »</b> dans la liste des factures.</li></ul>`},
+  {i:"↩", t:"Corriger ou annuler une facture : l'avoir", h:`Une facture émise ne se modifie pas et ne se supprime pas (obligation légale). Pour la corriger :<ol><li>Ouvre la facture et clique sur <b>« ↩ Créer un avoir »</b>.</li><li>Garde toutes les lignes pour l'annuler entièrement, ou modifie-les pour un avoir partiel.</li><li>Émets l'avoir, puis refais une facture correcte si besoin.</li></ol>`},
+  {i:"💰", t:"Paiements et relances", h:`<ul><li>Onglet <b>Factures</b> : <b>« ✓ Payée »</b> enregistre la date et le moyen de paiement.</li><li>Une facture en retard affiche <b>« ✉ Relancer »</b> : un email de relance tout prêt s'ouvre dans ta messagerie.</li></ul><div class="g-note">Loi anti-fraude à la TVA : si tu factures la TVA, l'appli ne suit pas les paiements de tes clients <b>particuliers</b> (cela demanderait un logiciel de caisse certifié). Le suivi reste possible pour les professionnels, et pour tout le monde en franchise de TVA.</div>`},
+  {i:"📧", t:"Envoyer un document au client", h:`Juste après l'émission (ou avec le bouton <b>« 📧 Envoyer au client »</b>), une fenêtre propose un email tout prêt : adresse, objet et message.<ul><li><b>« ✉️ Ouvrir ma messagerie »</b> : le PDF est téléchargé et l'email s'ouvre ; glisse le PDF dans le message puis envoie.</li><li><b>« 📲 Partager le PDF »</b> (téléphone) : le PDF est joint tout seul, choisis ta messagerie.</li></ul><b>Rien ne part sans toi.</b> Pour ne plus avoir la fenêtre après l'émission : « Mon entreprise », cadre F.`},
+  {i:"📅", t:"Prestation sur une période", h:`Sous la date de prestation, coche <b>« Sur une période (du … au …) »</b> et indique la date de fin (ex. entretien mensuel du 01/10 au 31/10). La période apparaît sur la facture et dans la facture électronique.`},
+  {i:"👤", t:"Clients et catalogue", h:`Les clients sont enregistrés automatiquement quand tu enregistres un document. L'onglet <b>Clients</b> permet de les modifier (adresse, SIREN, email). L'étoile ☆ d'une ligne l'ajoute à ton <b>catalogue</b> de prestations.`}
+ ]},
+ {g:"Obligations légales", items:[
+  {i:"⚡", t:"Facture électronique", h:`<ul><li><b>Réception</b> : obligatoire pour toutes les entreprises depuis le 1er septembre 2026.</li><li><b>Émission</b> : obligatoire pour les PME et les micro-entreprises au <b>1er septembre 2027</b> (déjà le cas pour les grandes entreprises et les ETI).</li><li>Elle passe par une <b>plateforme agréée</b>, que tu choisis.</li></ul>Dans l'appli : ouvre une facture émise pour un client <b>professionnel</b> → <b>« ⚡ Facture électronique »</b> → choisis Factur-X (conseillé), CII ou UBL → dépose le fichier sur ta plateforme. Pour les particuliers, pas de facture électronique : c'est l'e-reporting.`},
+  {i:"📡", t:"E-reporting", h:`Onglet Factures → <b>« 📡 E-reporting »</b> : le récapitulatif des ventes aux particuliers (et des encaissements, en franchise de TVA) à transmettre à ta plateforme agréée, avec les périodes et dates limites selon ton régime de TVA (à régler dans « Mon entreprise »). Export CSV disponible.`},
+  {i:"🔢", t:"Numérotation des factures", h:`Les numéros doivent se suivre <b>sans trou</b> et dans l'ordre des dates : l'appli s'en charge à l'émission. Tu peux repartir à 1 chaque année, à condition que l'<b>année figure dans le numéro</b> (case dans « Mon entreprise » → Numérotation). Factures, devis et avoirs ont chacun leur suite.`},
+  {i:"🗄", t:"Conservation et sauvegarde", h:`<ul><li>Une facture se conserve <b>10 ans</b>. Onglet <b>Archives</b> → « Tout télécharger (.zip) ».</li><li><b>Sauvegarde automatique</b> (« Mon entreprise ») : dans un dossier de ton choix, rangé par client avec un sous-dossier « PDF » et un sous-dossier « Facture électronique ».</li><li>Si Chrome te demande l'autorisation d'accéder au dossier, choisis <b>« Autoriser à chaque visite »</b> (ou installe l'appli) pour ne plus avoir à le refaire.</li></ul>`},
+  {i:"⚖️", t:"Mentions obligatoires", h:`L'appli ajoute automatiquement les mentions obligatoires à partir de « Mon entreprise » : identité et SIRET, n° de TVA ou mention de franchise (art. 293 B du CGI), date de la prestation, échéance, pénalités de retard et indemnité de 40 € pour les professionnels, médiateur de la consommation pour les particuliers. L'<b>assurance professionnelle</b> (ex. décennale) se renseigne dans le cadre F.`}
+ ]},
+ {g:"Équipe et compte", items:[
+  {i:"👥", t:"Travailler à plusieurs", h:`« Mon entreprise » → <b>Mon équipe</b> : saisis l'email de la personne, choisis ses droits, puis <b>« Inviter »</b>. Un email tout prêt lui explique quoi faire : créer son compte, confirmer son adresse, puis cliquer sur « Rejoindre ». Seul le propriétaire gère l'équipe.`},
+  {i:"🔒", t:"Tes données", h:`Tes données sont hébergées en France (Paris) chez Google Firebase. Tu peux tout exporter (« Mon entreprise » → Mon compte → « Exporter toutes mes données ») ou supprimer ton compte. Détails dans les <a href="mentions-legales.html" target="_blank">mentions légales et la politique de confidentialité</a>.`}
+ ]},
+ {g:"Questions fréquentes", items:[
+  {i:"❓", t:"J'ai fait une erreur sur une facture déjà émise", h:`Elle ne peut plus être modifiée : crée un <b>avoir</b> (bouton « ↩ Créer un avoir » sur la facture), puis refais une facture correcte.`},
+  {i:"❓", t:"Puis-je supprimer une facture ?", h:`Un <b>brouillon</b>, oui (✕ dans la liste). Une facture <b>émise</b>, non : la loi interdit de supprimer une facture numérotée. On l'annule par un avoir.`},
+  {i:"❓", t:"Particulier ou professionnel ?", h:`<b>Professionnel</b> : une entreprise (même auto-entrepreneur), une association, une administration… Il a un SIREN, obligatoire sur la facture. <b>Particulier</b> : une personne pour ses besoins personnels.`},
+  {i:"❓", t:"Pourquoi je ne peux pas indiquer « Payée » ?", h:`Si ton entreprise facture la TVA et que le client est un <b>particulier</b>, la loi anti-fraude interdit de suivre ses paiements sans logiciel de caisse certifié. Pour un professionnel ou en franchise de TVA, c'est possible.`},
+  {i:"❓", t:"L'appli envoie-t-elle des emails toute seule ?", h:`Non. Elle prépare l'email (adresse, objet, message, PDF) et c'est toujours toi qui cliques sur « Envoyer ».`},
+  {i:"❓", t:"Puis-je repartir à 1 au 1er janvier ?", h:`Oui, si l'année figure dans le numéro (ex. F-2027-001). Coche « repartir à 1 chaque année » dans « Mon entreprise » → Numérotation : l'appli ajoute l'année automatiquement.`},
+  {i:"❓", t:"Comment avoir la dernière version ?", h:`Les mises à jour sont automatiques. Si un bandeau « Mettre à jour » apparaît, enregistre ce que tu fais puis clique dessus. En cas de doute : Ctrl + Maj + R sur ordinateur.`}
+ ]}
+];
+const gNorm = x => String(x||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+function renderGuide(){
+  $("#gList").innerHTML = GUIDE.map((g,gi)=>`<div class="g-group"><h5>${esc(g.g)}</h5>${g.items.map((it,ii)=>`<details class="g-item" data-k="${gi}-${ii}"><summary><span class="g-ic">${it.i}</span><span>${esc(it.t)}</span></summary><div class="g-txt">${it.h}</div></details>`).join("")}</div>`).join("");
+}
+function filterGuide(){
+  const q=gNorm($("#gSearch").value.trim()); let shown=0;
+  $$("#gList .g-group").forEach(gr=>{ let n=0;
+    gr.querySelectorAll("details.g-item").forEach(d=>{ const hit=!q || gNorm(d.textContent).includes(q); d.style.display=hit?"":"none"; if(hit) n++; if(q) d.open=hit; });
+    gr.style.display=n?"":"none"; shown+=n; });
+  $("#gEmpty").style.display=shown?"none":"block";
+}
+function openGuide(){ if(!$("#gList").children.length) renderGuide(); $("#gSearch").value=""; filterGuide(); $$("#gList details").forEach((d,i)=>d.open=i===0); $("#guideModal").classList.add("on"); $(".g-body-wrap").scrollTop=0; }
+$("#btnHelp").addEventListener("click",openGuide);
+$("#gSearch").addEventListener("input",filterGuide);
+$("#gTour").addEventListener("click",()=>{ $("#guideModal").classList.remove("on"); Tour.start(); });
+$("#gClose").addEventListener("click",()=>$("#guideModal").classList.remove("on"));
+$("#guideModal").addEventListener("click",e=>{ if(e.target.id==="guideModal") $("#guideModal").classList.remove("on"); });
+window.__tour=Tour; // pour les tests
+
 /* ================= envoi au client (email préparé dans la messagerie de l'utilisateur : aucun serveur, rien ne part tout seul) ================= */
 const SHARE_FILES = (()=>{ try{ return typeof navigator.share==="function" && typeof navigator.canShare==="function" && navigator.canShare({files:[new File([new Uint8Array(1)],"t.pdf",{type:"application/pdf"})]}); }catch(_){ return false; } })();
 const openUrl = u => { if(window.__openUrl) return window.__openUrl(u); window.location.href=u; };   // crochet pour les tests
@@ -3627,7 +3825,7 @@ const Upd = {
   base:null, ready:false, last:0,
   async tag(){ try{ const r=await fetch("./index.html",{method:"HEAD",cache:"no-cache"}); return r.ok ? (r.headers.get("etag")||r.headers.get("last-modified")) : null; }catch(_){ return null; } },
   busy(){
-    if($$(".modal-bg.on").length) return true;                                        // une fenêtre est ouverte
+    if($$(".modal-bg.on").length || (typeof Tour!=="undefined" && Tour.on)) return true;   // une fenêtre ou la visite guidée est ouverte
     if($("#v-settings") && $("#v-settings").classList.contains("on")) return true;     // réglages en cours
     const a=document.activeElement; if(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true; // saisie en cours
     if(S.cur && (S.curSnap==null || JSON.stringify(S.cur)!==S.curSnap)) return true;  // document modifié non enregistré

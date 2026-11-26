@@ -58,3 +58,11 @@ sont aussi passés aux validateurs officiels. `SHOT=chemin` enregistre des captu
 défaut), adresse / objet / message pré-remplis, « Ouvrir ma messagerie » (PDF téléchargé + lien `mailto:` capturé par
 le crochet `window.__openUrl`), « Partager le PDF » (partage du navigateur simulé), adresse corrigée enregistrée dans la
 fiche client, et plus de fenêtre automatique quand le réglage est décoché.
+
+## Aide et tutoriel
+
+`npm run test:tutoriel` vérifie la visite guidée : lancement automatique à la première connexion (une seule fois),
+les 13 étapes (élément trouvé et visible, bulle dans l'écran et sans cacher l'élément), clavier (← → Échap), « Passer »
+qui ramène à l'onglet de départ, et la même chose sur un téléphone (390 × 844). Il vérifie aussi le guide : sujets,
+recherche (sans accents), message sans résultat et lancement de la visite. `SHOT=chemin` enregistre des captures.
+Les autres tests désactivent la visite avec `window.__noTour = true` (script d'initialisation de la page).
