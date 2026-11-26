@@ -26,6 +26,7 @@ let pass = 0, fail = 0; const ok = (c, m) => { if (c) { pass++; console.log("  o
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, acceptDownloads: true, deviceScaleFactor: process.env.SHOT ? 2 : 1 });
 const errs = []; page.on("pageerror", e => errs.push(e.message)); page.on("console", m => { if (m.type() === "error") errs.push(m.text()); });
+await page.addInitScript(() => { window.__noTour = true; });   // visite guidée testée à part (tutoriel.mjs)
 await page.route(/www\.gstatic\.com\/firebasejs\/13\.3\.0\/(.*)$/, route => route.fulfill({ status: 200, contentType: "application/javascript", body: fs.readFileSync(FB + route.request().url().split("/").pop()) }));
 const clearToast = () => page.evaluate(() => { document.querySelector("#toast").textContent = ""; });
 const waitToast = async (re, ms = 10000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const t = (await page.locator("#toast").textContent()) || ""; if (re.test(t)) return t; await page.waitForTimeout(150); } return (await page.locator("#toast").textContent()) || ""; };

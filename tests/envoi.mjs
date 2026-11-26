@@ -27,6 +27,7 @@ let pass = 0, fail = 0; const ok = (c, m) => { if (c) { pass++; console.log("  o
 const browser = await chromium.launch({ env: { ...process.env, LANG: "C.UTF-8", LC_ALL: "C.UTF-8" } });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
 const errs = []; page.on("pageerror", e => errs.push(e.message));
+await page.addInitScript(() => { window.__noTour = true; });   // visite guidée testée à part (tutoriel.mjs)
 await page.addInitScript(() => {   // partage (téléphone) et ouverture de la messagerie simulés
   window.__shared = []; window.__urls = []; window.__openUrl = u => window.__urls.push(u);
   Object.defineProperty(navigator, "canShare", { value: () => true, configurable: true });
